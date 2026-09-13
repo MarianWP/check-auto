@@ -7,7 +7,7 @@ const path = require("path");
 const MAP = {
   back: "chevron-left", chev: "chevron-right", check: "check", x: "x", minus: "minus", plus: "plus",
   info: "info", alert: "triangle-alert", book: "book-open", share: "share", trash: "trash-2", more: "ellipsis",
-  car: "car", clipboard: "clipboard-check", wrench: "wrench", circleCheck: "circle-check", external: "external-link"
+  car: "car", clipboard: "clipboard-check", wrench: "wrench", circleCheck: "circle-check", external: "external-link", circlePlus: "circle-plus"
 };
 
 const out = {};

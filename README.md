@@ -1,6 +1,6 @@
 # Golf Check
 
-Чек-лист огляду Volkswagen Golf V перед покупкою. PWA: відкривається в Safari, додається на Початковий екран iPhone, працює офлайн. Без діагностики й товщиноміра — тільки очі, руки, вуха.
+Чек-лист огляду Volkswagen Golf V перед покупкою. PWA: відкривається в Safari, додається на Початковий екран iPhone, працює офлайн. Працює і як Telegram Mini App. Без діагностики й товщиноміра — тільки очі, руки, вуха.
 
 ## Що всередині
 
@@ -21,6 +21,7 @@ css/app.css          стилі
 js/icons.js          іконки Lucide
 js/data.js           довідник: мотори, коробки, кузови, ціни, хвороби
 js/checklist.js      етапи і пункти чек-листа
+js/tg.js             інтеграція з Telegram Mini App (тема, повний екран, кнопка «Назад»)
 js/app.js            логіка застосунку
 icons/               PNG-іконки
 tools/               скрипти генерації іконок
@@ -28,10 +29,11 @@ tools/               скрипти генерації іконок
 
 ## Як опублікувати безкоштовно (GitHub Pages)
 
-1. Зареєструйся на github.com, натисни **New repository**, назви `golf-check`, познач **Public**, створи.
-2. **Add file → Upload files**: перетягни всі файли і папки з цієї теки (`index.html`, `manifest.webmanifest`, `sw.js`, `css`, `js`, `icons`). Натисни **Commit changes**.
-3. **Settings → Pages → Build and deployment**: Source = *Deploy from a branch*, Branch = *main*, папка */ (root)*. Save.
-4. За 1–2 хвилини сторінка з'явиться за адресою `https://<твій-логін>.github.io/golf-check/`.
+Репозиторій: `github.com/MarianWP/check-auto`, гілка `main`.
+
+1. **Settings → Pages → Build and deployment**: Source = *Deploy from a branch*, Branch = *main*, папка */ (root)*. Save.
+2. За 1–2 хвилини сторінка з'явиться за адресою `https://marianwp.github.io/check-auto/`.
+3. Кожен `git push` у `main` оновлює сайт автоматично.
 
 Альтернатива без GitHub: **app.netlify.com/drop** — перетягни теку, отримаєш посилання.
 
@@ -40,6 +42,12 @@ tools/               скрипти генерації іконок
 ```
 npx serve .
 ```
+
+## Telegram Mini App
+
+1. У [@BotFather](https://t.me/BotFather): `/newbot` (якщо бота ще немає), потім `/newapp` → обери бота → назва, опис, картинка 640×360 → **Web App URL**: `https://marianwp.github.io/check-auto/` → коротка назва, наприклад `golf`. Готове посилання: `https://t.me/<бот>/golf`.
+2. Або `/mybots` → бот → **Bot Settings → Menu Button** → той самий URL. Тоді апка відкривається кнопкою меню в чаті з ботом.
+3. Усередині Telegram апка сама розгортається на весь екран, підхоплює світлу/темну тему, показує системну кнопку «Назад», а «Поділитися звітом» надсилає текст у чат.
 
 ## Як встановити на iPhone
 

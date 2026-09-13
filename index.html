@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Golf Check</title>
   <meta name="description" content="Чек-лист огляду Volkswagen Golf V перед покупкою: мотори, хвороби, ціни в Україні, покроковий огляд і звіт.">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,6 +15,20 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
   <link rel="stylesheet" href="css/app.css">
+  <script>
+    /* Telegram Mini App: SDK потрібен лише коли апку відкрито з Telegram (параметри запуску у hash
+       або збережені SDK після перезавантаження). Поза Telegram зайвого запиту немає — PWA працює офлайн. */
+    (function () {
+      var launch = /tgWebApp(Data|Platform|Version|StartParam)=/.test(location.hash), stored = false;
+      try { stored = !!sessionStorage.getItem("__telegram__initParams"); } catch (e) { /* немає доступу */ }
+      if (!launch && !stored) return;
+      document.documentElement.dataset.tg = "1";
+      var s = document.createElement("script");
+      s.src = "https://telegram.org/js/telegram-web-app.js";
+      s.onload = function () { window.dispatchEvent(new Event("tg-sdk")); };
+      document.head.appendChild(s);
+    })();
+  </script>
 </head>
 <body>
   <div id="app"></div>
@@ -22,6 +36,7 @@
   <script src="js/icons.js"></script>
   <script src="js/data.js"></script>
   <script src="js/checklist.js"></script>
+  <script src="js/tg.js"></script>
   <script src="js/app.js"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol !== "file:") {

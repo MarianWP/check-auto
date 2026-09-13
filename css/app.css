@@ -40,6 +40,7 @@
   --sar: env(safe-area-inset-right, 0px);
   --gutter: 16px;
   --bar-h: 84px;
+  --tab-h: 49px;
 }
 
 /* Темна тема: системна (якщо не примусово світла) або примусова через data-theme="dark". */
@@ -95,8 +96,12 @@
 }
 
 /* ---------- База ---------- */
-*, *::before, *::after { box-sizing: border-box; }
+/* touch-action: manipulation на всьому — прибирає зум подвійним тапом на iOS, панорамування лишається. */
+*, *::before, *::after { box-sizing: border-box; touch-action: manipulation; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Оболонка: документ не скролиться взагалі, скролиться лише .screen.
+   Так iOS і Telegram не «відривають» сторінку від країв екрана. */
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 body {
   margin: 0;
   background: var(--bg);
@@ -106,10 +111,8 @@ body {
   line-height: 1.35;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  overscroll-behavior-y: none;
-  min-height: 100dvh;
 }
+#app { position: fixed; inset: 0; overflow: hidden; }
 button, input, textarea { font: inherit; color: inherit; }
 button { background: none; border: 0; padding: 0; margin: 0; cursor: pointer; text-align: inherit; }
 a { color: var(--tint); text-decoration: none; }
@@ -124,17 +127,23 @@ svg.i.lg { width: 28px; height: 28px; }
 
 /* ---------- Екран і переходи ---------- */
 .screen {
-  min-height: 100dvh;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding-bottom: calc(var(--sab) + 24px);
-  opacity: 1;
-  transform: translateX(0);
-  transition: opacity 220ms var(--ease-out), transform 260ms var(--ease-out);
 }
 .screen.has-bar { padding-bottom: calc(var(--sab) + var(--bar-h) + 16px); }
-@starting-style {
-  .screen.fwd { opacity: 0; transform: translateX(14px); }
-  .screen.back { opacity: 0; transform: translateX(-10px); }
-}
+.screen.has-tabs { padding-bottom: calc(var(--sab) + var(--tab-h) + 16px); }
+/* Вхід екрана — keyframes, а не transition: після анімації на скролері не лишається transform,
+   тож sticky-шапка з blur і фіксовані панелі поводяться передбачувано в Safari. */
+.screen.fwd { animation: screen-fwd 260ms var(--ease-out); }
+.screen.back { animation: screen-back 260ms var(--ease-out); }
+.screen.tab { animation: screen-fade 200ms ease; }
+@keyframes screen-fwd { from { opacity: 0; transform: translateX(14px); } }
+@keyframes screen-back { from { opacity: 0; transform: translateX(-10px); } }
+@keyframes screen-fade { from { opacity: 0; } }
 .screen.soft { transition: none; }
 
 .content {
@@ -191,6 +200,8 @@ svg.i.lg { width: 28px; height: 28px; }
 }
 .nav-sub { display: block; font-size: 12px; font-weight: 400; color: var(--label2); line-height: 1.2; margin-top: 1px; }
 .nav-title.stacked { line-height: 1.15; }
+.nav-title.on-scroll { opacity: 0; transition: opacity 160ms ease; }
+.nav.titled .nav-title.on-scroll { opacity: 1; }
 
 .large-title {
   font-size: 34px;
@@ -370,6 +381,7 @@ section[id] { scroll-margin-top: calc(var(--sat) + 60px); }
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
 }
 .stages::-webkit-scrollbar { display: none; }
 .stage {
@@ -509,6 +521,32 @@ details.why p { font-size: 14px; color: var(--label2); line-height: 1.45; paddin
 .bar-status { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--label2); padding-inline: 2px; }
 .bar-status b { color: var(--label); font-weight: 600; }
 
+/* ---------- Вкладки знизу (tab bar) ---------- */
+.tabs {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 15;
+  padding-bottom: var(--sab);
+  padding-left: var(--sal);
+  padding-right: var(--sar);
+  background: var(--chrome);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 -0.5px 0 var(--sep);
+}
+.tabs-in { display: grid; grid-template-columns: repeat(3, 1fr); height: var(--tab-h); max-width: 640px; margin-inline: auto; }
+.tab {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  color: var(--label2);
+  font-size: 10px; font-weight: 500; letter-spacing: 0.01em; line-height: 1;
+  user-select: none; -webkit-user-select: none;
+  transition: color 120ms ease, transform 160ms var(--ease-out);
+}
+.tab svg.i { width: 26px; height: 26px; stroke-width: 1.75; transition: stroke-width 120ms ease; }
+.tab.on { color: var(--tint); }
+.tab.on svg.i { stroke-width: 2.25; }
+.tab:active { transform: scale(0.92); }
+
 /* ---------- Домашній екран ---------- */
 .hero-btn { margin: 4px 0 8px; min-height: 54px; font-size: 18px; }
 .insp-wrap { position: relative; display: flex; align-items: center; padding-right: 8px; }
@@ -645,6 +683,8 @@ details.acc + details.acc::before { content: ""; position: absolute; left: 16px;
 .sheet-in { max-width: 560px; margin-inline: auto; display: grid; gap: 8px; }
 .sheet-group { background: var(--card); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-sheet); }
 .sheet-title { padding: 14px 16px 10px; font-size: 13px; color: var(--label2); text-align: center; line-height: 1.4; }
+.sheet-field { padding: 4px 12px 12px; }
+.sheet-field .input { background: var(--card2); box-shadow: none; text-align: center; }
 .sheet-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   width: 100%; min-height: 56px; font-size: 19px; color: var(--tint);
@@ -667,6 +707,7 @@ details.acc + details.acc::before { content: ""; position: absolute; left: 16px;
 @starting-style { .toast { opacity: 0; transform: translate(-50%, 8px); } }
 .toast.closing { opacity: 0; transform: translate(-50%, 6px); }
 body.with-bar .toast { bottom: calc(var(--sab) + var(--bar-h) + 12px); }
+body.with-tabs .toast { bottom: calc(var(--sab) + var(--tab-h) + 12px); }
 
 /* ---------- Ховер тільки для мишки ---------- */
 @media (hover: hover) and (pointer: fine) {
@@ -678,12 +719,15 @@ body.with-bar .toast { bottom: calc(var(--sab) + var(--bar-h) + 12px); }
 /* ---------- Доступність ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
-  .screen { transform: none !important; }
+  .screen { animation: none !important; }
   .sheet { transform: none !important; }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .nav, .bar { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .nav, .bar, .tabs { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 @media (prefers-contrast: more) {
   .group, .item, .verdict, .stat { box-shadow: 0 0 0 1px var(--sep); }
 }
+
+/* ---------- Telegram Mini App ---------- */
+html[data-tg] .install { display: none; }

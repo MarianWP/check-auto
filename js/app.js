@@ -3,6 +3,7 @@
   "use strict";
   const G = window.GOLF, CL = window.CHECKLIST;
   const app = document.getElementById("app");
+  const TG = window.TG || { active: false, setBack() {}, onReady() {}, haptic() {}, openLink() { return false; }, share() {} };
   const KEY = "golfcheck.v1";
   const W = { crit: 3, major: 2, minor: 1 };
   const SEV_LABEL = { crit: "Критично", major: "Важливо", minor: "Дрібниця" };
@@ -82,7 +83,8 @@
   }
 
   /* ---------- Навігація ---------- */
-  let navDir = "fwd", depth = 0, cur = { id: null, n: 0 };
+  let navDir = "fwd", depth = 0, cur = { id: null, n: 0 }, curBack = null;
+  const scroller = () => app.querySelector(".screen");
   function go(hash) {
     navDir = "fwd";
     if (location.hash === hash) { render(); return; }
@@ -100,6 +102,7 @@
     opts = opts || {};
     const p = parse(), r = p[0] || "";
     let v;
+    curBack = null;
     try {
       if (r === "new") v = viewNew();
       else if (r === "guide") v = p[1] ? viewEngine(p[1]) : viewGuide();
@@ -109,18 +112,25 @@
       else v = viewHome();
     } catch (e) { console.error(e); v = viewHome(); }
     if (!v) v = viewHome();
-    const y = opts.soft ? window.scrollY : 0;
+    const old = scroller();
+    const y = opts.soft && old ? old.scrollTop : 0;
     const cls = opts.soft ? "soft" : navDir;
-    app.innerHTML = "<div class=\"screen " + cls + (v.bar ? " has-bar" : "") + "\">" + v.html + "</div>" +
+    const tab = v.bar ? null : (v.tab || null);
+    app.innerHTML = "<div class=\"screen " + cls + (v.bar ? " has-bar" : tab ? " has-tabs" : "") + "\">" + v.html + "</div>" +
       (v.bar ? "<div class=\"bar\" id=\"bar\"><div class=\"bar-in\">" + v.bar + "</div></div>" : "");
     document.body.classList.toggle("with-bar", !!v.bar);
-    window.scrollTo(0, y);
+    document.body.classList.toggle("with-tabs", !!tab);
+    setTabs(tab);
+    const s = scroller();
+    if (s) s.scrollTop = y;
     navDir = "fwd";
+    const b = curBack;
+    TG.setBack(b ? () => back(b) : null);
     afterRender();
   }
   function afterRender() {
-    const n = document.getElementById("nav");
-    if (n) n.classList.toggle("scrolled", window.scrollY > 4);
+    const s = scroller();
+    if (s) syncNav(s);
     app.querySelectorAll("textarea.textarea").forEach(autosize);
     const curStage = document.querySelector("#stages .stage.current");
     if (curStage && curStage.scrollIntoView) curStage.scrollIntoView({ block: "nearest", inline: "center" });
@@ -130,15 +140,61 @@
       if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }));
     }
   }
-  window.addEventListener("scroll", () => {
-    const n = document.getElementById("nav");
-    if (n) n.classList.toggle("scrolled", window.scrollY > 4);
+  function syncNav(s) {
+    const n = document.getElementById("nav"); if (!n) return;
+    n.classList.toggle("scrolled", s.scrollTop > 4);
+    n.classList.toggle("titled", s.scrollTop > 44);
+  }
+  /* Скрол живе всередині .screen, тому слухаємо у фазі захоплення. */
+  app.addEventListener("scroll", e => { if (e.target && e.target.classList && e.target.classList.contains("screen")) syncNav(e.target); }, true);
+  /* iOS: коли скролер стоїть на самому краю, тягнення передається документу і сторінка «відривається».
+     Відступаємо на 1px від краю, а на нескрольованих ділянках гасимо жест. */
+  app.addEventListener("touchstart", e => {
+    const s = e.target.closest && e.target.closest(".screen"); if (!s) return;
+    if (s.scrollTop <= 0) s.scrollTop = 1;
+    else if (s.scrollTop + s.clientHeight >= s.scrollHeight) s.scrollTop = s.scrollHeight - s.clientHeight - 1;
   }, { passive: true });
+  document.addEventListener("touchmove", e => {
+    const t = e.target.closest ? e.target.closest(".screen, .stages, .textarea, .sheet") : null;
+    if (!t || (t.classList.contains("screen") && t.scrollHeight <= t.clientHeight)) e.preventDefault();
+  }, { passive: false });
+
+  /* ---------- Вкладки знизу ---------- */
+  const TABS = [
+    { id: "home", to: "#/", label: "Перевірки", icon: "clipboard" },
+    { id: "new", to: "#/new", label: "Нова", icon: "circlePlus" },
+    { id: "guide", to: "#/guide", label: "Довідник", icon: "book" }
+  ];
+  const tabsEl = document.createElement("nav");
+  tabsEl.className = "tabs"; tabsEl.id = "tabs"; tabsEl.hidden = true; tabsEl.setAttribute("aria-label", "Розділи");
+  tabsEl.innerHTML = "<div class=\"tabs-in\">" + TABS.map(t => "<button class=\"tab\" data-tab=\"" + t.id + "\" data-to=\"" + t.to + "\">" + icon(t.icon) + "<span>" + t.label + "</span></button>").join("") + "</div>";
+  document.body.appendChild(tabsEl);
+  tabsEl.addEventListener("click", e => { const b = e.target.closest(".tab"); if (b) switchTab(b.dataset.to); });
+  function setTabs(tab) {
+    tabsEl.hidden = !tab;
+    tabsEl.querySelectorAll(".tab").forEach(b => {
+      const on = b.dataset.tab === tab;
+      b.classList.toggle("on", on);
+      if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+    });
+  }
+  /* Перемикання вкладки не пише історію (як у нативних апках); повторний тап на активній — скрол угору. */
+  function switchTab(to) {
+    const h = location.hash || "#/";
+    if (h === to || (to === "#/" && h === "#")) {
+      const s = scroller(); if (s) s.scrollTo({ top: 0, behavior: reduced() ? "auto" : "smooth" });
+      return;
+    }
+    TG.haptic("select");
+    navDir = "tab";
+    location.replace(to);
+  }
 
   function nav(o) {
+    curBack = o.back != null ? o.back : null;
     return "<header class=\"nav\" id=\"nav\"><div class=\"nav-row\">" +
       "<div>" + (o.back != null ? "<button class=\"nav-btn\" data-action=\"back\" data-to=\"" + esc(o.back) + "\" aria-label=\"Назад\">" + icon("back") + "<span>" + esc(o.backLabel || "Назад") + "</span></button>" : "") + "</div>" +
-      "<div class=\"nav-title" + (o.sub ? " stacked" : "") + "\">" + esc(o.title || "") + (o.sub ? "<span class=\"nav-sub\">" + esc(o.sub) + "</span>" : "") + "</div>" +
+      "<div class=\"nav-title" + (o.sub ? " stacked" : "") + (o.titleOnScroll ? " on-scroll" : "") + "\">" + esc(o.title || "") + (o.sub ? "<span class=\"nav-sub\">" + esc(o.sub) + "</span>" : "") + "</div>" +
       "<div>" + (o.right || "") + "</div></div>" + (o.extra || "") + "</header>";
   }
 
@@ -146,10 +202,10 @@
   function viewHome() {
     const list = db.inspections.slice().sort((a, b) => b.updatedAt - a.updatedAt);
     const active = list.filter(i => !i.done), done = list.filter(i => i.done);
-    let html = nav({ title: "", right: "<button class=\"nav-btn right\" data-action=\"go\" data-to=\"#/guide\">" + icon("book") + "<span>Довідник</span></button>" });
+    let html = nav({ title: "Golf Check", titleOnScroll: true });
     html += "<div class=\"content\"><h1 class=\"large-title\">Golf Check</h1>" +
       "<p class=\"lead\">Чек-лист огляду Volkswagen Golf V перед покупкою. Без діагностики й товщиноміра: очі, руки, вуха.</p>" +
-      "<button class=\"btn hero-btn\" data-action=\"go\" data-to=\"#/new\">" + icon("plus") + " Нова перевірка</button>";
+      "<button class=\"btn hero-btn\" data-action=\"tab\" data-to=\"#/new\">" + icon("plus") + " Нова перевірка</button>";
     if (!list.length) {
       html += "<div class=\"empty\"><div class=\"ico\">" + icon("clipboard", "lg") + "</div><h2>Ще немає перевірок</h2><p>Обери мотор, рік і кузов — отримаєш картку моделі з хворобами, ціною і покроковий огляд.</p></div>";
     } else {
@@ -158,7 +214,7 @@
     }
     html += installCard();
     html += "<p class=\"foot\" style=\"text-align:center;margin-top:28px\">Дані зберігаються лише на цьому телефоні.</p></div>";
-    return { html };
+    return { html, tab: "home" };
   }
   function inspRow(i) {
     const rep = computeReport(i);
@@ -174,7 +230,7 @@
   const verdictBadge = rep => "<span class=\"badge badge-" + rep.verdict + "\">" + VERDICTS[rep.verdict].short + "</span>";
   function installCard() {
     const standalone = window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
-    if (standalone || db.hideInstall) return "";
+    if (standalone || db.hideInstall || TG.active) return "";
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
     return "<div class=\"install\">" + icon("share") + "<div><b>Додай на Початковий екран</b><br>" +
       (ios ? "У Safari натисни «Поділитися», потім «На Початковий екран». Апка працюватиме офлайн, як звичайна." : "Відкрий цю сторінку в Safari на iPhone і додай на Початковий екран через меню «Поділитися».") +
@@ -185,7 +241,7 @@
   const emptyDraft = () => ({ fuel: null, engine: null, body: null, year: null, gear: null, name: "", price: "" });
   let draft = emptyDraft(), scrollTarget = null;
   function viewNew() {
-    let html = nav({ back: "#/", title: "Нова перевірка" }) + "<div class=\"content\">";
+    let html = nav({ title: "Нова перевірка" }) + "<div class=\"content\">";
     html += step(1, "Паливо", chips([{ id: "petrol", name: "Бензин" }, { id: "diesel", name: "Дизель" }], draft.fuel, "fuel"), "s-fuel", true);
     if (draft.fuel) {
       const engines = G.ENGINES.filter(e => e.fuel === draft.fuel);
@@ -204,16 +260,14 @@
       const gears = G.gearsFor(draft.engine, draft.year);
       html += step(5, "Коробка передач", chips(gears.map(g => ({ id: g.id, name: g.name })), draft.gear, "gear"), "s-gear");
     }
-    let bar = null;
     if (draft.gear) {
       html += step(6, "Про це авто", "<div class=\"fields\">" +
         "<label class=\"field\"><span class=\"foot\" style=\"display:block;margin:0 4px 6px\">Назва (необов'язково)</span><input class=\"input\" data-field=\"name\" value=\"" + esc(draft.name) + "\" placeholder=\"Синій, Київ, з auto.ria\" autocomplete=\"off\"></label>" +
         "<label class=\"field\"><span class=\"foot\" style=\"display:block;margin:0 4px 6px\">Ціна продавця, $ (необов'язково)</span><input class=\"input num\" data-field=\"price\" value=\"" + esc(draft.price) + "\" placeholder=\"6500\" inputmode=\"numeric\" autocomplete=\"off\"></label>" +
-        "</div>", "s-final");
-      bar = "<button class=\"btn\" data-action=\"create\">Далі: картка моделі " + icon("chev") + "</button>";
+        "</div><div class=\"btn-stack\"><button class=\"btn\" data-action=\"create\">Далі: картка моделі " + icon("chev") + "</button></div>", "s-final");
     }
     html += "</div>";
-    return { html, bar };
+    return { html, tab: "new" };
   }
   const step = (n, title, inner, id, first) => "<section id=\"" + id + "\"><h2 class=\"section-h" + (first ? " first" : "") + "\">" + n + ". " + esc(title) + "</h2>" + inner + "</section>";
   const chips = (list, sel, key) => "<div class=\"chips\">" + list.map(o => "<button class=\"chip" + (sel === o.id ? " on" : "") + "\" data-action=\"draft\" data-k=\"" + key + "\" data-v=\"" + esc(o.id) + "\" aria-pressed=\"" + (sel === o.id) + "\">" + esc(o.name) + "</button>").join("") + "</div>";
@@ -315,7 +369,7 @@
   /* ---------- Довідник ---------- */
   function viewGuide() {
     const engRow = e => "<button class=\"row\" data-action=\"go\" data-to=\"#/guide/" + e.id + "\"><div class=\"row-main\"><div class=\"row-t\">" + esc(e.name) + " <span class=\"muted\">" + esc(e.hp) + "</span></div><div class=\"row-s\" style=\"display:flex;align-items:center;gap:10px;flex-wrap:wrap\">" + dots(e.reliability) + "<span class=\"num\">" + costStr(e.price) + "</span><span>" + e.years[0] + "–" + e.years[1] + "</span></div></div>" + icon("chev", "chev") + "</button>";
-    let html = nav({ back: "#/", title: "Довідник Golf V" }) + "<div class=\"content\">" +
+    let html = nav({ title: "Довідник Golf V" }) + "<div class=\"content\">" +
       "<p class=\"lead\" style=\"padding-top:8px\">Все про п'яте покоління: мотори, коробки, кузови, ціни і хвороби. Обери мотор, щоб побачити повну картку.</p>" +
       "<h2 class=\"section-h first\">Бензинові двигуни</h2><div class=\"group\">" + G.ENGINES.filter(e => e.fuel === "petrol").map(engRow).join("") + "</div>" +
       "<h2 class=\"section-h\">Дизельні двигуни</h2><div class=\"group\">" + G.ENGINES.filter(e => e.fuel === "diesel").map(engRow).join("") + "</div>" +
@@ -324,7 +378,7 @@
       "<h2 class=\"section-h\">Комплектації</h2><div class=\"group\">" + G.TRIMS.map(t => "<div class=\"row-block\"><div class=\"row-t strong\">" + esc(t.name) + "</div><div class=\"row-s\">" + esc(t.note) + "</div></div>").join("") + "</div>" +
       commonBlock() + vinBlock() + kitBlock() +
       "<p class=\"foot\" style=\"text-align:center;margin-top:24px\">Ціни орієнтовні, за даними auto.ria (" + esc(G.MARKET.updated) + ").</p></div>";
-    return { html };
+    return { html, tab: "guide" };
   }
   function viewEngine(id) {
     const e = G.engine(id); if (!e) return viewGuide();
@@ -335,7 +389,7 @@
       engineBlock(e) +
       "<h2 class=\"section-h\">Доступні комбінації</h2><div class=\"group\"><div class=\"row-block\"><dl class=\"kv\"><dt>Кузови</dt><dd>" + e.bodies.map(b => esc(G.body(b).name)).join(", ") + "</dd><dt>Коробки</dt><dd>" + e.gears.map(g => esc(G.gearbox(g).name)).join("; ") + "</dd></dl></div></div>" +
       "<div class=\"btn-stack\" style=\"margin-top:24px\"><button class=\"btn\" data-action=\"new-from\" data-id=\"" + e.id + "\">" + icon("plus") + " Нова перевірка з цим мотором</button></div></div>";
-    return { html };
+    return { html, tab: "guide" };
   }
 
   /* ---------- Чек-лист ---------- */
@@ -382,6 +436,7 @@
     const id = itemEl.dataset.item;
     const a = i.answers[id] || (i.answers[id] = {});
     a.s = a.s === s ? "" : s;
+    TG.haptic("light");
     i.updatedAt = Date.now(); save();
     itemEl.dataset.s = a.s;
     itemEl.querySelectorAll(".ans").forEach(b => { const on = b.dataset.s === a.s; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
@@ -395,6 +450,7 @@
     a.tags = a.tags || [];
     const t = btn.dataset.t, k = a.tags.indexOf(t);
     if (k >= 0) a.tags.splice(k, 1); else a.tags.push(t);
+    TG.haptic("select");
     btn.classList.toggle("on", k < 0); btn.setAttribute("aria-pressed", k < 0);
     i.updatedAt = Date.now(); save();
   }
@@ -443,7 +499,7 @@
       "<button class=\"btn secondary\" data-action=\"go\" data-to=\"#/check/" + i.id + "/0\">Повернутись до чек-листа</button>" +
       "<button class=\"btn ghost danger\" data-action=\"delete\" data-id=\"" + i.id + "\">Видалити перевірку</button></div>" +
       "<p class=\"foot\" style=\"text-align:center;margin-top:16px\">Звіт — орієнтир, а не експертиза. Для остаточного рішення покажи авто на СТО.</p></div>";
-    return { html };
+    return { html, tab: "home" };
   }
   const repRow = f => "<div class=\"rep-item\"><div class=\"t\">" + esc(f.it.t) + "</div>" +
     (f.a.tags && f.a.tags.length ? "<div class=\"tagline\">" + f.a.tags.map(t => "<span>" + esc(t) + "</span>").join("") + "</div>" : "") +
@@ -476,6 +532,13 @@
   async function share(id) {
     const i = insp(id); if (!i) return;
     const text = reportText(i);
+    if (TG.active) {
+      sheet({ title: "Поділитися звітом", actions: [
+        { label: icon("share") + " Надіслати в Telegram", fn: () => TG.share(text) },
+        { label: "Скопіювати текст", fn: () => copy(text) }
+      ] });
+      return;
+    }
     if (navigator.share) {
       try { await navigator.share({ title: "Golf Check — звіт", text }); return; }
       catch (e) { if (e && e.name === "AbortError") return; }
@@ -506,9 +569,9 @@
   }
   function rename(id) {
     const i = insp(id); if (!i) return;
-    const v = window.prompt("Назва перевірки", i.name || "");
-    if (v == null) return;
-    i.name = v.trim().slice(0, 60); i.updatedAt = Date.now(); save(); render({ soft: true });
+    sheet({ title: "Назва перевірки", input: { value: i.name || "", placeholder: G.label(i.cfg) }, actions: [{ label: "Зберегти", fn: v => {
+      i.name = String(v || "").trim().slice(0, 60); i.updatedAt = Date.now(); save(); render({ soft: true });
+    } }] });
   }
   function confirmDelete(id) {
     const i = insp(id); if (!i) return;
@@ -522,18 +585,24 @@
     const scrim = document.createElement("div"); scrim.className = "scrim";
     const sh = document.createElement("div"); sh.className = "sheet"; sh.setAttribute("role", "dialog"); sh.setAttribute("aria-modal", "true");
     sh.innerHTML = "<div class=\"sheet-in\"><div class=\"sheet-group\">" + (o.title ? "<div class=\"sheet-title\">" + esc(o.title) + "</div>" : "") +
+      (o.input ? "<div class=\"sheet-field\"><input class=\"input\" value=\"" + esc(o.input.value || "") + "\" placeholder=\"" + esc(o.input.placeholder || "") + "\" maxlength=\"60\" autocomplete=\"off\" enterkeyhint=\"done\"></div>" : "") +
       o.actions.map((a, k) => "<button class=\"sheet-btn" + (a.danger ? " danger" : "") + "\" data-k=\"" + k + "\">" + a.label + "</button>").join("") +
       "</div><div class=\"sheet-group\"><button class=\"sheet-btn cancel\" data-k=\"-1\">Скасувати</button></div></div>";
     document.body.append(scrim, sh);
+    const inputEl = sh.querySelector("input");
     let closed = false;
     const close = () => { if (closed) return; closed = true; scrim.classList.add("closing"); sh.classList.add("closing"); setTimeout(() => { scrim.remove(); sh.remove(); }, 260); };
+    const run = k => { const val = inputEl ? inputEl.value : undefined; close(); if (k >= 0 && o.actions[k].fn) setTimeout(() => o.actions[k].fn(val), 40); };
     scrim.addEventListener("click", close);
     sh.addEventListener("click", e => {
       if (closed) return;
       const b = e.target.closest("[data-k]"); if (!b) return;
-      const k = parseInt(b.dataset.k, 10); close();
-      if (k >= 0 && o.actions[k].fn) setTimeout(o.actions[k].fn, 40);
+      run(parseInt(b.dataset.k, 10));
     });
+    if (inputEl) {
+      inputEl.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); run(0); } });
+      setTimeout(() => { try { inputEl.focus(); inputEl.select(); } catch (e) { /* iOS без жесту */ } }, 60);
+    }
     const onKey = e => { if (e.key === "Escape") { close(); document.removeEventListener("keydown", onKey); } };
     document.addEventListener("keydown", onKey);
   }
@@ -548,9 +617,12 @@
 
   /* ---------- Події ---------- */
   app.addEventListener("click", e => {
+    const a = e.target.closest("a[href]");
+    if (a && TG.active && /^https?:/i.test(a.href) && TG.openLink(a.href)) { e.preventDefault(); return; }
     const el = e.target.closest("[data-action]"); if (!el) return;
     switch (el.dataset.action) {
       case "go": go(el.dataset.to); break;
+      case "tab": switchTab(el.dataset.to); break;
       case "back": back(el.dataset.to || "#/"); break;
       case "draft": setDraft(el.dataset.k, el.dataset.v); break;
       case "create": create(); break;
@@ -561,7 +633,7 @@
       case "delete": confirmDelete(el.dataset.id); break;
       case "menu": menu(el.dataset.id); break;
       case "hide-install": db.hideInstall = true; save(); render({ soft: true }); break;
-      case "new-from": { const en = G.engine(el.dataset.id); draft = Object.assign(emptyDraft(), { fuel: en.fuel, engine: en.id }); scrollTarget = "s-body"; go("#/new"); break; }
+      case "new-from": { const en = G.engine(el.dataset.id); draft = Object.assign(emptyDraft(), { fuel: en.fuel, engine: en.id }); scrollTarget = "s-body"; switchTab("#/new"); break; }
       default: break;
     }
   });
@@ -572,5 +644,6 @@
   });
   window.addEventListener("hashchange", () => render());
   window.addEventListener("pageshow", ev => { if (ev.persisted) { db = load(); render({ soft: true }); } });
+  TG.onReady(() => render({ soft: true }));
   render();
 })();

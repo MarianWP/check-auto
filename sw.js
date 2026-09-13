@@ -1,7 +1,7 @@
 /* Service worker: кешує оболонку застосунку, працює офлайн, оновлюється у фоні. */
-const VERSION = "golfcheck-v1";
+const VERSION = "golfcheck-v2";
 const ASSETS = [
-  "./", "./index.html", "./css/app.css", "./js/icons.js", "./js/data.js", "./js/checklist.js", "./js/app.js",
+  "./", "./index.html", "./css/app.css", "./js/icons.js", "./js/data.js", "./js/checklist.js", "./js/tg.js", "./js/app.js",
   "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-64.png"
 ];
 
