@@ -138,9 +138,9 @@ svg.i.lg { width: 28px; height: 28px; }
 /* Вхід екрана анімуємо лише на .content, а не на скролері: анімація (opacity/transform) на
    overflow-контейнері зі sticky-шапкою і backdrop-filter дає в WebKit артефакти —
    стиснутий контент на першому кадрі та «привиди» попереднього екрана. */
-.screen.fwd .content { animation: content-fwd 240ms var(--ease-out); }
-.screen.back .content { animation: content-back 240ms var(--ease-out); }
-.screen.tab .content { animation: content-fade 180ms ease; }
+.content.enter-fwd { animation: content-fwd 240ms var(--ease-out); }
+.content.enter-back { animation: content-back 240ms var(--ease-out); }
+.content.enter-tab { animation: content-fade 180ms ease; }
 @keyframes content-fwd { from { opacity: 0; transform: translateX(12px); } }
 @keyframes content-back { from { opacity: 0; transform: translateX(-8px); } }
 @keyframes content-fade { from { opacity: 0; } }
@@ -490,7 +490,7 @@ details.why p { font-size: 14px; color: var(--label2); line-height: 1.45; paddin
   opacity: 1; transform: translateY(0);
   transition: opacity 200ms ease, transform 240ms var(--ease-out);
 }
-@starting-style { .comment { opacity: 0; transform: translateY(-4px); } }
+.comment-enter-from { opacity: 0; transform: translateY(-4px); }
 .comment .tags { margin-bottom: 10px; }
 .textarea {
   width: 100%;
@@ -535,17 +535,17 @@ details.why p { font-size: 14px; color: var(--label2); line-height: 1.45; paddin
   box-shadow: 0 -0.5px 0 var(--sep);
 }
 .tabs-in { display: grid; grid-template-columns: repeat(3, 1fr); height: var(--tab-h); max-width: 640px; margin-inline: auto; }
-.tab {
+.tabs .tab {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   color: var(--label2);
   font-size: 10px; font-weight: 500; letter-spacing: 0.01em; line-height: 1;
   user-select: none; -webkit-user-select: none;
   transition: color 120ms ease, transform 160ms var(--ease-out);
 }
-.tab svg.i { width: 26px; height: 26px; stroke-width: 1.75; transition: stroke-width 120ms ease; }
-.tab.on { color: var(--tint); }
-.tab.on svg.i { stroke-width: 2.25; }
-.tab:active { transform: scale(0.92); }
+.tabs .tab svg.i { width: 26px; height: 26px; stroke-width: 1.75; transition: stroke-width 120ms ease; }
+.tabs .tab.on { color: var(--tint); }
+.tabs .tab.on svg.i { stroke-width: 2.25; }
+.tabs .tab:active { transform: scale(0.92); }
 
 /* ---------- Домашній екран ---------- */
 .hero-btn { margin: 4px 0 8px; min-height: 54px; font-size: 18px; }
@@ -669,17 +669,16 @@ details.acc + details.acc::before { content: ""; position: absolute; left: 16px;
   background: var(--scrim);
   opacity: 1; transition: opacity 220ms ease;
 }
-@starting-style { .scrim { opacity: 0; } }
-.scrim.closing { opacity: 0; }
+.scrim-enter-from, .scrim-leave-to { opacity: 0; }
 .sheet {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 51;
   padding: 8px max(10px, var(--sal)) calc(10px + var(--sab)) max(10px, var(--sar));
   transform: translateY(0);
   transition: transform 300ms var(--ease-drawer);
 }
-@starting-style { .sheet { transform: translateY(100%); } }
-.sheet.closing { transform: translateY(100%); transition-duration: 220ms; }
-.scrim.closing, .sheet.closing { pointer-events: none; }
+.sheet-enter-from, .sheet-leave-to { transform: translateY(100%); }
+.sheet-leave-active { transition-duration: 220ms; }
+.scrim-leave-active, .sheet-leave-active { pointer-events: none; }
 .sheet-in { max-width: 560px; margin-inline: auto; display: grid; gap: 8px; }
 .sheet-group { background: var(--card); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-sheet); }
 .sheet-title { padding: 14px 16px 10px; font-size: 13px; color: var(--label2); text-align: center; line-height: 1.4; }
@@ -690,7 +689,7 @@ details.acc + details.acc::before { content: ""; position: absolute; left: 16px;
   width: 100%; min-height: 56px; font-size: 19px; color: var(--tint);
   position: relative;
 }
-.sheet-btn + .sheet-btn::before, .sheet-title + .sheet-btn::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 0.5px; background: var(--sep); }
+.sheet-btn + .sheet-btn::before, .sheet-title + .sheet-btn::before, .sheet-field + .sheet-btn::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 0.5px; background: var(--sep); }
 .sheet-btn:active { background: var(--fill3); }
 .sheet-btn.danger { color: var(--red); }
 .sheet-btn.cancel { font-weight: 600; }
@@ -704,10 +703,10 @@ details.acc + details.acc::before { content: ""; position: absolute; left: 16px;
   opacity: 1; transition: opacity 200ms ease, transform 260ms var(--ease-out);
   white-space: nowrap;
 }
-@starting-style { .toast { opacity: 0; transform: translate(-50%, 8px); } }
-.toast.closing { opacity: 0; transform: translate(-50%, 6px); }
-body.with-bar .toast { bottom: calc(var(--sab) + var(--bar-h) + 12px); }
-body.with-tabs .toast { bottom: calc(var(--sab) + var(--tab-h) + 12px); }
+.toast-enter-from { opacity: 0; transform: translate(-50%, 8px); }
+.toast-leave-to { opacity: 0; transform: translate(-50%, 6px); }
+.toast.above-bar { bottom: calc(var(--sab) + var(--bar-h) + 12px); }
+.toast.above-tabs { bottom: calc(var(--sab) + var(--tab-h) + 12px); }
 
 /* ---------- Ховер тільки для мишки ---------- */
 @media (hover: hover) and (pointer: fine) {

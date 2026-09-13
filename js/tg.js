@@ -59,7 +59,7 @@
     if (v("6.1") && tg.BackButton) safe(function () { tg.BackButton.onClick(function () { if (backFn) backFn(); }); });
 
     /* Telegram передає параметри запуску у hash, а наш роутер живе там само. SDK їх уже прочитав — прибираємо. */
-    if (/tgWebApp/.test(location.hash)) safe(function () { history.replaceState(null, "", location.pathname + location.search + "#/"); });
+    if (/tgWebApp/.test(location.hash)) safe(function () { history.replaceState(history.state, "", location.pathname + location.search + "#/"); });
 
     setTimeout(function () {
       fired = true;

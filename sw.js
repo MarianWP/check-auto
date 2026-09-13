@@ -1,7 +1,10 @@
 /* Service worker: кешує оболонку застосунку, працює офлайн, оновлюється у фоні. */
-const VERSION = "golfcheck-v3";
+const VERSION = "golfcheck-v4";
 const ASSETS = [
-  "./", "./index.html", "./css/app.css", "./js/icons.js", "./js/data.js", "./js/checklist.js", "./js/tg.js", "./js/app.js",
+  "./", "./index.html", "./css/app.css",
+  "./vendor/vue.global.prod.js", "./vendor/vue-router.global.prod.js",
+  "./js/icons.js", "./js/data.js", "./js/checklist.js", "./js/tg.js",
+  "./js/store.js", "./js/ui.js", "./js/blocks.js", "./js/views.js", "./js/app.js",
   "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-64.png"
 ];
 
