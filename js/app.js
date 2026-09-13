@@ -147,17 +147,9 @@
   }
   /* Скрол живе всередині .screen, тому слухаємо у фазі захоплення. */
   app.addEventListener("scroll", e => { if (e.target && e.target.classList && e.target.classList.contains("screen")) syncNav(e.target); }, true);
-  /* iOS: коли скролер стоїть на самому краю, тягнення передається документу і сторінка «відривається».
-     Відступаємо на 1px від краю, а на нескрольованих ділянках гасимо жест. */
-  app.addEventListener("touchstart", e => {
-    const s = e.target.closest && e.target.closest(".screen"); if (!s) return;
-    if (s.scrollTop <= 0) s.scrollTop = 1;
-    else if (s.scrollTop + s.clientHeight >= s.scrollHeight) s.scrollTop = s.scrollHeight - s.clientHeight - 1;
-  }, { passive: true });
-  document.addEventListener("touchmove", e => {
-    const t = e.target.closest ? e.target.closest(".screen, .stages, .textarea, .sheet") : null;
-    if (!t || (t.classList.contains("screen") && t.scrollHeight <= t.clientHeight)) e.preventDefault();
-  }, { passive: false });
+  /* Навмисно без touch-обробників: у Safari будь-який touchstart-слухач вмикає :active на кнопках
+     одразу при дотику, і кожна спроба скролу «натискає» рядок. Межі скролу тримає CSS:
+     overscroll-behavior на html/body/.screen, у Telegram — disableVerticalSwipes. */
 
   /* ---------- Вкладки знизу ---------- */
   const TABS = [

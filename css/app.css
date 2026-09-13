@@ -112,7 +112,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
-#app { position: fixed; inset: 0; overflow: hidden; }
+#app { position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; }
 button, input, textarea { font: inherit; color: inherit; }
 button { background: none; border: 0; padding: 0; margin: 0; cursor: pointer; text-align: inherit; }
 a { color: var(--tint); text-decoration: none; }
@@ -131,19 +131,19 @@ svg.i.lg { width: 28px; height: 28px; }
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
   padding-bottom: calc(var(--sab) + 24px);
 }
 .screen.has-bar { padding-bottom: calc(var(--sab) + var(--bar-h) + 16px); }
 .screen.has-tabs { padding-bottom: calc(var(--sab) + var(--tab-h) + 16px); }
-/* Вхід екрана — keyframes, а не transition: після анімації на скролері не лишається transform,
-   тож sticky-шапка з blur і фіксовані панелі поводяться передбачувано в Safari. */
-.screen.fwd { animation: screen-fwd 260ms var(--ease-out); }
-.screen.back { animation: screen-back 260ms var(--ease-out); }
-.screen.tab { animation: screen-fade 200ms ease; }
-@keyframes screen-fwd { from { opacity: 0; transform: translateX(14px); } }
-@keyframes screen-back { from { opacity: 0; transform: translateX(-10px); } }
-@keyframes screen-fade { from { opacity: 0; } }
+/* Вхід екрана анімуємо лише на .content, а не на скролері: анімація (opacity/transform) на
+   overflow-контейнері зі sticky-шапкою і backdrop-filter дає в WebKit артефакти —
+   стиснутий контент на першому кадрі та «привиди» попереднього екрана. */
+.screen.fwd .content { animation: content-fwd 240ms var(--ease-out); }
+.screen.back .content { animation: content-back 240ms var(--ease-out); }
+.screen.tab .content { animation: content-fade 180ms ease; }
+@keyframes content-fwd { from { opacity: 0; transform: translateX(12px); } }
+@keyframes content-back { from { opacity: 0; transform: translateX(-8px); } }
+@keyframes content-fade { from { opacity: 0; } }
 .screen.soft { transition: none; }
 
 .content {
@@ -719,7 +719,7 @@ body.with-tabs .toast { bottom: calc(var(--sab) + var(--tab-h) + 12px); }
 /* ---------- Доступність ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
-  .screen { animation: none !important; }
+  .content { animation: none !important; }
   .sheet { transform: none !important; }
 }
 @media (prefers-reduced-transparency: reduce) {
