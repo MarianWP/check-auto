@@ -2,7 +2,7 @@
 
 Чек-лист огляду Volkswagen Golf V перед покупкою. PWA: відкривається в Safari, додається на Початковий екран iPhone, працює офлайн. Працює і як Telegram Mini App. Без діагностики й товщиноміра — тільки очі, руки, вуха.
 
-Застосунок на Vue 3 і vue-router 4 (hash-маршрути). Бібліотеки лежать локально у `vendor/`, збірки немає: файли можна правити і публікувати як є.
+Стек: Vue 3, vue-router 4, Vite, vite-plugin-pwa. Збірка через `npm run build`, деплой на GitHub Pages через GitHub Actions.
 
 ## Що всередині
 
@@ -13,44 +13,50 @@
 
 Дані зберігаються тільки в браузері телефону (localStorage).
 
+## Розробка
+
+```
+npm install      # один раз
+npm run dev      # http://localhost:5173/check-auto/
+npm run build    # збірка у dist/
+npm run preview  # перегляд збірки: http://localhost:4173/check-auto/
+npm run icons    # перегенерувати PNG-іконки і src/icons.js
+```
+
 ## Файли
 
 ```
-index.html           оболонка, підключення скриптів
-manifest.webmanifest маніфест PWA
-sw.js                service worker (офлайн)
-css/app.css          стилі
-vendor/              Vue 3 і vue-router 4 (production-збірки)
-js/icons.js          іконки Lucide
-js/data.js           довідник: мотори, коробки, кузови, ціни, хвороби
-js/checklist.js      етапи і пункти чек-листа
-js/tg.js             інтеграція з Telegram Mini App (тема, повний екран, кнопка «Назад»)
-js/store.js          стан застосунку (reactive), збереження, обчислення звіту
-js/ui.js             каркас: екран-скролер, шапка, таб-бар, чипи, аркуш дій, тост
-js/blocks.js         доменні блоки: ціна, двигун, коробка, хвороби, VIN, кільце оцінки
-js/views.js          сторінки: дім, нова перевірка, картка, довідник, мотор, чек-лист, звіт
-js/app.js            маршрути, навігація, глобальні дії, монтування
-icons/               PNG-іконки
-tools/               скрипти генерації іконок
+index.html              оболонка (Vite entry), підключення Telegram SDK лише з Telegram
+vite.config.js          база /check-auto/, PWA (маніфест, service worker)
+.github/workflows/      збірка і деплой на GitHub Pages
+public/icons/           PNG-іконки
+src/main.js             точка входу: застосунок, роутер, service worker, хуки Telegram
+src/App.vue             корінь: router-view, таб-бар, аркуш дій, тост
+src/router.js           маршрути (hash-режим)
+src/nav.js              навігація: напрямок анімації, «Назад», вкладки
+src/actions.js          меню перевірки, перейменування, видалення, поділитися
+src/store.js            стан (reactive), збереження у localStorage, обчислення звіту
+src/tg.js               інтеграція з Telegram Mini App (тема, повний екран, кнопка «Назад»)
+src/icons.js            іконки Lucide (генерується)
+src/data/golf.js        довідник: мотори, коробки, кузови, ціни, хвороби
+src/data/checklist.js   етапи і пункти чек-листа
+src/assets/app.css      стилі
+src/components/         AppScreen (єдиний скролер), NavBar, TabBar, ChipGroup, SheetHost, ToastHost,
+                        InspRow, InstallCard, IssueRow, PriceBlock, EngineBlock, GearBlock,
+                        CommonBlock, KitBlock, VinBlock, ScoreRing, EngineRow, AppIcon, DotsRating
+src/views/              HomeView, NewCheckView, CarView, GuideView, EngineView, CheckView, ReportView
+tools/                  скрипти генерації іконок
 ```
 
 Маршрути: `#/` перевірки, `#/new` нова перевірка, `#/guide` і `#/guide/:мотор` довідник, `#/car/:id` картка моделі, `#/check/:id/:етап` чек-лист, `#/report/:id` звіт.
 
-## Як опублікувати безкоштовно (GitHub Pages)
+## Публікація (GitHub Pages)
 
 Репозиторій: `github.com/MarianWP/check-auto`, гілка `main`.
 
-1. **Settings → Pages → Build and deployment**: Source = *Deploy from a branch*, Branch = *main*, папка */ (root)*. Save.
-2. За 1–2 хвилини сторінка з'явиться за адресою `https://marianwp.github.io/check-auto/`.
-3. Кожен `git push` у `main` оновлює сайт автоматично.
-
-Альтернатива без GitHub: **app.netlify.com/drop** — перетягни теку, отримаєш посилання.
-
-Локально для перевірки на комп'ютері:
-
-```
-npx serve .
-```
+1. **Settings → Pages → Build and deployment → Source**: *GitHub Actions* (не «Deploy from a branch»).
+2. Кожен `git push` у `main` запускає workflow `Deploy to GitHub Pages`: `npm ci` → `npm run build` → публікація `dist/`.
+3. Сайт: `https://marianwp.github.io/check-auto/`. Хід деплою видно у вкладці **Actions**.
 
 ## Telegram Mini App
 
@@ -67,10 +73,9 @@ npx serve .
 
 ## Як оновити дані
 
-- Ціни та хвороби моторів: `js/data.js`. Середня ринкова ціна у `MARKET.avg`, діапазони по моторах у полі `price` кожного двигуна.
-- Пункти чек-листа: `js/checklist.js`. Поле `only` обмежує пункт тегами мотора чи коробки (`belt`, `chain`, `turbo`, `dsg`, `manual`, `petrol`, `diesel`, `pd`, `dpf`, `vr6`, `twincharger`).
-- Після змін підніми версію `VERSION` у `sw.js`, щоб телефони підтягнули оновлення.
-- Іконки: `node tools/make-icons.js` (PNG) і `node tools/build-icons.js` (Lucide).
-- Оновити Vue: скачати `https://unpkg.com/vue@3/dist/vue.global.prod.js` і `https://unpkg.com/vue-router@4/dist/vue-router.global.prod.js` у `vendor/`.
+- Ціни та хвороби моторів: `src/data/golf.js`. Середня ринкова ціна у `MARKET.avg`, діапазони по моторах у полі `price` кожного двигуна.
+- Пункти чек-листа: `src/data/checklist.js`. Поле `only` обмежує пункт тегами мотора чи коробки (`belt`, `chain`, `turbo`, `dsg`, `manual`, `petrol`, `diesel`, `pd`, `dpf`, `vr6`, `twincharger`).
+- Service worker оновлюється сам при кожній збірці (хеші файлів), окремо піднімати версію не треба.
+- Іконки: `npm run icons` (Lucide-джерела у `tools/lucide/`).
 
 Ціни орієнтовні, за даними auto.ria станом на вересень 2026.

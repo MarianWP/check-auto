@@ -1,8 +1,10 @@
-/* Збирає js/icons.js з SVG-файлів Lucide (tools/lucide/*.svg).
+/* Збирає src/icons.js з SVG-файлів Lucide (tools/lucide/*.svg).
    Джерело: https://cdn.jsdelivr.net/npm/lucide-static@0.544.0/icons/<name>.svg
    Запуск: node tools/build-icons.js */
-const fs = require("fs");
-const path = require("path");
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const MAP = {
   back: "chevron-left", chev: "chevron-right", check: "check", x: "x", minus: "minus", plus: "plus",
@@ -17,6 +19,6 @@ for (const [key, file] of Object.entries(MAP)) {
   if (!m) throw new Error("Не знайдено <svg> у " + file);
   out[key] = m[1].replace(/\s+/g, " ").replace(/\s*\/>/g, "/>").trim();
 }
-const js = "/* Іконки Lucide (https://lucide.dev), ISC. Згенеровано з lucide-static v0.544.0 скриптом tools/build-icons.js. */\nwindow.LUCIDE = " + JSON.stringify(out, null, 2) + ";\n";
-fs.writeFileSync(path.join(__dirname, "..", "js", "icons.js"), js);
-console.log("ok js/icons.js:", Object.keys(out).length, "іконок");
+const js = "/* Іконки Lucide (https://lucide.dev), ISC. Згенеровано з lucide-static v0.544.0 скриптом tools/build-icons.js. */\nexport default " + JSON.stringify(out, null, 2) + ";\n";
+fs.writeFileSync(path.join(__dirname, "..", "src", "icons.js"), js);
+console.log("ok src/icons.js:", Object.keys(out).length, "іконок");

@@ -11,3 +11,8 @@ desktop.ini
 node_modules/
 npm-debug.log*
 *.log
+
+# Збірка
+node_modules/
+dist/
+dev-dist/

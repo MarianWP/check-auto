@@ -1,0 +1,37 @@
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
+import { VitePWA } from "vite-plugin-pwa";
+
+/* Сайт живе на GitHub Pages за адресою /check-auto/. */
+const base = "/check-auto/";
+
+export default defineConfig({
+  base,
+  plugins: [
+    vue(),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["icons/favicon-64.png", "icons/apple-touch-icon.png"],
+      manifest: {
+        name: "Golf Check",
+        short_name: "Golf Check",
+        description: "Чек-лист огляду Volkswagen Golf V перед покупкою",
+        lang: "uk",
+        display: "standalone",
+        orientation: "portrait",
+        background_color: "#F2F2F7",
+        theme_color: "#0A6BE6",
+        icons: [
+          { src: "icons/icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "icons/icon-512.png", sizes: "512x512", type: "image/png" },
+          { src: "icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
+        ]
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,png,svg,webmanifest}"],
+        navigateFallback: base + "index.html"
+      }
+    })
+  ],
+  build: { target: ["es2019", "safari13"] }
+});

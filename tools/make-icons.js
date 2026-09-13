@@ -1,8 +1,10 @@
 /* Генерує PNG-іконки без залежностей: синій градієнт + біле кільце з галочкою.
    Запуск: node tools/make-icons.js */
-const fs = require("fs");
-const path = require("path");
-const zlib = require("zlib");
+import fs from "node:fs";
+import path from "node:path";
+import zlib from "node:zlib";
+import { fileURLToPath } from "node:url";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function crc32(buf) {
   let crc = ~0;
@@ -86,7 +88,7 @@ function render(size, rounded) {
   return png(size, size, out);
 }
 
-const dir = path.join(__dirname, "..", "icons");
+const dir = path.join(__dirname, "..", "public", "icons");
 fs.mkdirSync(dir, { recursive: true });
 const jobs = [
   ["icon-512.png", 512, false],

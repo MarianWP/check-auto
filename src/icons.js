@@ -1,5 +1,5 @@
 /* Іконки Lucide (https://lucide.dev), ISC. Згенеровано з lucide-static v0.544.0 скриптом tools/build-icons.js. */
-window.LUCIDE = {
+export default {
   "back": "<path d=\"m15 18-6-6 6-6\"/>",
   "chev": "<path d=\"m9 18 6-6-6-6\"/>",
   "check": "<path d=\"M20 6 9 17l-5-5\"/>",

@@ -1,7 +1,7 @@
 /* Довідник Volkswagen Golf V (1K / 5M), 2003–2009.
    Усі ціни — орієнтовні, у доларах США, для ринку України (вересень 2026).
    Джерело середньої ціни: auto.ria.com (Golf V ≈ $7 100; дизель дорожчий, бензин дешевший, ГБО найдешевше). */
-window.GOLF = (function () {
+const GOLF = (function () {
   const MARKET = {
     avg: 7100,
     updated: "вересень 2026",
@@ -412,3 +412,5 @@ window.GOLF = (function () {
 
   return { MARKET, BODIES, GEARBOXES, ENGINES, COMMON, VIN, PLANTS, TRIMS, KIT, engine, body, gearbox, yearsFor, gearsFor, priceFor, tagsFor, label };
 })();
+
+export default GOLF;

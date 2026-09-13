@@ -1,7 +1,7 @@
 /* Golf Check — інтеграція з Telegram Mini App.
    SDK підвантажується з index.html лише коли апку відкрито з Telegram.
-   Поза Telegram window.TG існує, але всі методи — безпечні заглушки. */
-(function () {
+   Поза Telegram модуль існує, але всі методи — безпечні заглушки. */
+const TG = (function () {
   "use strict";
   var api = { active: false, tg: null };
   var backFn = null, fired = false, queue = [];
@@ -93,7 +93,8 @@
     else window.open(link, "_blank");
   };
 
-  window.TG = api;
   if (window.Telegram && window.Telegram.WebApp) init();
   else window.addEventListener("tg-sdk", init);
+  return api;
 })();
+export default TG;
