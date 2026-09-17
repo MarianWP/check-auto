@@ -4,7 +4,7 @@ import { registerSW } from "virtual:pwa-register";
 import App from "./App.vue";
 import router from "./router";
 import TG from "./tg";
-import { reload } from "./store";
+import { reload, flush, probeStorage } from "./store";
 import { autosize } from "./directives";
 import "./assets/app.css";
 
@@ -22,6 +22,10 @@ document.getElementById("app").addEventListener("click", e => {
   if (a && TG.active && /^https?:/i.test(a.href) && TG.openLink(a.href)) e.preventDefault();
 });
 window.addEventListener("pageshow", ev => { if (ev.persisted) reload(); });
+/* Сховище: перевіряємо запис одразу і не чекаємо таймера, коли апку згортають чи закривають. */
+probeStorage();
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flush(); });
+window.addEventListener("pagehide", flush);
 /* Після старту SDK Telegram hash запуску вже прибрано — вирівнюємо роутер. */
 TG.onReady(() => {
   if (/tgWebApp/.test(router.currentRoute.value.path) || /tgWebApp/.test(location.hash)) router.replace("/");

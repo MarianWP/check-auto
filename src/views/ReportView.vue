@@ -7,7 +7,7 @@ import AppIcon from "../components/AppIcon.vue";
 import ScoreRing from "../components/ScoreRing.vue";
 import PriceBlock from "../components/PriceBlock.vue";
 import G from "../data/golf";
-import { insp, computeReport, VERDICTS, money, fmtN, costStr, dateStr } from "../store";
+import { insp, computeReport, VERDICTS, FULL_COVERAGE, money, fmtN, costStr, dateStr } from "../store";
 import { go } from "../nav";
 import { share, confirmDelete } from "../actions";
 
@@ -19,6 +19,7 @@ const label = G.label(i.cfg);
 const V = computed(() => VERDICTS[rep.value.verdict]);
 const rest = computed(() => rep.value.skipped.concat(rep.value.unanswered));
 const groups = [["crit", "Критичні проблеми"], ["major", "Важливі зауваження"], ["minor", "Дрібниці"]];
+const needPct = Math.round(FULL_COVERAGE * 100);
 const fair = computed(() => {
   const r = rep.value;
   if (!i.price) return "";
@@ -31,7 +32,7 @@ const fair = computed(() => {
     <NavBar back="/" back-label="Перевірки" title="Звіт" />
     <div class="content" :class="enter">
       <div class="model-head"><div class="kicker">{{ i.name || 'Golf V' }}</div><h1>{{ label }}</h1><p class="sub">{{ dateStr(i.updatedAt) }}</p></div>
-      <div class="verdict" :class="rep.verdict" style="margin-top:12px">
+      <div class="verdict" :class="rep.verdict" :data-verdict="rep.verdict" style="margin-top:12px">
         <ScoreRing :score="rep.score" />
         <div><div class="verdict-t">{{ V.t }}</div><div class="verdict-s">{{ V.s(rep) }}</div></div>
       </div>
@@ -40,6 +41,25 @@ const fair = computed(() => {
         <div class="stat bad"><b>{{ rep.failCount }}</b><span>проблем</span></div>
         <div class="stat"><b>{{ rep.skipped.length + rep.unanswered.length }}</b><span>не перевірено</span></div>
       </div>
+
+      <h2 class="section-h">Повнота огляду</h2>
+      <div class="group">
+        <div class="cov" :class="{ complete: rep.complete }">
+          <div class="cov-top"><span>Перевірено {{ rep.answered }} з {{ rep.total }} пунктів</span><b class="num">{{ rep.pct }} %</b></div>
+          <div class="progress lg"><i :style="{ transform: 'scaleX(' + rep.coverage.toFixed(3) + ')' }"></i></div>
+          <p class="foot" style="margin-top:8px">Критичних пунктів перевірено {{ rep.critChecked }} з {{ rep.critTotal }}. Оцінка в кільці стосується лише перевіреного. Вердикт «можна брати» можливий від {{ needPct }} % і з усіма критичними пунктами.</p>
+        </div>
+      </div>
+      <template v-if="rep.critUnchecked.length">
+        <h2 class="section-h">Критичні пункти без перевірки · {{ rep.critUnchecked.length }}</h2>
+        <div class="group">
+          <button v-for="x in rep.critUnchecked" :key="x.it.id" class="row" data-action="go" :data-to="'/check/' + i.id + '/' + x.si" @click="go('/check/' + i.id + '/' + x.si)">
+            <div class="row-main"><div class="row-t">{{ x.it.t }}</div><div class="row-s">{{ x.stage.short }}</div></div>
+            <AppIcon name="chev" cls="chev" />
+          </button>
+        </div>
+      </template>
+
       <template v-if="rep.cost.hi > 0">
         <h2 class="section-h">Бюджет на усунення</h2>
         <div class="group"><div class="price-card"><div class="price-big num">≈ {{ costStr([rep.cost.lo, rep.cost.hi]) }}</div><p class="sub" style="margin-top:6px">Сума орієнтовних вартостей по знайдених проблемах. Це твій аргумент у торгу.{{ fair }}</p></div></div>
@@ -58,7 +78,7 @@ const fair = computed(() => {
           </div>
         </template>
       </template>
-      <template v-if="!rep.failCount"><h2 class="section-h">Проблеми</h2><div class="group"><div class="row-block sub">Проблем не зафіксовано. Якщо огляд був повним — це дуже добрий знак.</div></div></template>
+      <template v-if="!rep.failCount"><h2 class="section-h">Проблеми</h2><div class="group"><div class="row-block sub">Серед перевірених пунктів проблем не зафіксовано.<template v-if="!rep.complete"> Огляд ще неповний, тож це не гарантія.</template><template v-else> Огляд повний — це дуже добрий знак.</template></div></div></template>
       <template v-if="rest.length">
         <h2 class="section-h">Не перевірено · {{ rest.length }}</h2>
         <div class="group"><details class="acc"><summary><span>Показати список</span><AppIcon name="chev" cls="chev" /></summary><div class="acc-body"><ul class="list"><li v-for="x in rest" :key="x.it.id">{{ x.it.t }} <span class="muted">· {{ x.stage.short }}</span></li></ul></div></details></div>

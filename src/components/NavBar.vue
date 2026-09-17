@@ -2,6 +2,7 @@
 import { inject, reactive } from "vue";
 import AppIcon from "./AppIcon.vue";
 import { back as goBack } from "../nav";
+import { tgState } from "../tg";
 
 defineProps({
   back: { type: String, default: "" },
@@ -17,7 +18,8 @@ const s = inject("scrollState", reactive({ scrolled: false, titled: false }));
   <header id="nav" class="nav" :class="{ scrolled: s.scrolled, titled: s.titled }">
     <div class="nav-row">
       <div>
-        <button v-if="back" class="nav-btn" data-action="back" :data-to="back" aria-label="Назад" @click="goBack(back)">
+        <!-- У Telegram «Назад» показує сам Telegram (BackButton), тож власну кнопку ховаємо, щоб їх не було дві. -->
+        <button v-if="back && !tgState.nativeBack" class="nav-btn" data-action="back" :data-to="back" aria-label="Назад" @click="goBack(back)">
           <AppIcon name="back" /><span>{{ backLabel || 'Назад' }}</span>
         </button>
       </div>

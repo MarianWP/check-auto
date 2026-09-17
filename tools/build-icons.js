@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MAP = {
   back: "chevron-left", chev: "chevron-right", check: "check", x: "x", minus: "minus", plus: "plus",
   info: "info", alert: "triangle-alert", book: "book-open", share: "share", trash: "trash-2", more: "ellipsis",
-  car: "car", clipboard: "clipboard-check", wrench: "wrench", circleCheck: "circle-check", external: "external-link", circlePlus: "circle-plus"
+  car: "car", clipboard: "clipboard-check", wrench: "wrench", circleCheck: "circle-check", external: "external-link", circlePlus: "circle-plus", download: "download", upload: "upload"
 };
 
 const out = {};

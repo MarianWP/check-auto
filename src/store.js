@@ -1,17 +1,20 @@
-/* Golf Check — стан застосунку (Vue reactive) і чисті обчислення. Тут немає DOM. */
+/* Golf Check — стан застосунку (Vue reactive): перевірки, чернетка, інтерфейс, збереження.
+   Чиста логіка (звіт, перевірка записів) живе у src/logic/ і покрита тестами. */
 import { reactive, watch } from "vue";
 import G from "./data/golf";
-import CL from "./data/checklist";
+import { computeReport } from "./logic/report";
+import { KEY, parseState } from "./logic/storage";
 
-const KEY = "golfcheck.v1";
-const W = { crit: 3, major: 2, minor: 1 };
+export { visibleStages, computeReport, stageProgress, MIN_DATA, FULL_COVERAGE } from "./logic/report";
 
 export const SEV_LABEL = { crit: "Критично", major: "Важливо", minor: "Дрібниця" };
+const found = r => r.failCount ? " Уже знайдено проблем: " + r.failCount + "." : "";
 export const VERDICTS = {
-  good: { t: "Можна брати", short: "Можна брати", s: () => "Серйозних проблем не знайдено. Дрібниці — привід для невеликого торгу." },
-  bargain: { t: "Брати з торгом", short: "З торгом", s: () => "Є важливі зауваження. Відніми від ціни бюджет на їх усунення." },
+  good: { t: "Можна брати", short: "Можна брати", s: () => "Огляд повний, серйозних проблем не знайдено. Дрібниці — привід для невеликого торгу." },
+  bargain: { t: "Брати з торгом", short: "З торгом", s: () => "Огляд повний, є важливі зауваження. Відніми від ціни бюджет на їх усунення." },
   no: { t: "Не рекомендуємо", short: "Не брати", s: r => r.fails.crit.length ? "Знайдено критичних проблем: " + r.fails.crit.length + ". Краще пошукати інший екземпляр." : "Забагато проблем для цієї ціни. Краще пошукати інший екземпляр." },
-  nodata: { t: "Недостатньо даних", short: "Мало даних", s: r => "Перевірено " + r.pct + " % пунктів. Пройди решту етапів, щоб отримати вердикт." }
+  partial: { t: "Огляд неповний", short: "Неповний", s: r => "Перевірено " + r.pct + " % пунктів" + (r.critUnchecked.length ? ", критичних без перевірки: " + r.critUnchecked.length : "") + "." + (r.failCount ? found(r) : " Серйозних проблем поки немає.") + " Доверши огляд, щоб отримати вердикт." },
+  nodata: { t: "Недостатньо даних", short: "Мало даних", s: r => "Перевірено " + r.pct + " % пунктів." + found(r) + " Пройди решту етапів, щоб отримати вердикт." }
 };
 
 /* ---------- Утиліти ---------- */
@@ -23,63 +26,61 @@ export const uid = () => Date.now().toString(36) + Math.random().toString(36).sl
 export const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 export const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-/* ---------- Сховище: localStorage, формат golfcheck.v1 без змін ---------- */
+/* ---------- Стан інтерфейсу: аркуш дій, тост, ціль прокрутки ---------- */
+export const ui = reactive({ sheet: null, toast: null, scrollTarget: null });
+let toastT = null;
+export function toast(msg, ms) {
+  ui.toast = { id: Date.now(), msg };
+  clearTimeout(toastT);
+  toastT = setTimeout(() => { ui.toast = null; }, ms || 2200);
+}
+export const sheet = o => { ui.sheet = o; };
+export const closeSheet = () => { ui.sheet = null; };
+
+/* ---------- Сховище: localStorage, формат golfcheck.v1 ----------
+   storage.ok       — чи вдається зберігати; false = зміни живуть лише до закриття апки.
+   storage.rejected — скільки записів не пройшли перевірку під час завантаження.
+   storage.loadError — збережені дані не читаються (parse/shape). Оригінал у такому разі
+                       відкладається в KEY + ".corrupt", щоб наступне збереження його не затерло. */
+export const storage = reactive({ ok: true, rejected: 0, loadError: "" });
+
+function readRaw() { try { return localStorage.getItem(KEY); } catch (e) { storage.ok = false; return null; } }
 function load() {
-  try {
-    const d = JSON.parse(localStorage.getItem(KEY));
-    if (d && Array.isArray(d.inspections)) return { inspections: d.inspections, hideInstall: !!d.hideInstall };
-  } catch (e) { /* немає доступу */ }
-  return { inspections: [], hideInstall: false };
+  const raw = readRaw();
+  const res = parseState(raw);
+  storage.rejected = res.rejected;
+  storage.loadError = res.error || "";
+  if (raw && (res.error || res.rejected)) { try { localStorage.setItem(KEY + ".corrupt", raw); } catch (e) { /* немає місця або доступу */ } }
+  return res.state;
 }
 export const db = reactive(load());
-let saveT = null;
-watch(db, () => {
-  clearTimeout(saveT);
-  saveT = setTimeout(() => {
-    try { localStorage.setItem(KEY, JSON.stringify({ inspections: db.inspections, hideInstall: db.hideInstall })); } catch (e) { /* приватний режим */ }
-  }, 50);
-}, { deep: true });
-export const reload = () => { Object.assign(db, load()); };
-export const insp = id => db.inspections.find(i => i.id === id);
 
-/* ---------- Обчислення ---------- */
-export function visibleStages(i) {
-  const tags = G.tagsFor(i.cfg);
-  return CL.map(s => Object.assign({}, s, { items: s.items.filter(it => !it.only || it.only.every(t => tags.has(t))) }));
+let saveT = null;
+function writeNow() {
+  clearTimeout(saveT); saveT = null;
+  const was = storage.ok;
+  try {
+    localStorage.setItem(KEY, JSON.stringify({ inspections: db.inspections, hideInstall: db.hideInstall }));
+    storage.ok = true;
+    if (!was) toast("Збереження відновлено");
+  } catch (e) {
+    storage.ok = false;
+    if (was) toast("Не вдалося зберегти зміни. Зроби резервну копію.", 4000);
+  }
 }
-export function computeReport(i) {
-  const stages = visibleStages(i);
-  let total = 0, okW = 0, ansW = 0, ok = 0, lo = 0, hi = 0;
-  const fails = { crit: [], major: [], minor: [] }, skipped = [], unanswered = [];
-  stages.forEach(stage => stage.items.forEach(it => {
-    total++;
-    const a = i.answers[it.id], s = a && a.s;
-    if (!s) { unanswered.push({ it, stage }); return; }
-    if (s === "skip") { skipped.push({ it, stage }); return; }
-    ansW += W[it.sev];
-    if (s === "ok") { okW += W[it.sev]; ok++; }
-    else { fails[it.sev].push({ it, a, stage }); if (it.cost) { lo += it.cost[0]; hi += it.cost[1]; } }
-  }));
-  const failCount = fails.crit.length + fails.major.length + fails.minor.length;
-  const answered = ok + failCount;
-  const answeredAll = answered + skipped.length;
-  const pct = total ? Math.round(answered / total * 100) : 0;
-  const score = ansW ? clamp(Math.round(okW / ansW * 100) - 25 * fails.crit.length, 0, 100) : 0;
-  let verdict;
-  if (answered < total * 0.4) verdict = "nodata";
-  else if (fails.crit.length) verdict = "no";
-  else if (score >= 85 && fails.major.length <= 1) verdict = "good";
-  else if (score >= 65) verdict = "bargain";
-  else verdict = "no";
-  return { stages, total, ok, failCount, fails, skipped, unanswered, answered, answeredAll, pct, score, verdict, cost: { lo, hi } };
+watch(db, () => { clearTimeout(saveT); saveT = setTimeout(writeNow, 50); }, { deep: true });
+/* Апку можуть закрити одразу після відповіді — не чекаємо таймера. */
+export const flush = () => { if (saveT) writeNow(); };
+/* Перевірка запису на старті: приватний режим і заборонене сховище видно одразу, а не після огляду. */
+export function probeStorage() {
+  try { localStorage.setItem(KEY + ".probe", "1"); localStorage.removeItem(KEY + ".probe"); }
+  catch (e) { storage.ok = false; }
+  return storage.ok;
 }
-export function stageProgress(i, stages) {
-  return stages.map(s => {
-    let answered = 0;
-    s.items.forEach(it => { const a = i.answers[it.id]; if (a && a.s) answered++; });
-    return { answered, total: s.items.length };
-  });
-}
+export const reload = () => { Object.assign(db, load()); };
+export const dismissLoadNotice = () => { storage.rejected = 0; storage.loadError = ""; };
+export const insp = id => db.inspections.find(i => i.id === id);
+export const replaceInspections = list => { db.inspections = list; };
 
 /* ---------- Чернетка нової перевірки ---------- */
 const emptyDraft = () => ({ fuel: null, engine: null, body: null, year: null, gear: null, name: "", price: "" });
@@ -140,8 +141,8 @@ export const hideInstall = () => { db.hideInstall = true; };
 export function reportText(i) {
   const rep = computeReport(i), price = G.priceFor(i.cfg), V = VERDICTS[rep.verdict];
   const L = ["Golf Check — звіт огляду", G.label(i.cfg) + (i.name ? " · " + i.name : ""), dateStr(i.updatedAt), ""];
-  L.push("Вердикт: " + V.t + " (" + rep.score + " зі 100)");
-  L.push("Перевірено " + rep.answered + " з " + rep.total + " пунктів, проблем: " + rep.failCount);
+  L.push("Вердикт: " + V.t + " (оцінка перевіреного " + rep.score + " зі 100)");
+  L.push("Повнота огляду: " + rep.pct + " % (" + rep.answered + " з " + rep.total + " пунктів, критичних " + rep.critChecked + " з " + rep.critTotal + "), проблем: " + rep.failCount);
   if (i.price) L.push("Ціна продавця: " + money(i.price));
   L.push("Ринок: " + money(price.lo) + "–" + fmtN(price.hi));
   if (rep.cost.hi) L.push("Бюджет на усунення: ≈ " + costStr([rep.cost.lo, rep.cost.hi]));
@@ -153,18 +154,11 @@ export function reportText(i) {
       if (f.a.c) L.push("  " + f.a.c);
     });
   });
+  if (rep.critUnchecked.length) {
+    L.push("", "КРИТИЧНІ ПУНКТИ БЕЗ ПЕРЕВІРКИ:");
+    rep.critUnchecked.forEach(x => L.push("• " + x.it.t));
+  }
   const rest = rep.skipped.length + rep.unanswered.length;
   if (rest) L.push("", "Не перевірено: " + rest + " пунктів");
   return L.join("\n");
 }
-
-/* ---------- Стан інтерфейсу: аркуш дій, тост, ціль прокрутки ---------- */
-export const ui = reactive({ sheet: null, toast: null, scrollTarget: null });
-let toastT = null;
-export function toast(msg) {
-  ui.toast = { id: Date.now(), msg };
-  clearTimeout(toastT);
-  toastT = setTimeout(() => { ui.toast = null; }, 2200);
-}
-export const sheet = o => { ui.sheet = o; };
-export const closeSheet = () => { ui.sheet = null; };

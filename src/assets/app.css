@@ -269,8 +269,11 @@ svg.i.lg { width: 28px; height: 28px; }
 .row-s { font-size: 14px; color: var(--label2); line-height: 1.35; margin-top: 2px; }
 .row-v { font-size: 15px; color: var(--label2); flex: none; }
 .row .chev { color: var(--label3); flex: none; }
-button.row { transition: background-color 120ms ease; }
-button.row:active { background: var(--fill3); }
+button.row, label.row { transition: background-color 120ms ease; }
+button.row:active, label.row:active { background: var(--fill3); }
+label.row { cursor: pointer; }
+.row > svg.i:first-child { color: var(--tint); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- Кнопки ---------- */
 .btn {
@@ -570,6 +573,7 @@ details.why p { font-size: 14px; color: var(--label2); line-height: 1.45; paddin
 .badge-bargain { background: var(--orange-soft); color: var(--orange); }
 .badge-no { background: var(--red-soft); color: var(--red); }
 .badge-nodata { background: var(--fill2); color: var(--label2); }
+.badge-partial { background: var(--tint-soft); color: var(--tint); }
 .badge-progress { background: var(--tint-soft); color: var(--tint); }
 .more {
   display: inline-flex; align-items: center; justify-content: center;
@@ -649,6 +653,8 @@ details.acc + details.acc::before { content: ""; position: absolute; left: 16px;
 .verdict.bargain .ring, .verdict.bargain .verdict-t { color: var(--orange); }
 .verdict.no .ring, .verdict.no .verdict-t { color: var(--red); }
 .verdict.nodata .ring { color: var(--label2); }
+.verdict.partial { background: var(--tint-soft); }
+.verdict.partial .ring, .verdict.partial .verdict-t { color: var(--tint); }
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
 .stat { padding: 12px 10px; border-radius: 12px; background: var(--card); box-shadow: var(--shadow); text-align: center; }
 .stat b { display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
@@ -730,3 +736,25 @@ details.acc + details.acc::before { content: ""; position: absolute; left: 16px;
 
 /* ---------- Telegram Mini App ---------- */
 html[data-tg] .install { display: none; }
+
+/* ---------- Попередження про сховище ---------- */
+.notice {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 16px; margin: 0 0 14px;
+  border-radius: var(--r-card);
+  font-size: 14px; line-height: 1.45; color: var(--label);
+}
+.notice b { font-size: 15px; }
+.notice svg.i { margin-top: 2px; }
+.notice.bad { background: var(--red-soft); }
+.notice.bad > svg.i { color: var(--red); }
+.notice.warn { background: var(--orange-soft); }
+.notice.warn > svg.i { color: var(--orange); }
+.notice .x { margin-left: auto; color: var(--label2); width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; flex: none; }
+
+/* ---------- Повнота огляду у звіті ---------- */
+.cov { padding: 14px 16px; }
+.cov-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 15px; margin-bottom: 10px; }
+.cov-top b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.cov .progress > i { background: var(--orange); }
+.cov.complete .progress > i { background: var(--green); }

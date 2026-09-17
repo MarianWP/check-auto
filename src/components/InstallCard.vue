@@ -1,12 +1,12 @@
 <script setup>
 import { computed } from "vue";
 import AppIcon from "./AppIcon.vue";
-import TG from "../tg";
+import { tgState } from "../tg";
 import { db, hideInstall } from "../store";
 
 const standalone = window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
 const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-const show = computed(() => !standalone && !db.hideInstall && !TG.active);
+const show = computed(() => !standalone && !db.hideInstall && !tgState.active);
 </script>
 
 <template>

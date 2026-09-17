@@ -1,6 +1,12 @@
 /* Golf Check — інтеграція з Telegram Mini App.
    SDK підвантажується з index.html лише коли апку відкрито з Telegram.
    Поза Telegram модуль існує, але всі методи — безпечні заглушки. */
+import { reactive } from "vue";
+
+/* Реактивний стан для інтерфейсу: active — апка працює всередині Telegram;
+   nativeBack — Telegram показує власну кнопку «Назад», тож нашу в шапці ховаємо. */
+export const tgState = reactive({ active: false, nativeBack: false });
+
 const TG = (function () {
   "use strict";
   var api = { active: false, tg: null };
@@ -44,6 +50,8 @@ const TG = (function () {
     if (!tg || api.active) return;
     if (!(tg.initData || (tg.platform && tg.platform !== "unknown"))) return;
     api.tg = tg; api.active = true;
+    tgState.active = true;
+    tgState.nativeBack = v("6.1") && !!tg.BackButton;
     document.documentElement.dataset.tg = "1";
 
     safe(function () { tg.expand(); });
