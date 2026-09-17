@@ -151,7 +151,7 @@ export function reportText(i) {
     L.push("", t + ":");
     rep.fails[k].forEach(f => {
       L.push("• " + f.it.t + (f.a.tags && f.a.tags.length ? " — " + f.a.tags.join(", ") : ""));
-      if (f.a.c) L.push("  " + f.a.c);
+      if (f.a.c) L.push("  Коментар: " + f.a.c);
     });
   });
   if (rep.critUnchecked.length) {

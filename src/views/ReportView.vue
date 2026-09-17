@@ -75,7 +75,11 @@ const fair = computed(() => {
             <div v-for="f in rep.fails[k]" :key="f.it.id" class="rep-item">
               <h3 class="rep-t">{{ f.it.t }}</h3>
               <div v-if="f.a.tags && f.a.tags.length" class="tagline"><span v-for="t in f.a.tags" :key="t">{{ t }}</span></div>
-              <p v-if="f.a.c" class="rep-c">{{ f.a.c }}</p>
+              <!-- Те, що написав користувач: значок, підпис і власний фон, щоб не сплутати з текстом застосунку. -->
+              <div v-if="f.a.c" class="user-note">
+                <AppIcon name="comment" />
+                <div class="user-note-body"><span class="user-note-l">Твій коментар</span><p class="user-note-t">{{ f.a.c }}</p></div>
+              </div>
               <p class="rep-m">{{ f.stage.short }}<template v-if="f.it.cost && f.it.cost[1]"> · усунення ≈ {{ costStr(f.it.cost) }}</template></p>
             </div>
           </div>
