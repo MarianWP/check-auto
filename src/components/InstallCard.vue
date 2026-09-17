@@ -10,13 +10,13 @@ const show = computed(() => !standalone && !db.hideInstall && !tgState.active);
 </script>
 
 <template>
-  <div v-if="show" class="install">
+  <div v-if="show" class="notice info install" style="margin-top: var(--s6)">
     <AppIcon name="share" />
     <div>
-      <b>Додай на Початковий екран</b><br>
-      <template v-if="ios">У Safari натисни «Поділитися», потім «На Початковий екран». Апка працюватиме офлайн, як звичайна.</template>
+      <b>Додай на Початковий екран</b>
+      <template v-if="ios">У Safari натисни «Поділитися», потім «На Початковий екран». Застосунок працюватиме офлайн.</template>
       <template v-else>Відкрий цю сторінку в Safari на iPhone і додай на Початковий екран через меню «Поділитися».</template>
     </div>
-    <button class="x" data-action="hide-install" aria-label="Сховати підказку" @click="hideInstall()"><AppIcon name="x" cls="sm" /></button>
+    <button class="icon-btn" data-action="hide-install" aria-label="Сховати підказку" @click="hideInstall()"><AppIcon name="x" /></button>
   </div>
 </template>

@@ -6,9 +6,14 @@ defineProps({ g: { type: Object, required: true } });
 </script>
 
 <template>
-  <h2 class="section-h">Коробка: {{ g.short }}</h2>
-  <div class="group">
-    <div class="row-block"><p class="body">{{ g.summary }}</p><p class="sub" style="margin-top:8px;display:flex;align-items:center;gap:8px"><DotsRating :r="g.reliability" />надійність {{ g.reliability }} з 5</p></div>
-    <IssueRow v-for="(x, k) in g.issues" :key="k" :x="x" />
-  </div>
+  <section aria-labelledby="h-gear">
+    <h2 id="h-gear" class="h2">Коробка: {{ g.name }}</h2>
+    <div class="group">
+      <div class="row-block">
+        <p class="prose">{{ g.summary }}</p>
+        <p class="engine-meta" style="margin-top: var(--s3)"><DotsRating :r="g.reliability" /><span>надійність {{ g.reliability }} з 5</span></p>
+      </div>
+      <IssueRow v-for="(x, k) in g.issues" :key="k" :x="x" />
+    </div>
+  </section>
 </template>

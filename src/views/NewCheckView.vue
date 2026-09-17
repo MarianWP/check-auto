@@ -16,6 +16,16 @@ const years = computed(() => d.body ? G.yearsFor(d.engine, d.body).map(y => ({ i
 const gears = computed(() => d.year ? G.gearsFor(d.engine, d.year).map(g => ({ id: g.id, name: g.name })) : []);
 const yearSel = computed(() => d.year ? String(d.year) : null);
 
+/* Крок, на якому зараз користувач: перший невибраний (6 — останній, про авто). */
+const stepNow = computed(() => !d.fuel ? 1 : !d.engine ? 2 : !d.body ? 3 : !d.year ? 4 : !d.gear ? 5 : 6);
+const picked = computed(() => ({
+  fuel: d.fuel ? FUELS.find(f => f.id === d.fuel).name : "",
+  engine: d.engine ? G.engine(d.engine).name : "",
+  body: d.body ? G.body(d.body).short : "",
+  year: d.year ? String(d.year) : "",
+  gear: d.gear ? G.gearbox(d.gear).short : ""
+}));
+
 function scrollTo(id) {
   nextTick(() => {
     const el = document.getElementById(id);
@@ -32,33 +42,74 @@ onMounted(() => {
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar title="Нова перевірка" />
+    <NavBar root />
     <div class="content" :class="enter">
-      <section id="s-fuel"><h2 class="section-h first">1. Паливо</h2><ChipGroup :list="FUELS" :sel="d.fuel" k="fuel" @pick="pick" /></section>
-      <section v-if="d.fuel" id="s-engine">
-        <h2 class="section-h">2. Двигун</h2>
-        <div class="group">
+      <header class="page-head">
+        <p class="kicker">Крок {{ stepNow }} з 6</p>
+        <h1 class="title">Новий огляд</h1>
+        <p class="lead">Обери конфігурацію авто. Чек-лист підлаштується під двигун і коробку.</p>
+      </header>
+
+      <section id="s-fuel" class="step" :class="{ done: !!d.fuel }" aria-labelledby="st-fuel">
+        <header class="step-head">
+          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.fuel" name="check" /><template v-else>1</template></span>
+          <h2 id="st-fuel" class="step-t">Паливо</h2><span v-if="d.fuel" class="step-val">{{ picked.fuel }}</span>
+        </header>
+        <ChipGroup :list="FUELS" :sel="d.fuel" k="fuel" label="Паливо" @pick="pick" />
+      </section>
+
+      <section v-if="d.fuel" id="s-engine" class="step" :class="{ done: !!d.engine }" aria-labelledby="st-engine">
+        <header class="step-head">
+          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.engine" name="check" /><template v-else>2</template></span>
+          <h2 id="st-engine" class="step-t">Двигун</h2><span v-if="d.engine" class="step-val">{{ picked.engine }}</span>
+        </header>
+        <div class="opts" role="group" aria-label="Двигун">
           <button v-for="e in engines" :key="e.id" class="opt" :class="{ on: d.engine === e.id }" data-action="draft" data-k="engine" :data-v="e.id" :aria-pressed="d.engine === e.id" @click="pick('engine', e.id)">
-            <div class="opt-top"><span class="opt-name">{{ e.name }}</span><span class="opt-hp">{{ e.hp }}</span><span class="check"><AppIcon name="circleCheck" /></span></div>
-            <div class="opt-sub">{{ e.codes }}</div>
-            <div class="opt-meta"><DotsRating :r="e.reliability" /><span>{{ e.years[0] }}–{{ e.years[1] }}</span><span class="num">{{ costStr(e.price) }}</span></div>
+            <span class="opt-main">
+              <span class="opt-top"><span class="opt-name">{{ e.name }}</span><span class="opt-hp">{{ e.hp }}</span></span>
+              <span class="opt-sub" style="display: block">{{ e.codes }}</span>
+              <span class="opt-meta"><DotsRating :r="e.reliability" /><span>{{ e.reliability }} з 5</span><span>{{ e.years[0] }}–{{ e.years[1] }}</span><span>{{ costStr(e.price) }}</span></span>
+            </span>
+            <span class="opt-check" aria-hidden="true"><AppIcon name="check" /></span>
           </button>
         </div>
       </section>
-      <section v-if="d.engine" id="s-body"><h2 class="section-h">3. Кузов</h2><ChipGroup :list="bodies" :sel="d.body" k="body" @pick="pick" /></section>
-      <section v-if="d.body" id="s-year">
-        <h2 class="section-h">4. Рік випуску</h2>
-        <ChipGroup :list="years" :sel="yearSel" k="year" @pick="pick" />
+
+      <section v-if="d.engine" id="s-body" class="step" :class="{ done: !!d.body }" aria-labelledby="st-body">
+        <header class="step-head">
+          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.body" name="check" /><template v-else>3</template></span>
+          <h2 id="st-body" class="step-t">Кузов</h2><span v-if="d.body" class="step-val">{{ picked.body }}</span>
+        </header>
+        <ChipGroup :list="bodies" :sel="d.body" k="body" label="Кузов" @pick="pick" />
+      </section>
+
+      <section v-if="d.body" id="s-year" class="step" :class="{ done: !!d.year }" aria-labelledby="st-year">
+        <header class="step-head">
+          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.year" name="check" /><template v-else>4</template></span>
+          <h2 id="st-year" class="step-t">Рік випуску</h2><span v-if="d.year" class="step-val">{{ picked.year }}</span>
+        </header>
+        <ChipGroup :list="years" :sel="yearSel" k="year" label="Рік випуску" @pick="pick" />
         <p class="hint">Модельний рік за VIN (10-й символ) може бути на 1 більшим за рік у техпаспорті.</p>
       </section>
-      <section v-if="d.year" id="s-gear"><h2 class="section-h">5. Коробка передач</h2><ChipGroup :list="gears" :sel="d.gear" k="gear" @pick="pick" /></section>
-      <section v-if="d.gear" id="s-final">
-        <h2 class="section-h">6. Про це авто</h2>
-        <div class="fields">
-          <label class="field"><span class="foot" style="display:block;margin:0 4px 6px">Назва (необов'язково)</span><input v-model="d.name" class="input" data-field="name" maxlength="60" placeholder="Синій, Київ, з auto.ria" autocomplete="off"></label>
-          <label class="field"><span class="foot" style="display:block;margin:0 4px 6px">Ціна продавця, $ (необов'язково)</span><input v-model="d.price" class="input num" data-field="price" placeholder="6500" inputmode="numeric" autocomplete="off"></label>
+
+      <section v-if="d.year" id="s-gear" class="step" :class="{ done: !!d.gear }" aria-labelledby="st-gear">
+        <header class="step-head">
+          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.gear" name="check" /><template v-else>5</template></span>
+          <h2 id="st-gear" class="step-t">Коробка передач</h2><span v-if="d.gear" class="step-val">{{ picked.gear }}</span>
+        </header>
+        <ChipGroup :list="gears" :sel="d.gear" k="gear" label="Коробка передач" @pick="pick" />
+      </section>
+
+      <section v-if="d.gear" id="s-final" class="step" aria-labelledby="st-final">
+        <header class="step-head">
+          <span class="step-no" aria-hidden="true">6</span>
+          <h2 id="st-final" class="step-t">Про це авто</h2>
+        </header>
+        <div class="card fields">
+          <label class="field"><span class="field-label">Назва, щоб упізнати серед інших (необов'язково)</span><input v-model="d.name" class="input" data-field="name" maxlength="60" placeholder="Синій, Київ, з auto.ria" autocomplete="off" enterkeyhint="next"></label>
+          <label class="field"><span class="field-label">Ціна продавця, $ (необов'язково)</span><input v-model="d.price" class="input" data-field="price" placeholder="6500" inputmode="numeric" autocomplete="off" enterkeyhint="done"></label>
         </div>
-        <div class="btn-stack"><button class="btn" data-action="create" @click="create"><span>Далі: картка моделі</span><AppIcon name="chev" /></button></div>
+        <div class="btn-stack"><button class="btn" data-action="create" @click="create"><span>Далі: картка авто</span><AppIcon name="arrowRight" /></button></div>
       </section>
     </div>
   </AppScreen>

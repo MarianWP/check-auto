@@ -10,8 +10,8 @@ defineProps({ e: { type: Object, required: true } });
 <template>
   <button class="row" data-action="go" :data-to="'/guide/' + e.id" @click="go('/guide/' + e.id)">
     <div class="row-main">
-      <div class="row-t">{{ e.name }} <span class="muted">{{ e.hp }}</span></div>
-      <div class="row-s" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><DotsRating :r="e.reliability" /><span class="num">{{ costStr(e.price) }}</span><span>{{ e.years[0] }}–{{ e.years[1] }}</span></div>
+      <div class="row-t">{{ e.name }} <span class="muted" style="font-weight: 450">{{ e.hp }}</span></div>
+      <div class="engine-meta"><DotsRating :r="e.reliability" /><span>{{ e.reliability }} з 5</span><span>{{ costStr(e.price) }}</span><span>{{ e.years[0] }}–{{ e.years[1] }}</span></div>
     </div>
     <AppIcon name="chev" cls="chev" />
   </button>

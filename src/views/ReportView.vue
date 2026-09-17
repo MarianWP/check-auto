@@ -4,7 +4,7 @@ import { useRoute } from "vue-router";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
-import ScoreRing from "../components/ScoreRing.vue";
+import CfgLabel from "../components/CfgLabel.vue";
 import PriceBlock from "../components/PriceBlock.vue";
 import G from "../data/golf";
 import { insp, computeReport, VERDICTS, FULL_COVERAGE, money, fmtN, costStr, dateStr } from "../store";
@@ -15,7 +15,6 @@ const route = useRoute();
 const i = insp(String(route.params.id));
 const rep = computed(() => computeReport(i));
 const price = G.priceFor(i.cfg);
-const label = G.label(i.cfg);
 const V = computed(() => VERDICTS[rep.value.verdict]);
 const rest = computed(() => rep.value.skipped.concat(rep.value.unanswered));
 const groups = [["crit", "Критичні проблеми"], ["major", "Важливі зауваження"], ["minor", "Дрібниці"]];
@@ -29,66 +28,89 @@ const fair = computed(() => {
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar back="/" back-label="Перевірки" title="Звіт" />
+    <NavBar back="/" back-label="мої огляди" title="Звіт" />
     <div class="content" :class="enter">
-      <div class="model-head"><div class="kicker">{{ i.name || 'Golf V' }}</div><h1>{{ label }}</h1><p class="sub">{{ dateStr(i.updatedAt) }}</p></div>
-      <div class="verdict" :class="rep.verdict" :data-verdict="rep.verdict" style="margin-top:12px">
-        <ScoreRing :score="rep.score" />
-        <div><div class="verdict-t">{{ V.t }}</div><div class="verdict-s">{{ V.s(rep) }}</div></div>
-      </div>
-      <div class="stats">
-        <div class="stat ok"><b>{{ rep.ok }}</b><span>ок</span></div>
-        <div class="stat bad"><b>{{ rep.failCount }}</b><span>проблем</span></div>
-        <div class="stat"><b>{{ rep.skipped.length + rep.unanswered.length }}</b><span>не перевірено</span></div>
-      </div>
+      <header class="page-head">
+        <p class="kicker">{{ i.name || 'Volkswagen Golf V' }} · {{ dateStr(i.updatedAt) }}</p>
+        <h1 class="title"><CfgLabel :cfg="i.cfg" /></h1>
+      </header>
 
-      <h2 class="section-h">Повнота огляду</h2>
-      <div class="group">
-        <div class="cov" :class="{ complete: rep.complete }">
-          <div class="cov-top"><span>Перевірено {{ rep.answered }} з {{ rep.total }} пунктів</span><b class="num">{{ rep.pct }} %</b></div>
-          <div class="progress lg"><i :style="{ transform: 'scaleX(' + rep.coverage.toFixed(3) + ')' }"></i></div>
-          <p class="foot" style="margin-top:8px">Критичних пунктів перевірено {{ rep.critChecked }} з {{ rep.critTotal }}. Оцінка в кільці стосується лише перевіреного. Вердикт «можна брати» можливий від {{ needPct }} % і з усіма критичними пунктами.</p>
-        </div>
+      <!-- 1. Вердикт -->
+      <section class="verdict" :class="'v-' + rep.verdict" :data-verdict="rep.verdict" aria-labelledby="h-verdict">
+        <div class="verdict-top"><span class="verdict-ic"><AppIcon :name="V.icon" cls="lg" /></span><span>Вердикт</span></div>
+        <h2 id="h-verdict" class="verdict-t">{{ V.t }}</h2>
+        <p class="verdict-s">{{ V.s(rep) }}</p>
+      </section>
+
+      <!-- 2. Повнота: оцінка і кількість неперевіреного — однакової ваги, щоб бал не затьмарював прогалини -->
+      <div class="tiles report-tiles" role="group" aria-label="Підсумок огляду">
+        <div class="tile"><b class="tile-v big">{{ rep.score }}<span class="unit"> зі 100</span></b><span class="tile-l">Оцінка перевіреного</span></div>
+        <div class="tile" :class="{ attention: rest.length > 0 }" data-tile="unchecked"><b class="tile-v big">{{ rest.length }}<span class="unit"> з {{ rep.total }}</span></b><span class="tile-l">Не перевірено</span></div>
+        <div class="tile"><b class="tile-v big text-ok">{{ rep.ok }}</b><span class="tile-l">Без зауважень</span></div>
+        <div class="tile"><b class="tile-v big" :class="{ 'text-bad': rep.failCount > 0 }">{{ rep.failCount }}</b><span class="tile-l">Проблем знайдено</span></div>
       </div>
-      <template v-if="rep.critUnchecked.length">
-        <h2 class="section-h">Критичні пункти без перевірки · {{ rep.critUnchecked.length }}</h2>
+      <section aria-labelledby="h-cov">
+        <h2 id="h-cov" class="h2">Повнота огляду</h2>
+        <div class="card cov">
+          <div class="cov-top"><span>Перевірено {{ rep.answered }} з {{ rep.total }} пунктів</span><b>{{ rep.pct }} %</b></div>
+          <div class="progress" :class="{ complete: rep.complete }" role="progressbar" aria-label="Повнота огляду" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="rep.pct"><i :style="{ transform: 'scaleX(' + rep.coverage.toFixed(3) + ')' }"></i></div>
+          <p class="foot">Критичних пунктів перевірено {{ rep.critChecked }} з {{ rep.critTotal }}. Вердикт «можна брати» можливий від {{ needPct }} % і коли перевірено всі критичні пункти.</p>
+        </div>
+      </section>
+      <section v-if="rep.critUnchecked.length" aria-labelledby="h-critun">
+        <h2 id="h-critun" class="h2">Критичні пункти без перевірки · {{ rep.critUnchecked.length }}</h2>
         <div class="group">
           <button v-for="x in rep.critUnchecked" :key="x.it.id" class="row" data-action="go" :data-to="'/check/' + i.id + '/' + x.si" @click="go('/check/' + i.id + '/' + x.si)">
-            <div class="row-main"><div class="row-t">{{ x.it.t }}</div><div class="row-s">{{ x.stage.short }}</div></div>
+            <div class="row-main"><div class="row-t">{{ x.it.t }}</div><div class="row-s">Етап {{ x.si + 1 }}: {{ x.stage.short }}</div></div>
             <AppIcon name="chev" cls="chev" />
           </button>
         </div>
-      </template>
+      </section>
 
-      <template v-if="rep.cost.hi > 0">
-        <h2 class="section-h">Бюджет на усунення</h2>
-        <div class="group"><div class="price-card"><div class="price-big num">≈ {{ costStr([rep.cost.lo, rep.cost.hi]) }}</div><p class="sub" style="margin-top:6px">Сума орієнтовних вартостей по знайдених проблемах. Це твій аргумент у торгу.{{ fair }}</p></div></div>
-      </template>
-      <PriceBlock :i="i" :price="price" />
+      <!-- 3. Знайдені проблеми -->
       <template v-for="[k, title] in groups" :key="k">
-        <template v-if="rep.fails[k].length">
-          <h2 class="section-h">{{ title }} · {{ rep.fails[k].length }}</h2>
+        <section v-if="rep.fails[k].length" :aria-labelledby="'h-f-' + k">
+          <h2 :id="'h-f-' + k" class="h2">{{ title }} · {{ rep.fails[k].length }}</h2>
           <div class="group">
             <div v-for="f in rep.fails[k]" :key="f.it.id" class="rep-item">
-              <div class="t">{{ f.it.t }}</div>
+              <h3 class="rep-t">{{ f.it.t }}</h3>
               <div v-if="f.a.tags && f.a.tags.length" class="tagline"><span v-for="t in f.a.tags" :key="t">{{ t }}</span></div>
-              <div v-if="f.a.c" class="c">{{ f.a.c }}</div>
-              <div class="m">{{ f.stage.short }}<template v-if="f.it.cost && f.it.cost[1]"> · ≈ {{ costStr(f.it.cost) }}</template></div>
+              <p v-if="f.a.c" class="rep-c">{{ f.a.c }}</p>
+              <p class="rep-m">{{ f.stage.short }}<template v-if="f.it.cost && f.it.cost[1]"> · усунення ≈ {{ costStr(f.it.cost) }}</template></p>
             </div>
           </div>
-        </template>
+        </section>
       </template>
-      <template v-if="!rep.failCount"><h2 class="section-h">Проблеми</h2><div class="group"><div class="row-block sub">Серед перевірених пунктів проблем не зафіксовано.<template v-if="!rep.complete"> Огляд ще неповний, тож це не гарантія.</template><template v-else> Огляд повний — це дуже добрий знак.</template></div></div></template>
-      <template v-if="rest.length">
-        <h2 class="section-h">Не перевірено · {{ rest.length }}</h2>
-        <div class="group"><details class="acc"><summary><span>Показати список</span><AppIcon name="chev" cls="chev" /></summary><div class="acc-body"><ul class="list"><li v-for="x in rest" :key="x.it.id">{{ x.it.t }} <span class="muted">· {{ x.stage.short }}</span></li></ul></div></details></div>
-      </template>
-      <div class="btn-stack" style="margin-top:24px">
+      <section v-if="!rep.failCount" aria-labelledby="h-noprob">
+        <h2 id="h-noprob" class="h2">Проблеми</h2>
+        <div class="card"><p class="prose">Серед перевірених пунктів проблем не зафіксовано.<template v-if="!rep.complete"> Огляд ще неповний, тож це не гарантія.</template><template v-else> Огляд повний — це дуже добрий знак.</template></p></div>
+      </section>
+
+      <!-- 4. Подробиці: бюджет, ринок, перелік неперевіреного -->
+      <section v-if="rep.cost.hi > 0" aria-labelledby="h-budget">
+        <h2 id="h-budget" class="h2">Бюджет на усунення</h2>
+        <div class="card price">
+          <div class="price-v">≈ {{ costStr([rep.cost.lo, rep.cost.hi]) }}</div>
+          <p class="foot">Сума орієнтовних вартостей по знайдених проблемах. Це твій аргумент у торгу.{{ fair }}</p>
+        </div>
+      </section>
+      <PriceBlock :i="i" :price="price" />
+      <section v-if="rest.length" aria-labelledby="h-rest">
+        <h2 id="h-rest" class="h2">Не перевірено · {{ rest.length }}</h2>
+        <div class="group">
+          <details class="acc">
+            <summary><span class="grow">Показати список</span><AppIcon name="chevDown" cls="turn" /></summary>
+            <div class="acc-body"><ul class="list"><li v-for="x in rest" :key="x.it.id">{{ x.it.t }} <span class="muted">· {{ x.stage.short }}</span></li></ul></div>
+          </details>
+        </div>
+      </section>
+
+      <div class="btn-stack" style="margin-top: var(--s6)">
         <button class="btn" data-action="share" :data-id="i.id" @click="share(i.id)"><AppIcon name="share" /><span>Поділитися звітом</span></button>
-        <button class="btn secondary" data-action="go" :data-to="'/check/' + i.id + '/0'" @click="go('/check/' + i.id + '/0')">Повернутись до чек-листа</button>
-        <button class="btn ghost danger" data-action="delete" :data-id="i.id" @click="confirmDelete(i.id)">Видалити перевірку</button>
+        <button class="btn tonal" data-action="go" :data-to="'/check/' + i.id + '/0'" @click="go('/check/' + i.id + '/0')">Повернутись до чек-листа</button>
+        <button class="btn ghost danger" data-action="delete" :data-id="i.id" @click="confirmDelete(i.id)"><AppIcon name="trash" /><span>Видалити огляд</span></button>
       </div>
-      <p class="foot" style="text-align:center;margin-top:16px">Звіт — орієнтир, а не експертиза. Для остаточного рішення покажи авто на СТО.</p>
+      <p class="foot center" style="margin-top: var(--s4)">Звіт — орієнтир, а не експертиза. Для остаточного рішення покажи авто на СТО.</p>
     </div>
   </AppScreen>
 </template>

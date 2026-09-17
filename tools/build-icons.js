@@ -7,9 +7,11 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const MAP = {
-  back: "chevron-left", chev: "chevron-right", check: "check", x: "x", minus: "minus", plus: "plus",
-  info: "info", alert: "triangle-alert", book: "book-open", share: "share", trash: "trash-2", more: "ellipsis",
-  car: "car", clipboard: "clipboard-check", wrench: "wrench", circleCheck: "circle-check", external: "external-link", circlePlus: "circle-plus", download: "download", upload: "upload"
+  chev: "chevron-right", check: "check", x: "x", minus: "minus", plus: "plus",
+  alert: "triangle-alert", book: "book-open", share: "share", trash: "trash-2", more: "ellipsis",
+  car: "car", clipboard: "clipboard-check", wrench: "wrench", circleCheck: "circle-check", external: "external-link", download: "download", upload: "upload",
+  arrowLeft: "arrow-left", arrowRight: "arrow-right", chevDown: "chevron-down", pencil: "pencil", fileText: "file-text",
+  circleX: "circle-x", circleAlert: "circle-alert", circleDashed: "circle-dashed"
 };
 
 const out = {};

@@ -19,8 +19,8 @@ export default defineConfig({
         lang: "uk",
         display: "standalone",
         orientation: "portrait",
-        background_color: "#F2F2F7",
-        theme_color: "#0A6BE6",
+        background_color: "#101112",
+        theme_color: "#101112",
         icons: [
           { src: "icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "icons/icon-512.png", sizes: "512x512", type: "image/png" },
@@ -28,7 +28,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,png,svg,webmanifest}"],
+        globPatterns: ["**/*.{js,css,html,png,svg,webmanifest,woff2}"],
         navigateFallback: base + "index.html"
       }
     })

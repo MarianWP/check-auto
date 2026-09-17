@@ -11,20 +11,21 @@ const TG = (function () {
   "use strict";
   var api = { active: false, tg: null };
   var backFn = null, fired = false, queue = [];
-  var LIGHT = "#F2F2F7", DARK = "#000000";
+  /* Єдина темна тема: кольори шапки, підкладки і нижньої смуги Telegram завжди збігаються з фоном апки. */
+  var BG = "#101112";
 
   function safe(fn) { try { return fn(); } catch (e) { return undefined; } }
   function v(ver) { return safe(function () { return !!(api.tg && api.tg.isVersionAtLeast(ver)); }) === true; }
 
-  /* Тема: беремо лише світла/темна, палітра залишається наша. Колір шапки і підкладки — як фон апки. */
+  /* Тема Telegram (світла чи темна) на палітру не впливає: лише фарбуємо рамку Telegram у наш фон.
+     Викликаємо і на themeChanged, бо Telegram після зміни теми повертає свої кольори. */
   function applyTheme() {
-    var tg = api.tg, dark = tg.colorScheme === "dark", bg = dark ? DARK : LIGHT;
-    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    var tg = api.tg;
     if (v("6.1")) {
-      safe(function () { tg.setBackgroundColor(bg); });
-      safe(function () { tg.setHeaderColor(v("6.9") ? bg : (dark ? "bg_color" : "secondary_bg_color")); });
+      safe(function () { tg.setBackgroundColor(BG); });
+      safe(function () { tg.setHeaderColor(v("6.9") ? BG : "bg_color"); });
     }
-    if (v("7.10")) safe(function () { tg.setBottomBarColor(bg); });
+    if (v("7.10")) safe(function () { tg.setBottomBarColor(BG); });
   }
 
   /* Безпечні зони: у повноекранному режимі Telegram малює свої кнопки (закрити, меню) поверх контенту,

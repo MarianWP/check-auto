@@ -3,6 +3,7 @@ import { useRoute } from "vue-router";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
+import SpecTiles from "../components/SpecTiles.vue";
 import EngineBlock from "../components/EngineBlock.vue";
 import G from "../data/golf";
 import { money, fmtN, resetDraft, ui } from "../store";
@@ -19,15 +20,27 @@ function newFrom() { resetDraft({ fuel: e.fuel, engine: e.id }); ui.scrollTarget
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar back="/guide" back-label="Довідник" :title="e.name" />
+    <NavBar back="/guide" back-label="довідник" title="Двигун" />
     <div class="content" :class="enter">
-      <div class="model-head"><div class="kicker">{{ fuelLabel }} · {{ e.years[0] }}–{{ e.years[1] }}</div><h1>{{ e.name }}</h1><p class="sub">{{ e.codes }}</p></div>
-      <h2 class="section-h">Ринкова ціна</h2>
-      <div class="group"><div class="price-card"><div class="price-big num">{{ money(price.lo) }} – {{ fmtN(price.hi) }}</div><p class="sub" style="margin-top:6px">Для 5-дверного хетчбека {{ e.years[1] }} року. Кузов, рік і коробка змінюють ціну на 5–15 %.</p></div></div>
+      <header class="page-head">
+        <p class="kicker">{{ fuelLabel }} · {{ e.years[0] }}–{{ e.years[1] }}</p>
+        <h1 class="title">{{ e.name }}</h1>
+        <p class="lead">{{ e.codes }}</p>
+      </header>
+      <SpecTiles :e="e" style="margin-top: var(--s4)" />
+      <section aria-labelledby="h-eprice">
+        <h2 id="h-eprice" class="h2">Ринкова ціна</h2>
+        <div class="card price">
+          <div class="price-v">{{ money(price.lo) }} – {{ fmtN(price.hi) }}</div>
+          <p class="foot">Для 5-дверного хетчбека {{ e.years[1] }} року. Кузов, рік і коробка змінюють ціну на 5–15 %.</p>
+        </div>
+      </section>
       <EngineBlock :e="e" />
-      <h2 class="section-h">Доступні комбінації</h2>
-      <div class="group"><div class="row-block"><dl class="kv"><dt>Кузови</dt><dd>{{ bodies }}</dd><dt>Коробки</dt><dd>{{ gears }}</dd></dl></div></div>
-      <div class="btn-stack" style="margin-top:24px"><button class="btn" data-action="new-from" :data-id="e.id" @click="newFrom"><AppIcon name="plus" /><span>Нова перевірка з цим мотором</span></button></div>
+      <section aria-labelledby="h-combos">
+        <h2 id="h-combos" class="h2">Доступні комбінації</h2>
+        <div class="card"><dl class="kv"><dt>Кузови</dt><dd>{{ bodies }}</dd><dt>Коробки</dt><dd>{{ gears }}</dd></dl></div>
+      </section>
+      <div class="btn-stack"><button class="btn" data-action="new-from" :data-id="e.id" @click="newFrom"><AppIcon name="plus" /><span>Новий огляд із цим двигуном</span></button></div>
     </div>
   </AppScreen>
 </template>

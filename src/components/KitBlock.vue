@@ -5,6 +5,8 @@ const kit = G.KIT;
 </script>
 
 <template>
-  <h2 class="section-h">Що взяти з собою</h2>
-  <div class="group"><div class="row-block"><ul class="list"><li v-for="(k, n) in kit" :key="n">{{ k }}</li></ul></div></div>
+  <section id="sec-kit" class="anchor" aria-labelledby="h-kit">
+    <h2 id="h-kit" class="h2">Що взяти з собою</h2>
+    <div class="card"><ul class="list"><li v-for="(k, n) in kit" :key="n">{{ k }}</li></ul></div>
+  </section>
 </template>

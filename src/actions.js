@@ -8,27 +8,27 @@ import router from "./router";
 export function menu(id) {
   const i = insp(id); if (!i) return;
   sheet({ title: i.name || G.label(i.cfg), actions: [
-    { icon: "car", label: "Картка моделі", fn: () => go("/car/" + id) },
+    { icon: "car", label: "Картка авто", fn: () => go("/car/" + id) },
     { icon: "clipboard", label: "Чек-лист", fn: () => go("/check/" + id + "/" + (i.stage || 0)) },
-    { icon: "share", label: "Звіт", fn: () => go("/report/" + id) },
-    { label: "Перейменувати", fn: () => renameSheet(id) },
-    { icon: "trash", label: "Видалити", danger: true, fn: () => confirmDelete(id) }
+    { icon: "fileText", label: "Звіт", fn: () => go("/report/" + id) },
+    { icon: "pencil", label: "Перейменувати", fn: () => renameSheet(id) },
+    { icon: "trash", label: "Видалити огляд", danger: true, fn: () => confirmDelete(id) }
   ] });
 }
 export function renameSheet(id) {
   const i = insp(id); if (!i) return;
-  sheet({ title: "Назва перевірки", input: { value: i.name || "", placeholder: G.label(i.cfg) }, actions: [
-    { label: "Зберегти", fn: v => rename(i, v) }
+  sheet({ title: "Перейменувати огляд", input: { label: "Назва огляду", value: i.name || "", placeholder: G.label(i.cfg) }, actions: [
+    { label: "Зберегти", primary: true, fn: v => rename(i, v) }
   ] });
 }
 export function confirmDelete(id) {
   const i = insp(id); if (!i) return;
-  sheet({ title: "Видалити перевірку «" + (i.name || G.label(i.cfg)) + "»? Це незворотно.", actions: [
-    { label: "Видалити", danger: true, fn: () => {
+  sheet({ title: "Видалити огляд «" + (i.name || G.label(i.cfg)) + "»?", text: "Відповіді й коментарі зникнуть. Повернути їх можна буде лише з резервної копії.", actions: [
+    { icon: "trash", label: "Видалити огляд", danger: true, fn: () => {
       remove(id);
       const r = router.currentRoute.value;
       if (r.params && r.params.id === id) { nav.dir = "back"; router.replace("/"); }
-      toast("Перевірку видалено");
+      toast("Огляд видалено");
     } }
   ] });
 }
@@ -38,7 +38,7 @@ export async function share(id) {
   if (TG.active) {
     sheet({ title: "Поділитися звітом", actions: [
       { icon: "share", label: "Надіслати в Telegram", fn: () => TG.share(text) },
-      { label: "Скопіювати текст", fn: () => copy(text) }
+      { icon: "clipboard", label: "Скопіювати текст", fn: () => copy(text) }
     ] });
     return;
   }

@@ -1,30 +1,30 @@
 <script setup>
-import { inject, reactive } from "vue";
+/* Верхня смуга. root — лише суцільна смуга під статус-бар і кнопки Telegram (заголовок живе в контенті);
+   інакше рядок із «Назад» і короткою назвою екрана. */
+import { computed, inject, reactive } from "vue";
 import AppIcon from "./AppIcon.vue";
 import { back as goBack } from "../nav";
 import { tgState } from "../tg";
 
-defineProps({
+const props = defineProps({
+  root: { type: Boolean, default: false },
   back: { type: String, default: "" },
   backLabel: { type: String, default: "" },
-  title: { type: String, default: "" },
-  sub: { type: String, default: "" },
-  titleOnScroll: { type: Boolean, default: false }
+  title: { type: String, default: "" }
 });
-const s = inject("scrollState", reactive({ scrolled: false, titled: false }));
+const s = inject("scrollState", reactive({ scrolled: false }));
+/* У Telegram «Назад» показує сам Telegram (BackButton), тож власну кнопку ховаємо, щоб їх не було дві. */
+const showBack = computed(() => !!props.back && !tgState.nativeBack);
 </script>
 
 <template>
-  <header id="nav" class="nav" :class="{ scrolled: s.scrolled, titled: s.titled }">
-    <div class="nav-row">
-      <div>
-        <!-- У Telegram «Назад» показує сам Telegram (BackButton), тож власну кнопку ховаємо, щоб їх не було дві. -->
-        <button v-if="back && !tgState.nativeBack" class="nav-btn" data-action="back" :data-to="back" aria-label="Назад" @click="goBack(back)">
-          <AppIcon name="back" /><span>{{ backLabel || 'Назад' }}</span>
-        </button>
-      </div>
-      <div class="nav-title" :class="{ stacked: !!sub, 'on-scroll': titleOnScroll }">{{ title }}<span v-if="sub" class="nav-sub">{{ sub }}</span></div>
-      <div><slot name="right"></slot></div>
+  <header id="nav" class="topbar" :class="{ root, scrolled: s.scrolled }">
+    <div v-if="!root" class="topbar-row" :class="{ 'no-back': !showBack }">
+      <button v-if="showBack" class="icon-btn" data-action="back" :data-to="back" :aria-label="backLabel ? 'Назад: ' + backLabel : 'Назад'" @click="goBack(back)">
+        <AppIcon name="arrowLeft" />
+      </button>
+      <div class="topbar-title">{{ title }}</div>
+      <slot name="right"></slot>
     </div>
     <slot name="extra"></slot>
   </header>

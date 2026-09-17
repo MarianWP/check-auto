@@ -1,0 +1,223 @@
+/* Golf Check — каркас: оболонка-колонка, скролер, верхня смуга, панель дій, нижня навігація.
+   Нижні панелі стоять у потоці, а не поверх контенту: останній пункт не може опинитися під кнопкою. */
+
+#app { position: fixed; top: 0; right: 0; bottom: 0; left: 0; }
+.shell { height: 100%; display: flex; flex-direction: column; }
+
+/* ---------- Екран: єдиний скролер ---------- */
+.screen {
+  order: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--raised) transparent;
+}
+.content {
+  max-width: var(--col);
+  margin-inline: auto;
+  padding: 0 max(var(--gutter), var(--sar)) var(--s6) max(var(--gutter), var(--sal));
+}
+/* Вхід екрана анімуємо лише на .content: скролер і верхня смуга не рухаються. */
+.content.enter-fwd { animation: content-fwd 240ms var(--ease-out); }
+.content.enter-back { animation: content-back 240ms var(--ease-out); }
+.content.enter-tab { animation: content-fade 180ms ease; }
+@keyframes content-fwd { from { opacity: 0; transform: translateX(12px); } }
+@keyframes content-back { from { opacity: 0; transform: translateX(-8px); } }
+@keyframes content-fade { from { opacity: 0; } }
+
+/* ---------- Верхня смуга ----------
+   На кореневих екранах це лише суцільна смуга під статус-бар і кнопки Telegram; заголовок живе в контенті.
+   На вкладених — рядок із «Назад» і короткою назвою. */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding-top: var(--sat);
+  background: var(--bg);
+  box-shadow: 0 1px 0 transparent;
+  transition: box-shadow 200ms ease;
+}
+.topbar.scrolled { box-shadow: 0 1px 0 var(--line); }
+.topbar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  min-height: var(--h-topbar);
+  max-width: var(--col);
+  margin-inline: auto;
+  padding-inline: max(var(--s2), var(--sal)) max(var(--gutter), var(--sar));
+}
+.topbar-row.no-back { padding-left: max(var(--gutter), var(--sal)); }
+.topbar-title { flex: 1 1 auto; min-width: 0; font-size: var(--fs-h3); font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.topbar-meta { flex: none; font-size: var(--fs-body-s); font-weight: 600; color: var(--text-2); }
+
+/* ---------- Тост: якір нульової висоти між екраном і нижніми панелями ---------- */
+.toast-anchor { order: 2; flex: none; height: 0; position: relative; z-index: 60; }
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: var(--s3);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(calc(100vw - var(--s6)), 420px);
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-ctl);
+  background: var(--raised);
+  border: 1px solid var(--line-field);
+  color: var(--text);
+  font-size: var(--fs-body-s);
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  transition: opacity 200ms ease, transform 260ms var(--ease-out);
+}
+.toast-enter-from { opacity: 0; transform: translate(-50%, 8px); }
+.toast-leave-to { opacity: 0; transform: translate(-50%, 4px); }
+
+/* ---------- Панель дій (картка авто, чек-лист) ---------- */
+.bar {
+  order: 3;
+  flex: none;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  padding: var(--s3) max(var(--gutter), var(--sar)) calc(var(--s3) + var(--sab)) max(var(--gutter), var(--sal));
+}
+.bar-in { max-width: var(--col); margin-inline: auto; display: grid; gap: var(--s2); }
+.bar-status { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3); font-size: var(--fs-cap); color: var(--text-2); }
+.bar-status b { color: var(--text); font-weight: 700; }
+.bar-actions { display: flex; gap: var(--s2); }
+
+/* ---------- Нижня навігація: округла панель розділів + окрема кнопка створення ---------- */
+.bottom-nav {
+  order: 4;
+  flex: none;
+  position: relative;
+  background: var(--bg);
+  padding: var(--s2) max(var(--gutter), var(--sar)) calc(var(--s2) + var(--sab)) max(var(--gutter), var(--sal));
+}
+/* М'яке згасання контенту над панеллю замість розмиття. */
+.bottom-nav::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 100%;
+  height: var(--s5);
+  background: linear-gradient(to bottom, rgba(16, 17, 18, 0), var(--bg));
+  pointer-events: none;
+}
+.bottom-nav-in { max-width: 420px; margin-inline: auto; display: flex; align-items: stretch; gap: var(--s3); }
+.tabs {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  gap: var(--s1);
+  padding: var(--s1);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+/* Підпис стоїть поруч з іконкою, а коли не вміщається (вузький екран, збільшений текст) — сам переходить під неї. */
+.tabs .tab {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: var(--h-btn);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: center;
+  justify-content: center;
+  column-gap: var(--s2);
+  row-gap: 0;
+  padding: var(--s1) var(--s2);
+  border-radius: var(--r-pill);
+  color: var(--text-2);
+  font-size: var(--fs-tab);
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+/* Вузький екран або збільшений текст: обидві вкладки однаково стають «іконка над підписом». */
+@media (max-width: 374px) { .tabs .tab { flex-direction: column; } }
+html.big-text .tabs .tab { flex-direction: column; }
+.tabs .tab:active { background: var(--raised); }
+.tabs .tab.on { background: var(--raised); color: var(--text); }
+.tabs .tab.on svg.i { color: var(--accent); }
+.fab {
+  flex: none;
+  width: 60px;
+  min-height: 60px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  transition: transform 160ms var(--ease-out), background-color 120ms ease;
+}
+.fab svg.i { width: 28px; height: 28px; stroke-width: 2.5; }
+.fab:active { transform: scale(0.94); background: var(--accent-press); }
+/* Активний стан «+» позначає кільце, а не лише колір. */
+.fab.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+
+/* Екранна клавіатура відкрита: нижні панелі не забирають місце у видимої частини. */
+html.kb-open .bar, html.kb-open .bottom-nav { display: none; }
+
+/* ---------- Аркуш (меню дій, діалоги) ---------- */
+.scrim { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 50; background: var(--scrim); transition: opacity 220ms ease; }
+.scrim-enter-from, .scrim-leave-to { opacity: 0; }
+.sheet {
+  position: fixed;
+  left: 0; right: 0; bottom: var(--kb);
+  z-index: 51;
+  padding: 0 max(var(--s2), var(--sar)) calc(var(--s2) + var(--sab)) max(var(--s2), var(--sal));
+  transition: transform 300ms var(--ease-drawer);
+}
+html.kb-open .sheet { padding-bottom: var(--s2); }
+.sheet-enter-from, .sheet-leave-to { transform: translateY(105%); }
+.sheet-leave-active { transition-duration: 220ms; }
+.scrim-leave-active, .sheet-leave-active { pointer-events: none; }
+.sheet-in {
+  max-width: 520px;
+  max-height: calc(100vh - var(--sat) - var(--kb) - var(--s5));
+  margin-inline: auto;
+  overflow-y: auto;
+  display: grid;
+  gap: var(--s3);
+  padding: var(--s2) var(--s4) var(--s4);
+  border-radius: var(--r-card);
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+}
+.sheet-handle { width: 40px; height: 4px; margin: var(--s1) auto 0; border-radius: 2px; background: var(--raised-2); }
+.sheet-title { font-size: var(--fs-h3); font-weight: 600; line-height: 1.3; }
+.sheet-text { font-size: var(--fs-body-s); color: var(--text-2); }
+.sheet-list { display: grid; }
+.sheet-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--s2);
+  border-radius: var(--r-ctl);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+  transition: background-color 120ms ease;
+}
+.sheet-btn svg.i { color: var(--text-2); }
+.sheet-btn:active { background: var(--raised); }
+.sheet-btn.danger, .sheet-btn.danger svg.i { color: var(--bad); }
+
+@media (hover: hover) and (pointer: fine) {
+  .tabs .tab:not(.on):hover, .sheet-btn:hover { background: var(--raised); }
+  .fab:hover { background: var(--accent-press); }
+}

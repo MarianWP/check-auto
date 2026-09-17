@@ -4,6 +4,7 @@ import { useRoute } from "vue-router";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
+import SpecTiles from "../components/SpecTiles.vue";
 import PriceBlock from "../components/PriceBlock.vue";
 import EngineBlock from "../components/EngineBlock.vue";
 import GearBlock from "../components/GearBlock.vue";
@@ -22,25 +23,33 @@ const checkTo = computed(() => "/check/" + i.id + "/" + (i.stage || 0));
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar back="/" title="Картка моделі" />
+    <NavBar back="/" back-label="мої огляди" title="Картка авто" />
     <div class="content" :class="enter">
-      <div class="model-head">
-        <div class="kicker">Volkswagen Golf V</div>
-        <h1>{{ e.name }} · {{ i.cfg.year }}</h1>
-        <p class="sub">{{ b.name }} · {{ g.name }}<template v-if="i.name"> · {{ i.name }}</template></p>
-      </div>
+      <header class="page-head">
+        <p class="kicker">Volkswagen Golf V<template v-if="i.name"> · {{ i.name }}</template></p>
+        <h1 class="title">{{ e.name }} · {{ i.cfg.year }}</h1>
+        <p class="lead">{{ b.name }} · {{ g.name }}</p>
+      </header>
+      <SpecTiles :e="e" style="margin-top: var(--s4)" />
       <PriceBlock :i="i" :price="price" />
       <EngineBlock :e="e" />
       <GearBlock :g="g" />
-      <h2 class="section-h">Кузов: {{ b.name }}</h2>
-      <div class="group"><div class="row-block sub">{{ b.note }}</div></div>
+      <section aria-labelledby="h-body">
+        <h2 id="h-body" class="h2">Кузов: {{ b.name }}</h2>
+        <div class="card"><p class="prose">{{ b.note }}</p></div>
+      </section>
       <CommonBlock />
       <KitBlock />
     </div>
   </AppScreen>
+
   <div id="bar" class="bar">
     <div class="bar-in">
-      <button class="btn" data-action="go" :data-to="checkTo" @click="go(checkTo)"><span>{{ rep.answeredAll ? 'Продовжити огляд' : 'Почати огляд' }}</span><AppIcon name="chev" /></button>
+      <p class="bar-status">
+        <span>{{ rep.answeredAll ? 'Пройдено пунктів' : 'Чек-лист для цієї конфігурації' }}</span>
+        <b>{{ rep.answeredAll ? rep.answeredAll + ' з ' + rep.total : rep.total + ' пунктів' }}</b>
+      </p>
+      <button class="btn" data-action="go" :data-to="checkTo" @click="go(checkTo)"><span>{{ rep.answeredAll ? 'Продовжити огляд' : 'Почати огляд' }}</span><AppIcon name="arrowRight" /></button>
     </div>
   </div>
 </template>

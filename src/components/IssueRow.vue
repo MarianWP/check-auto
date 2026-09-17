@@ -1,13 +1,16 @@
 <script setup>
-import { costStr } from "../store";
+import { costStr, SEV_LABEL } from "../store";
 
 defineProps({ x: { type: Object, required: true } });
 </script>
 
 <template>
   <div class="issue">
-    <span class="dot" :class="x.sev || ''"></span>
-    <div class="row-main"><div class="issue-t">{{ x.t }}</div><div class="issue-d">{{ x.d }}</div></div>
-    <span v-if="x.cost && x.cost[1]" class="issue-c">{{ costStr(x.cost) }}</span>
+    <div class="issue-t">{{ x.t }}</div>
+    <div class="issue-d">{{ x.d }}</div>
+    <div v-if="x.sev || (x.cost && x.cost[1])" class="issue-meta">
+      <span v-if="x.sev" class="sev" :class="'sev-' + x.sev">{{ SEV_LABEL[x.sev] }}</span>
+      <span v-if="x.cost && x.cost[1]" class="issue-c">≈ {{ costStr(x.cost) }}</span>
+    </div>
   </div>
 </template>

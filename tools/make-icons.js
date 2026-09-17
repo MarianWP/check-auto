@@ -1,4 +1,4 @@
-/* Генерує PNG-іконки без залежностей: синій градієнт + біле кільце з галочкою.
+/* Генерує PNG-іконки без залежностей: темне тло + оранжеве кільце з галочкою.
    Запуск: node tools/make-icons.js */
 import fs from "node:fs";
 import path from "node:path";
@@ -79,8 +79,8 @@ function render(size, rounded) {
       }
       const a = bgAcc / (SS * SS), w = whiteAcc / (SS * SS);
       const t = (px / size + py / size) / 2; /* діагональний градієнт */
-      const r0 = 62 + (14 - 62) * t, g0 = 140 + (96 - 140) * t, b0 = 255 + (226 - 255) * t;
-      const r = r0 * (1 - w) + 255 * w, g = g0 * (1 - w) + 255 * w, b = b0 * (1 - w) + 255 * w;
+      const r0 = 37 + (16 - 37) * t, g0 = 40 + (17 - 40) * t, b0 = 44 + (18 - 44) * t; /* #25282C → #101112 */
+      const r = r0 * (1 - w) + 255 * w, g = g0 * (1 - w) + 122 * w, b = b0 * (1 - w) + 26 * w; /* знак #FF7A1A */
       const i = (py * size + px) * 4;
       out[i] = Math.round(r); out[i + 1] = Math.round(g); out[i + 2] = Math.round(b); out[i + 3] = Math.round(255 * a);
     }

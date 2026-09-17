@@ -1,0 +1,174 @@
+/* Golf Check — екрани: головна, чек-лист, конфігуратор, картка авто, довідник, звіт. */
+
+/* ---------- Головна: картка огляду ---------- */
+.insp-card { display: grid; gap: var(--s4); padding: var(--s4); border-radius: var(--r-card); background: var(--card); }
+.insp-head { display: flex; align-items: flex-start; gap: var(--s2); }
+.insp-titles { flex: 1 1 auto; min-width: 0; }
+.insp-title { font-size: var(--fs-h2); font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.insp-cfg { margin-top: var(--s1); font-size: var(--fs-body-s); line-height: 1.4; color: var(--text-2); }
+.insp-date { margin-top: var(--s1); font-size: var(--fs-cap); line-height: 1.4; color: var(--text-3); }
+.insp-head .icon-btn { margin: calc(-1 * var(--s1)) calc(-1 * var(--s1)) 0 0; }
+.metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4); }
+.metric { display: flex; flex-direction: column; gap: var(--s1); min-width: 0; }
+.metric + .metric { padding-left: var(--s4); border-left: 1px solid var(--line); }
+.metric-v { font-size: var(--fs-metric); font-weight: 500; line-height: 1.05; letter-spacing: -0.02em; }
+.metric-l { font-size: var(--fs-cap); line-height: 1.35; color: var(--text-2); overflow-wrap: anywhere; }
+.insp-count { font-size: var(--fs-cap); line-height: 1.4; color: var(--text-2); }
+.insp-result { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); }
+.insp-score { font-size: var(--fs-cap); font-weight: 600; color: var(--text-2); }
+
+/* Порожній стан: вирівняний ліворуч, з однією дією. */
+.empty { display: grid; justify-items: start; gap: var(--s3); margin-top: var(--s4); padding: var(--s5) var(--s4); border-radius: var(--r-card); background: var(--card); }
+.empty-ic { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: var(--r-btn); background: var(--raised); color: var(--text); }
+.empty-t { font-size: var(--fs-h2); font-weight: 600; line-height: 1.25; }
+.empty-s { font-size: var(--fs-body-s); color: var(--text-2); }
+.empty .btn { margin-top: var(--s2); }
+
+/* ---------- Чек-лист ---------- */
+.stages {
+  display: flex;
+  gap: var(--s2);
+  max-width: var(--col);
+  margin-inline: auto;
+  padding: var(--s2) max(var(--gutter), var(--sar)) var(--s2) max(var(--gutter), var(--sal));
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+.stages::-webkit-scrollbar { display: none; }
+.stage {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: var(--h-ctl);
+  padding: var(--s1) var(--s4) var(--s1) var(--s1);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--text-2);
+  font-size: var(--fs-body-s);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  scroll-snap-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms var(--ease-out);
+}
+.stage:active { transform: scale(0.97); }
+.stage-no { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding-inline: var(--s1); border-radius: var(--r-pill); background: var(--raised); color: var(--text-2); font-size: var(--fs-cap); font-weight: 700; }
+.stage-no svg.i { width: 18px; height: 18px; stroke-width: 3; }
+.stage.part .stage-no { color: var(--text); box-shadow: inset 0 0 0 2px var(--text-2); }
+.stage.done { color: var(--text); }
+.stage.done .stage-no { background: var(--text); color: var(--bg); }
+.stage.current { background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.stage.current .stage-no { background: rgba(16, 17, 18, 0.16); color: var(--on-accent); box-shadow: none; }
+
+.items { display: grid; gap: var(--s3); margin-top: var(--s5); }
+.item { padding: var(--s4); border-radius: var(--r-card); border: 2px solid transparent; background: var(--card); transition: border-color 200ms ease; }
+.item[data-s="bad"] { border-color: rgba(255, 113, 105, 0.45); }
+.item-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); margin-bottom: var(--s3); }
+.item-idx { font-size: var(--fs-cap); font-weight: 600; color: var(--text-2); }
+.item-t { font-size: var(--fs-h2); font-weight: 600; line-height: 1.3; }
+.how { margin-top: var(--s2); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text); }
+.note { display: flex; align-items: flex-start; gap: var(--s2); margin-top: var(--s3); padding: var(--s3); border-radius: var(--r-ctl); background: var(--warn-soft); font-size: var(--fs-body-s); line-height: 1.45; }
+.note svg.i { margin-top: 2px; color: var(--warn); }
+details.why { margin-top: var(--s2); }
+details.why > summary { display: inline-flex; align-items: center; gap: var(--s2); min-height: var(--h-ctl); font-size: var(--fs-body-s); font-weight: 700; color: var(--text); }
+details.why > p { padding-bottom: var(--s2); font-size: var(--fs-body-s); line-height: var(--lh-body); color: var(--text-2); }
+
+/* Відповіді: «Ок» і «Проблема» поруч, «Не перевірено» — окремим рядком; коли текст не вміщається, кнопки стають у стовпчик.
+   Вибране видно не лише кольором: рамка, заповнений значок і жирніший підпис. */
+.answers { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+.ans {
+  flex: 1 1 120px;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  min-height: var(--h-btn);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-btn);
+  border: 2px solid transparent;
+  background: var(--raised);
+  color: var(--text);
+  font-size: var(--fs-body-s);
+  font-weight: 700;
+  line-height: 1.2;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 160ms var(--ease-out), background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.ans:active { transform: scale(0.97); }
+.ans-ic { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; color: var(--text-2); transition: background-color 160ms ease, color 160ms ease; }
+.ans-ic svg.i { width: 18px; height: 18px; stroke-width: 2.75; }
+.ans-skip { flex-basis: 100%; min-height: var(--h-ctl); background: transparent; border-color: var(--raised); color: var(--text-2); font-weight: 600; }
+.ans.on { font-weight: 800; }
+.ans-ok.on { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.ans-ok.on .ans-ic { background: var(--ok); color: var(--bg); }
+.ans-bad.on { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.ans-bad.on .ans-ic { background: var(--bad); color: var(--bg); }
+.ans-skip.on { background: var(--raised); border-color: var(--text-2); color: var(--text); }
+.ans-skip.on .ans-ic { background: var(--text-2); color: var(--bg); }
+@media (min-width: 560px) {
+  .ans-skip { flex-basis: 120px; min-height: var(--h-btn); }
+}
+.comment { display: grid; gap: var(--s3); margin-top: var(--s4); padding-top: var(--s4); border-top: 1px solid var(--line); transition: opacity 200ms ease, transform 240ms var(--ease-out); }
+.comment-enter-from { opacity: 0; transform: translateY(-4px); }
+
+/* ---------- Конфігуратор ---------- */
+.step { margin-top: var(--s6); scroll-margin-top: calc(var(--sat) + var(--s4)); }
+.step-head { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3); }
+.step-no { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--raised); color: var(--text-2); font-size: var(--fs-cap); font-weight: 700; transition: background-color 200ms ease, color 200ms ease; }
+.step-no svg.i { width: 18px; height: 18px; stroke-width: 3; }
+.step.done .step-no { background: var(--accent); color: var(--on-accent); }
+.step-t { flex: 1 1 auto; min-width: 0; font-size: var(--fs-h2); font-weight: 600; line-height: 1.25; }
+.step-val { flex: 0 1 auto; min-width: 0; font-size: var(--fs-cap); font-weight: 700; line-height: 1.3; text-align: right; overflow-wrap: anywhere; }
+.opts { display: grid; gap: var(--s2); }
+.opt { display: flex; align-items: center; gap: var(--s3); width: 100%; padding: var(--s4); border-radius: var(--r-card); border: 2px solid transparent; background: var(--card); text-align: left; transition: background-color 160ms ease, border-color 160ms ease; }
+.opt:active { background: var(--raised); }
+.opt.on { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--card); border-color: var(--accent); }
+.opt-main { flex: 1 1 auto; min-width: 0; }
+.opt-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s2); }
+.opt-name { font-size: var(--fs-body); font-weight: 700; line-height: 1.3; }
+.opt-hp { font-size: var(--fs-body-s); color: var(--text-2); }
+.opt-sub { margin-top: var(--s1); font-size: var(--fs-cap); line-height: 1.4; color: var(--text-2); }
+.opt-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s3); margin-top: var(--s2); font-size: var(--fs-cap); color: var(--text-2); }
+.opt-check { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--line-field); color: transparent; transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
+.opt-check svg.i { width: 18px; height: 18px; stroke-width: 3; }
+.opt.on .opt-check { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+/* ---------- Картка авто, двигун, довідник ---------- */
+.price { display: grid; gap: var(--s2); }
+.price-v { font-size: var(--fs-metric); font-weight: 500; line-height: 1.1; letter-spacing: -0.02em; }
+.price-cmp { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1) var(--s2); font-size: var(--fs-body-s); }
+.jump { display: flex; gap: var(--s2); margin: var(--s4) calc(-1 * var(--gutter)) 0; padding: 0 var(--gutter); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+.jump::-webkit-scrollbar { display: none; }
+.jump .chip { flex: none; white-space: nowrap; }
+.anchor { scroll-margin-top: calc(var(--sat) + var(--s4)); }
+.engine-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s3); margin-top: var(--s1); font-size: var(--fs-cap); color: var(--text-2); }
+
+/* ---------- Звіт ---------- */
+.verdict { display: grid; gap: var(--s3); margin-top: var(--s4); padding: var(--s5) var(--s4); border-radius: var(--r-card); border: 2px solid var(--raised); background: var(--card); }
+.verdict-top { display: flex; align-items: center; gap: var(--s3); font-size: var(--fs-cap); font-weight: 600; color: var(--text-2); }
+.verdict-ic { flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--raised); color: var(--text); }
+.verdict-t { font-size: clamp(28px, calc(28 * var(--u)), 36px); font-weight: 500; line-height: var(--lh-tight); letter-spacing: -0.02em; }
+.verdict-s { font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text); }
+.verdict.v-good { border-color: var(--ok); }
+.verdict.v-good .verdict-ic { background: var(--ok); color: var(--bg); }
+.verdict.v-bargain { border-color: var(--warn); }
+.verdict.v-bargain .verdict-ic { background: var(--warn); color: var(--bg); }
+.verdict.v-no { border-color: var(--bad); }
+.verdict.v-no .verdict-ic { background: var(--bad); color: var(--bg); }
+.report-tiles { margin-top: var(--s2); }
+.cov { display: grid; gap: var(--s3); }
+.cov-top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3); font-size: var(--fs-body-s); }
+.cov-top b { font-size: var(--fs-h2); font-weight: 600; }
+.rep-item { position: relative; padding: var(--s4); }
+.rep-t { font-size: var(--fs-body); font-weight: 600; line-height: 1.3; }
+.rep-c { margin-top: var(--s2); font-size: var(--fs-body-s); line-height: 1.45; }
+.rep-m { margin-top: var(--s2); font-size: var(--fs-cap); color: var(--text-2); }
+.tagline { display: flex; flex-wrap: wrap; gap: var(--s1); margin-top: var(--s2); }
+.tagline span { padding: var(--s1) var(--s3); border-radius: var(--r-pill); background: var(--bad-soft); color: var(--bad); font-size: var(--fs-cap-s); font-weight: 700; line-height: 1.3; }

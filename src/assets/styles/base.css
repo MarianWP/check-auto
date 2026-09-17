@@ -1,0 +1,51 @@
+/* Golf Check — база: скидання, текст, фокус, службові класи. */
+
+/* touch-action: manipulation прибирає зум подвійним тапом, але лишає масштабування двома пальцями. */
+*, *::before, *::after { box-sizing: border-box; touch-action: manipulation; }
+
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--bg); }
+/* Документ не скролиться: скролиться лише .screen, тож сторінку не «відриває» від країв. */
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  font-weight: 450;
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, input, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
+button { background: none; border: 0; padding: 0; margin: 0; border-radius: 0; cursor: pointer; text-align: inherit; }
+a { color: var(--accent); text-decoration: none; }
+p, h1, h2, h3, h4, dl, dd, ul, ol { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+h1, h2, h3, h4 { font-weight: 600; text-wrap: balance; }
+[hidden] { display: none !important; }
+::selection { background: var(--accent-soft); }
+
+svg.i { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+svg.i.sm { width: 18px; height: 18px; }
+svg.i.lg { width: 28px; height: 28px; }
+
+/* Фокус з клавіатури: світле кільце з відступом, видиме на будь-якій поверхні, зокрема навколо оранжевих кнопок. */
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+/* Цифри пропорційні: табличні у Manrope лишають помітні проміжки навколо одиниці. */
+.nw { white-space: nowrap; }
+.muted { color: var(--text-2); }
+.strong { font-weight: 700; color: var(--text); }
+.center { text-align: center; }
+.text-ok { color: var(--ok); }
+.text-bad { color: var(--bad); }
+.text-warn { color: var(--warn); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

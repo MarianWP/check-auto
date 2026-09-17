@@ -1,0 +1,217 @@
+/* Golf Check — спільні компоненти: заголовки, кнопки, чипи, картки, рядки, прогрес, поля, позначки. */
+
+/* ---------- Заголовки сторінки і розділів ---------- */
+.page-head { padding: var(--s4) 0 var(--s2); }
+.kicker { margin-bottom: var(--s1); font-size: var(--fs-cap); font-weight: 600; line-height: 1.4; color: var(--text-2); }
+.title { font-size: var(--fs-title); font-weight: 500; line-height: var(--lh-tight); letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.lead { margin-top: var(--s2); max-width: 60ch; font-size: var(--fs-body-s); color: var(--text-2); }
+.page-head + section > .h2 { margin-top: var(--s5); }
+.h2 { margin: var(--s6) 0 var(--s3); font-size: var(--fs-h2); font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
+.foot { font-size: var(--fs-cap); line-height: 1.45; color: var(--text-2); }
+.prose { font-size: var(--fs-body); line-height: var(--lh-body); }
+.prose + .prose { margin-top: var(--s3); }
+.callout { margin-top: var(--s3); padding: var(--s3) var(--s4); border-radius: var(--r-ctl); background: var(--raised); font-size: var(--fs-body-s); }
+
+/* ---------- Кнопки ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  width: 100%;
+  min-height: var(--h-btn);
+  padding: var(--s2) var(--s5);
+  border-radius: var(--r-btn);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 160ms var(--ease-out), background-color 120ms ease;
+}
+.btn:active { transform: scale(0.98); background: var(--accent-press); }
+.btn.tonal { background: var(--raised); color: var(--text); }
+.btn.tonal:active { background: var(--raised-2); }
+.btn.ghost { background: transparent; color: var(--text); }
+.btn.ghost:active { background: var(--raised); }
+.btn.danger { color: var(--bad); }
+.btn.square { flex: none; width: var(--h-btn); padding: 0; }
+.btn[disabled] { opacity: 0.45; pointer-events: none; }
+.btn-stack { display: grid; gap: var(--s3); margin-top: var(--s5); }
+.icon-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--h-ctl);
+  height: var(--h-ctl);
+  border-radius: 50%;
+  color: var(--text);
+  transition: background-color 120ms ease;
+}
+.icon-btn.tonal { background: var(--raised); }
+.icon-btn:active { background: var(--raised-2); }
+.link { display: inline-flex; align-items: center; gap: var(--s2); min-height: var(--h-ctl); font-size: var(--fs-body-s); font-weight: 700; color: var(--accent); }
+
+/* ---------- Чипи: вибір = оранжева заливка + галочка ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: var(--h-ctl);
+  padding: var(--s1) var(--s4);
+  border-radius: var(--r-pill);
+  border: 2px solid transparent;
+  background: var(--raised);
+  color: var(--text);
+  font-size: var(--fs-body-s);
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 160ms var(--ease-out), background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+.chip svg.i { width: 18px; height: 18px; stroke-width: 2.5; }
+.chip:active { transform: scale(0.97); }
+.chip.on { background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.chip.tag.on { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--raised); border-color: var(--accent); color: var(--text); }
+.chip.tag.on svg.i { color: var(--accent); }
+
+/* ---------- Картки, групи, рядки ---------- */
+.card { padding: var(--s4); border-radius: var(--r-card); background: var(--card); }
+.cards { display: grid; gap: var(--s3); }
+.group { border-radius: var(--r-card); background: var(--card); overflow: hidden; }
+.row { position: relative; display: flex; align-items: center; gap: var(--s3); width: 100%; min-height: 56px; padding: var(--s3) var(--s4); text-align: left; }
+.row-block { position: relative; padding: var(--s4); }
+.row + .row::before,
+.row + .row-block::before,
+.row-block + .row::before,
+.row-block + .row-block::before,
+.issue + .issue::before,
+.rep-item + .rep-item::before,
+details.acc + details.acc::before,
+.row-block + .issue::before {
+  content: "";
+  position: absolute;
+  top: 0; left: var(--s4); right: var(--s4);
+  height: 1px;
+  background: var(--line);
+}
+.row-main { flex: 1 1 auto; min-width: 0; }
+.row-t { font-size: var(--fs-body); font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.row-s { margin-top: var(--s1); font-size: var(--fs-cap); line-height: 1.4; color: var(--text-2); }
+.row > svg.i:first-child { color: var(--text-2); }
+.row > svg.i.chev { color: var(--text-3); }
+button.row, label.row { cursor: pointer; transition: background-color 120ms ease; }
+button.row:active, label.row:active { background: var(--raised); }
+.list { padding-left: var(--s5); list-style: disc; font-size: var(--fs-body-s); line-height: var(--lh-body); }
+.list li + li { margin-top: var(--s2); }
+.list li::marker { color: var(--text-3); }
+
+/* ---------- Пари «назва — значення» ---------- */
+.kv { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: var(--s2) var(--s4); font-size: var(--fs-body-s); line-height: 1.45; }
+.kv dt { color: var(--text-2); }
+.kv dd { overflow-wrap: anywhere; }
+
+/* ---------- Великі показники ---------- */
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+.tile { display: flex; flex-direction: column; gap: var(--s1); min-width: 0; padding: var(--s4); border-radius: var(--r-card); background: var(--card); }
+.tile-v { font-size: var(--fs-h2); font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.tile-v.big { font-size: var(--fs-metric); font-weight: 500; line-height: 1.05; letter-spacing: -0.02em; }
+.unit { font-size: var(--fs-body-s); font-weight: 600; letter-spacing: 0; color: var(--text-2); }
+.tile-l { font-size: var(--fs-cap); line-height: 1.35; color: var(--text-2); }
+.tile.attention { box-shadow: inset 0 0 0 2px var(--warn); }
+.tile.attention .tile-v { color: var(--warn); }
+
+/* ---------- Прогрес: світла заливка, оранжевий лишається для дій ---------- */
+.progress { height: 6px; border-radius: 3px; background: var(--raised); overflow: hidden; }
+.progress > i { display: block; height: 100%; border-radius: inherit; background: var(--text); transform-origin: left; transform: scaleX(0); transition: transform 320ms var(--ease-out); }
+.progress.thin { height: 3px; border-radius: 0; background: var(--card); }
+.progress.complete > i { background: var(--ok); }
+
+/* Смужка етапів: один сегмент = один етап огляду, заливка = частка пройдених пунктів етапу. */
+.segbar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--s1); padding-bottom: var(--s2); }
+.segbar > i { position: relative; height: 8px; border-radius: 4px; background: var(--raised); }
+.segbar > i > b { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: inherit; background: var(--text); transform-origin: left; transform: scaleX(var(--f, 0)); transition: transform 320ms var(--ease-out); }
+.segbar > i.cur::after { content: ""; position: absolute; left: 0; right: 0; bottom: calc(-1 * var(--s2)); height: 3px; border-radius: 2px; background: var(--accent); }
+
+/* ---------- Позначки ---------- */
+.sev { display: inline-flex; align-items: center; gap: var(--s1); min-height: 28px; padding: var(--s1) var(--s3); border-radius: var(--r-pill); font-size: var(--fs-cap-s); font-weight: 700; line-height: 1.2; }
+.sev svg.i { width: 16px; height: 16px; }
+.sev-crit { background: var(--bad-soft); color: var(--bad); }
+.sev-major { background: var(--raised); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-field); }
+.sev-minor { background: var(--raised); color: var(--text-2); }
+.badge { display: inline-flex; align-items: center; gap: var(--s1); min-height: 32px; padding: var(--s1) var(--s3); border-radius: var(--r-pill); background: var(--raised); color: var(--text); font-size: var(--fs-cap); font-weight: 700; line-height: 1.2; }
+.badge svg.i { width: 18px; height: 18px; }
+.badge.v-good { background: var(--ok-soft); color: var(--ok); }
+.badge.v-bargain { background: var(--warn-soft); color: var(--warn); }
+.badge.v-no { background: var(--bad-soft); color: var(--bad); }
+.dots { display: inline-flex; align-items: center; gap: var(--s1); }
+.dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--raised-2); }
+.dots i.on { background: var(--text); }
+
+/* ---------- Проблеми у довіднику й картці авто ---------- */
+.issue { position: relative; padding: var(--s4); }
+.issue-t { font-size: var(--fs-body); font-weight: 600; line-height: 1.3; }
+.issue-d { margin-top: var(--s1); font-size: var(--fs-body-s); line-height: 1.45; color: var(--text-2); }
+.issue-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); margin-top: var(--s2); }
+.issue-c { font-size: var(--fs-cap); font-weight: 600; color: var(--text); }
+
+/* ---------- Розкривні блоки ---------- */
+summary { list-style: none; cursor: pointer; }
+summary::-webkit-details-marker { display: none; }
+details > summary svg.i.turn { color: var(--text-2); transition: transform 200ms var(--ease-out); }
+details[open] > summary svg.i.turn { transform: rotate(180deg); }
+details.acc { position: relative; }
+details.acc > summary { display: flex; align-items: center; gap: var(--s3); min-height: 56px; padding: var(--s3) var(--s4); font-size: var(--fs-body); font-weight: 600; line-height: 1.3; }
+details.acc > summary > .grow { flex: 1 1 auto; min-width: 0; }
+details.acc > summary .engine-meta { font-weight: 450; }
+.acc-body { padding: 0 var(--s4) var(--s4); font-size: var(--fs-body-s); line-height: var(--lh-body); color: var(--text-2); }
+
+/* ---------- Поля вводу ---------- */
+.fields { display: grid; gap: var(--s4); }
+.field { display: block; }
+.field-label { display: block; margin-bottom: var(--s2); font-size: var(--fs-cap); font-weight: 600; line-height: 1.35; color: var(--text-2); }
+.input, .textarea {
+  display: block;
+  width: 100%;
+  min-height: var(--h-field);
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--line-field);
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--fs-body);
+  line-height: 1.4;
+}
+.textarea { resize: none; min-height: 96px; }
+.input::placeholder, .textarea::placeholder { color: var(--text-3); opacity: 1; }
+.input:focus-visible, .textarea:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+.hint { margin-top: var(--s2); font-size: var(--fs-cap); line-height: 1.45; color: var(--text-2); }
+
+/* ---------- Повідомлення на сторінці ---------- */
+.notice { display: flex; align-items: flex-start; gap: var(--s3); margin-top: var(--s4); padding: var(--s4); border-radius: var(--r-card); font-size: var(--fs-body-s); line-height: 1.45; }
+.notice > svg.i { margin-top: 2px; }
+.notice b { display: block; margin-bottom: var(--s1); font-size: var(--fs-body); font-weight: 700; }
+.notice.bad { background: linear-gradient(var(--bad-soft), var(--bad-soft)), var(--card); }
+.notice.bad > svg.i { color: var(--bad); }
+.notice.warn { background: linear-gradient(var(--warn-soft), var(--warn-soft)), var(--card); }
+.notice.warn > svg.i { color: var(--warn); }
+.notice.info { background: var(--card); color: var(--text-2); }
+.notice.info b { color: var(--text); }
+.notice.info > svg.i { color: var(--text-2); }
+.notice > div { flex: 1 1 auto; min-width: 0; }
+.notice .icon-btn { margin: calc(-1 * var(--s2)) calc(-1 * var(--s2)) 0 0; color: var(--text-2); }
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { background: var(--accent-press); }
+  .btn.tonal:hover { background: var(--raised-2); }
+  .btn.ghost:hover, button.row:hover, label.row:hover, .icon-btn:hover { background: var(--raised); }
+  .icon-btn.tonal:hover { background: var(--raised-2); }
+  .chip:not(.on):hover { background: var(--raised-2); }
+}
