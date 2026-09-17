@@ -6,6 +6,7 @@ import router from "./router";
 import TG from "./tg";
 import { reload, flush, probeStorage } from "./store";
 import { autosize } from "./directives";
+import { isExternalUrl } from "./logic/links";
 import { initKeyboard } from "./keyboard";
 import "./assets/styles/index.css";
 
@@ -17,10 +18,13 @@ app.mount("#app");
 /* Для відлагодження в консолі та тестів. */
 window.TG = TG;
 
-/* Зовнішні посилання у Telegram відкриваємо через SDK. */
+/* У Telegram зовнішні посилання відкриваємо через SDK. Саме зовнішні: інший origin або target=_blank.
+   Внутрішні (#/guide, #/new — пункти нижньої навігації) лишаються роутеру, інакше вони відкривали б сайт у браузері. */
 document.getElementById("app").addEventListener("click", e => {
   const a = e.target.closest && e.target.closest("a[href]");
-  if (a && TG.active && /^https?:/i.test(a.href) && TG.openLink(a.href)) e.preventDefault();
+  if (!a || !TG.active) return;
+  const external = isExternalUrl(a.href, location.href) || (a.target === "_blank" && /^https?:/i.test(a.href));
+  if (external && TG.openLink(a.href)) e.preventDefault();
 });
 window.addEventListener("pageshow", ev => { if (ev.persisted) reload(); });
 /* Сховище: перевіряємо запис одразу і не чекаємо таймера, коли апку згортають чи закривають. */

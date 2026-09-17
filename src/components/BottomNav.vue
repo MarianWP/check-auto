@@ -18,11 +18,11 @@ const active = computed(() => route.meta.tab);
   <nav id="tabs" class="bottom-nav" aria-label="Головна навігація">
     <div class="bottom-nav-in">
       <div class="tabs">
-        <a v-for="t in tabs" :key="t.id" class="tab" :class="{ on: active === t.id }" :href="'#' + t.to" :data-tab="t.id" :aria-current="active === t.id ? 'page' : null" @click.prevent="switchTab(t.to)">
+        <a v-for="t in tabs" :key="t.id" class="tab" :class="{ on: active === t.id }" :href="'#' + t.to" draggable="false" :data-tab="t.id" :aria-current="active === t.id ? 'page' : null" @click.prevent="switchTab(t.to)">
           <AppIcon :name="t.icon" /><span>{{ t.label }}</span>
         </a>
       </div>
-      <a class="fab" :class="{ on: active === 'new' }" href="#/new" data-tab="new" aria-label="Новий огляд" :aria-current="active === 'new' ? 'page' : null" @click.prevent="switchTab('/new')">
+      <a class="fab" :class="{ on: active === 'new' }" href="#/new" draggable="false" data-tab="new" aria-label="Новий огляд" :aria-current="active === 'new' ? 'page' : null" @click.prevent="switchTab('/new')">
         <AppIcon name="plus" />
       </a>
     </div>

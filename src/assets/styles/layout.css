@@ -142,6 +142,8 @@
   -webkit-user-select: none;
   transition: background-color 160ms ease, color 160ms ease;
 }
+/* Це посилання, але поводяться як кнопки застосунку: без системного меню посилання на довге натискання. */
+.tabs .tab, .fab { -webkit-touch-callout: none; }
 /* Вузький екран або збільшений текст: обидві вкладки однаково стають «іконка над підписом». */
 @media (max-width: 374px) { .tabs .tab { flex-direction: column; } }
 html.big-text .tabs .tab { flex-direction: column; }
@@ -150,20 +152,21 @@ html.big-text .tabs .tab { flex-direction: column; }
 .tabs .tab.on svg.i { color: var(--accent); }
 .fab {
   flex: none;
-  width: 60px;
-  min-height: 60px;
+  width: 58px;
+  height: 58px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background: var(--accent);
   color: var(--on-accent);
+  border: 0.0625rem solid var(--line);
   transition: transform 160ms var(--ease-out), background-color 120ms ease;
 }
 .fab svg.i { width: 28px; height: 28px; stroke-width: 2.5; }
 .fab:active { transform: scale(0.94); background: var(--accent-press); }
 /* Активний стан «+» позначає кільце, а не лише колір. */
-.fab.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+.fab.on { background-color: var(--card); color: var(--text); }
 
 /* Екранна клавіатура відкрита: нижні панелі не забирають місце у видимої частини. */
 html.kb-open .bar, html.kb-open .bottom-nav { display: none; }

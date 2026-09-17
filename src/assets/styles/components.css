@@ -153,7 +153,9 @@ button.row:active, label.row:active { background: var(--raised); }
 .badge.v-no { background: var(--bad-soft); color: var(--bad); }
 .dots { display: inline-flex; align-items: center; gap: var(--s1); }
 .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--raised-2); }
-.dots i.on { background: var(--text); }
+.dots i.on { background: var(--rate-hi); }
+.dots.r3 i.on { background: var(--rate-mid); }
+.dots.r1 i.on, .dots.r2 i.on { background: var(--rate-lo); }
 
 /* ---------- Проблеми у довіднику й картці авто ---------- */
 .issue { position: relative; padding: var(--s4); }
