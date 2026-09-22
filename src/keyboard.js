@@ -27,7 +27,8 @@ export function initKeyboard() {
     const open = isField(el) && maxH - vv.height > 140;
     root.classList.toggle("kb-open", open);
     /* Висота клавіатури; обмежена 60 % екрана, бо під час анімації iOS іноді дає завищене значення, і низ апки поїхав би догори. */
-    const kb = open ? Math.min(Math.round(window.innerHeight * 0.6), Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop))) : 0;
+    /* У Telegram висоту видимої області дає сам Telegram (див. layout.css), тому власний зсув там не потрібен. */
+    const kb = open && !root.dataset.tg ? Math.min(Math.round(window.innerHeight * 0.6), Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop))) : 0;
     root.style.setProperty("--kb", kb + "px");
     if (open) reveal(el);
   }

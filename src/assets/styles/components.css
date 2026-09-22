@@ -317,6 +317,8 @@ details.acc > summary .engine-meta { font-weight: 450; }
 /* Клавіатура відкрита: поле пливе одразу над нею (fixed, без safe-area, бо клавіатура її перекриває),
    а чат лишається на весь екран під ним і прокручується до останніх повідомлень. */
 html.kb-open .chat-bar { position: fixed; left: 0; right: 0; bottom: var(--kb); z-index: 30; padding-bottom: var(--s2); box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25); }
+/* У Telegram оболонка сама стискається до видимої області, тож поле лишається в потоці внизу. */
+html[data-tg].kb-open .chat-bar { position: static; box-shadow: none; }
 html.kb-open .chat .msgs, html.kb-open .chat .chat-empty { padding-bottom: 96px; }
 
 /* ---------- Шапка вкладеного екрана: підпис і пояснення одразу під смугою із заголовком ---------- */
