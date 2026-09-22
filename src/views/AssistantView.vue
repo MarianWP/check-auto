@@ -7,6 +7,7 @@ import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
 import ProfileButton from "../components/ProfileButton.vue";
 import TelegramLogin from "../components/TelegramLogin.vue";
+import AiThinking from "../components/AiThinking.vue";
 import { db, apiOf, computeReport, visibleStages, VERDICTS, sheet, reduced } from "../store";
 import { auth, user, loginMiniApp } from "../cloud/auth";
 import { CLOUD_ERROR } from "../cloud/client";
@@ -53,6 +54,8 @@ async function send(q) {
   await ask(t, { inspId: insp.value ? insp.value.id : null, context: context(), lang: prefs.lang });
   toBottom();
 }
+/* Клавіатура відкривається з затримкою: прокручуємо чат до останніх повідомлень, щойно вона стане на місце. */
+function onFocus() { setTimeout(toBottom, 350); setTimeout(toBottom, 700); }
 function onKey(e) {
   /* Enter надсилає лише з фізичної клавіатури; на телефоні Enter — новий рядок, надсилає кнопка. */
   if (e.key === "Enter" && !e.shiftKey && window.matchMedia("(hover: hover) and (pointer: fine)").matches) { e.preventDefault(); send(); }
@@ -102,8 +105,10 @@ onMounted(load);
         </section>
         <ol v-else class="msgs" aria-live="polite" aria-label="Розмова">
           <li v-for="m in chat.messages" :key="m.id" class="msg" :class="[m.role === 'user' ? 'me' : 'ai', { pending: m.pending }]">
-            <span v-if="m.role === 'assistant'" class="msg-ic" aria-hidden="true"><AppIcon name="sparkles" /></span>
-            <div class="msg-b">{{ m.content || (m.pending ? 'Думаю…' : '') }}</div>
+            <!-- Поки відповідь ще не почалася: анімований контур замість іконки і текст із мерехтінням; далі текст без бульбашки. -->
+            <span v-if="m.role === 'assistant' && !(m.pending && !m.content)" class="msg-ic" aria-hidden="true"><AppIcon name="sparkles" /></span>
+            <AiThinking v-if="m.pending && !m.content" />
+            <div v-else class="msg-b">{{ m.content }}</div>
           </li>
         </ol>
         <p v-if="chat.error" class="notice bad" role="alert"><AppIcon name="alert" /><span>{{ chat.error }}</span></p>
@@ -118,7 +123,7 @@ onMounted(load);
   <div v-if="ready" class="chat-bar">
     <div class="chat-bar-in">
       <label class="visually-hidden" for="chat-input">Запитання помічнику</label>
-      <textarea id="chat-input" v-model="text" v-autosize class="textarea chat-input" rows="1" maxlength="1500" placeholder="Запитай про авто…" enterkeyhint="send" :disabled="chat.streaming" @keydown="onKey"></textarea>
+      <textarea id="chat-input" v-model="text" v-autosize class="textarea chat-input" rows="1" maxlength="1500" placeholder="Запитай про авто…" enterkeyhint="send" :disabled="chat.streaming" @keydown="onKey" @focus="onFocus"></textarea>
       <button class="btn square" data-action="send" :disabled="chat.streaming || !text.trim()" aria-label="Надіслати" @click="send()"><AppIcon name="send" /></button>
     </div>
   </div>

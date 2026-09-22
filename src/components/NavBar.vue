@@ -14,7 +14,9 @@ const props = defineProps({
   backLabel: { type: String, default: "" },
   title: { type: String, default: "" },
   kicker: { type: String, default: "" },
-  lead: { type: String, default: "" }
+  lead: { type: String, default: "" },
+  /* h1 за замовчуванням; "div", коли справжній заголовок сторінки живе в контенті (чек-лист). */
+  titleTag: { type: String, default: "h1" }
 });
 const s = inject("scrollState", reactive({ scrolled: false }));
 /* У Telegram «Назад» показує сам Telegram (BackButton), тож власну кнопку ховаємо, щоб їх не було дві. */
@@ -27,7 +29,7 @@ const showBack = computed(() => !!props.back && !tgState.nativeBack);
       <button v-if="showBack" class="icon-btn" data-action="back" :data-to="back" :aria-label="backLabel ? 'Назад: ' + backLabel : 'Назад'" @click="goBack(back)">
         <AppIcon name="arrowLeft" />
       </button>
-      <h1 class="topbar-title"><slot name="title">{{ title }}</slot></h1>
+      <component :is="titleTag" class="topbar-title"><slot name="title">{{ title }}</slot></component>
       <slot name="right"></slot>
     </div>
     <slot name="extra"></slot>

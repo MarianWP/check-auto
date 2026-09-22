@@ -42,20 +42,25 @@ onMounted(() => { const c = document.querySelector("#stages .stage.current"); if
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar :back="'/car/' + id" back-label="картка авто" :title="st.name" :kicker="'Етап ' + (n + 1) + ' з ' + stages.length + ' · ' + G.model.name + ' · ' + G.engine(i.cfg.engine).name + ' · ' + i.cfg.year" :lead="st.intro">
+    <!-- Липка шапка: номер етапу, прогрес і смужка етапів завжди під рукою; назва й опис етапу скролять із контентом. -->
+    <NavBar :back="'/car/' + id" back-label="картка авто" :title="'Етап ' + (n + 1) + ' з ' + stages.length" title-tag="div">
       <template #right><span class="topbar-meta num">{{ overallPct }} % огляду</span></template>
       <template #extra>
         <div class="progress thin" role="progressbar" aria-label="Загальний прогрес огляду" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="overallPct"><i id="prog" :style="{ transform: 'scaleX(' + (overallPct / 100).toFixed(3) + ')' }"></i></div>
+        <nav id="stages" class="stages" aria-label="Етапи огляду">
+          <button v-for="(s, k) in stages" :key="s.id" class="stage" :class="stageCls(k)" data-action="stage" :data-to="'/check/' + id + '/' + k" :aria-current="k === n ? 'step' : null" :aria-label="stageHint(k)" @click="go('/check/' + id + '/' + k)">
+            <span class="stage-no"><AppIcon v-if="stageDone(k)" name="check" /><template v-else>{{ k + 1 }}</template></span><span>{{ s.short }}</span>
+          </button>
+        </nav>
       </template>
     </NavBar>
 
-    <nav id="stages" class="stages" aria-label="Етапи огляду">
-      <button v-for="(s, k) in stages" :key="s.id" class="stage" :class="stageCls(k)" data-action="stage" :data-to="'/check/' + id + '/' + k" :aria-current="k === n ? 'step' : null" :aria-label="stageHint(k)" @click="go('/check/' + id + '/' + k)">
-        <span class="stage-no"><AppIcon v-if="stageDone(k)" name="check" /><template v-else>{{ k + 1 }}</template></span><span>{{ s.short }}</span>
-      </button>
-    </nav>
-
     <div class="content" :class="enter">
+      <header class="page-head stage-head">
+        <p class="kicker">{{ G.model.name }} · {{ G.engine(i.cfg.engine).name }} · {{ i.cfg.year }}</p>
+        <h1 class="title">{{ st.name }}</h1>
+        <p class="lead">{{ st.intro }}</p>
+      </header>
 
       <div class="items">
         <article v-for="(it, k) in st.items" :key="it.id" class="item" :data-item="it.id" :data-s="ans(it).s || ''">

@@ -283,10 +283,21 @@ details.acc > summary .engine-meta { font-weight: 450; }
 .msgs { list-style: none; margin: var(--s4) 0 0; padding: 0; display: grid; gap: var(--s3); }
 .msg { display: flex; align-items: flex-end; gap: var(--s2); }
 .msg.me { justify-content: flex-end; }
-.msg-ic { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--raised); color: var(--accent); }
-.msg-ic svg.i { width: 18px; height: 18px; }
+/* Іконка ШІ без фону; відповідь помічника — звичайний текст без бульбашки, моя репліка — у бульбашці. */
+.msg-ic { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; color: var(--accent); }
+.msg-ic svg.i { width: 20px; height: 20px; }
 .msg-b { max-width: 88%; padding: var(--s3) var(--s4); border-radius: var(--r-card); font-size: var(--fs-body); line-height: var(--lh-body); white-space: pre-wrap; overflow-wrap: anywhere; }
-.msg.ai .msg-b { background: var(--card); border: 1px solid var(--line); border-bottom-left-radius: var(--s2); }
+.msg.ai { align-items: flex-start; }
+.msg.ai .msg-b { max-width: none; padding: 2px 0 0; border-radius: 0; background: none; border: 0; }
+/* «ШІ думає»: контур малюється по колу, текст мерехтить (як у референсі користувача). */
+.ai-think { display: inline-flex; align-items: center; gap: var(--s2); min-height: 28px; font-size: var(--fs-body-s); font-weight: 600; color: var(--text-2); }
+.ai-loader { flex: none; color: var(--accent); }
+.ai-loader path { opacity: 0; transition: opacity 300ms ease; }
+.ai-loader path.ready { opacity: 1; animation: ai-draw 2.5s infinite; }
+@keyframes ai-draw { 0% { stroke-dashoffset: var(--path-length); animation-timing-function: ease-in-out; } 50% { stroke-dashoffset: 0; animation-timing-function: ease-in-out; } 100% { stroke-dashoffset: calc(var(--path-length) * -1); } }
+.ai-shimmer { background: linear-gradient(90deg, var(--text-2) 0%, var(--text-2) 40%, var(--text) 50%, var(--text-2) 60%, var(--text-2) 100%); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: ai-shimmer 2s ease-in-out infinite; }
+@keyframes ai-shimmer { 0% { background-position: -100% center; } 100% { background-position: 100% center; } }
+@media (prefers-reduced-motion: reduce) { .ai-loader path.ready, .ai-shimmer { animation: none; } .ai-shimmer { color: var(--text-2); background: none; } }
 .msg.me .msg-b { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--card); border: 1px solid var(--accent); border-bottom-right-radius: var(--s2); }
 .msg.pending .msg-b { color: var(--text-2); }
 .chat-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-top: var(--s4); }
@@ -300,8 +311,10 @@ details.acc > summary .engine-meta { font-weight: 450; }
 }
 .chat-bar-in { max-width: var(--col); margin-inline: auto; display: flex; align-items: flex-end; gap: var(--s2); }
 .chat-input { flex: 1 1 auto; min-height: var(--h-btn); max-height: 160px; padding-top: 14px; padding-bottom: 14px; }
-/* Клавіатура відкрита: поле лишається над нею (без safe-area, бо клавіатура її перекриває). */
-html.kb-open .chat-bar { padding-bottom: var(--s2); margin-bottom: var(--kb); }
+/* Клавіатура відкрита: поле пливе одразу над нею (fixed, без safe-area, бо клавіатура її перекриває),
+   а чат лишається на весь екран під ним і прокручується до останніх повідомлень. */
+html.kb-open .chat-bar { position: fixed; left: 0; right: 0; bottom: var(--kb); z-index: 30; padding-bottom: var(--s2); box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25); }
+html.kb-open .chat .msgs, html.kb-open .chat .chat-empty { padding-bottom: 96px; }
 
 /* ---------- Шапка вкладеного екрана: підпис і пояснення одразу під смугою із заголовком ---------- */
 .head-sub { max-width: var(--col); margin-inline: auto; padding: 0 max(var(--gutter), var(--sar)) var(--s2) max(var(--gutter), var(--sal)); }

@@ -26,7 +26,9 @@ export function initKeyboard() {
     const el = document.activeElement;
     const open = isField(el) && maxH - vv.height > 140;
     root.classList.toggle("kb-open", open);
-    root.style.setProperty("--kb", (open ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0) + "px");
+    /* Висота клавіатури; обмежена 60 % екрана, бо під час анімації iOS іноді дає завищене значення, і низ апки поїхав би догори. */
+    const kb = open ? Math.min(Math.round(window.innerHeight * 0.6), Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop))) : 0;
+    root.style.setProperty("--kb", kb + "px");
     if (open) reveal(el);
   }
   vv.addEventListener("resize", update);
