@@ -1,25 +1,42 @@
 /* Чат з помічником: історія з бази (RLS: лише свої рядки), запитання через Edge Function assistant
-   зі стрімінгом відповіді. Ключ OpenAI живе тільки в секретах функції. */
+   зі стрімінгом відповіді. Ключ API живе тільки в секретах функції.
+   Історія кешується локально (golfcheck.chat.v1): при відкритті показується одразу, а хмара оновлює її у фоні. */
 import { reactive } from "vue";
 import { CLOUD, CLOUD_URL, CLOUD_KEY, supabase, errText } from "./client";
-import { messageFromRow } from "../logic/assistant";
+import { messageFromRow, readChatCache, putChatCache, CHAT_CACHE_KEY } from "../logic/assistant";
 
-export const chat = reactive({ messages: [], loadedFor: undefined, loading: false, streaming: false, error: "", remaining: null });
+export const chat = reactive({ messages: [], loadedFor: undefined, loading: false, refreshing: false, streaming: false, error: "", remaining: null, stale: false });
+const HISTORY_TIMEOUT = 10000;
+let loadSeq = 0;
 
 const key = inspId => inspId || null;
+const ckey = inspId => inspId || "none";
+const cacheRead = () => { try { return readChatCache(localStorage.getItem(CHAT_CACHE_KEY)); } catch (e) { return {}; } };
+const cacheWrite = (inspId, list) => { try { localStorage.setItem(CHAT_CACHE_KEY, JSON.stringify(putChatCache(cacheRead(), ckey(inspId), list))); } catch (e) { /* немає місця або доступу */ } };
 
 export async function loadHistory(inspId) {
   if (!CLOUD) return;
-  chat.loading = true; chat.error = "";
+  const seq = ++loadSeq;
+  const cached = cacheRead()[ckey(inspId)];
+  chat.error = ""; chat.stale = false; chat.loadedFor = key(inspId);
+  /* Кеш є — показуємо одразу і лише оновлюємо; кешу немає — чесний стан завантаження. */
+  if (cached && cached.length) { chat.messages = cached; chat.loading = false; chat.refreshing = true; }
+  else { chat.messages = []; chat.loading = true; }
   try {
-    let q = supabase.from("assistant_messages").select("id, role, content, created_at").order("created_at", { ascending: true }).limit(60);
+    let q = supabase.from("assistant_messages").select("id, role, content, created_at").order("created_at", { ascending: true }).limit(60).abortSignal(AbortSignal.timeout(HISTORY_TIMEOUT));
     q = inspId ? q.eq("inspection_id", inspId) : q.is("inspection_id", null);
     const { data, error } = await q;
     if (error) throw error;
-    chat.messages = (data || []).map(messageFromRow).filter(Boolean);
-    chat.loadedFor = key(inspId);
-  } catch (e) { chat.error = errText(e); }
-  finally { chat.loading = false; }
+    /* Поки чекали, користувач міг перемкнути огляд: не затираємо іншу розмову. */
+    if (seq !== loadSeq) return;
+    const list = (data || []).map(messageFromRow).filter(Boolean);
+    chat.messages = list;
+    cacheWrite(inspId, list);
+  } catch (e) {
+    if (seq !== loadSeq) return;
+    if (cached && cached.length) chat.stale = true;
+    else chat.error = /abort|timeout/i.test(String(e && (e.name || e.message))) ? "Хмара відповідає надто довго. Перевір інтернет і спробуй ще раз." : errText(e);
+  } finally { if (seq === loadSeq) { chat.loading = false; chat.refreshing = false; } }
 }
 
 /* Надсилає запитання; відповідь домальовується у chat.messages у міру надходження. Повертає true, якщо вдалося. */
@@ -55,6 +72,7 @@ export async function ask(text, { inspId, context, lang } = {}) {
     }
     reply.content = reply.content.trim();
     if (!reply.content) throw new Error("Порожня відповідь, спробуй ще раз");
+    cacheWrite(inspId, chat.messages.map(m => ({ id: m.id, role: m.role, content: m.content, at: m.at })));
     return true;
   } catch (e) {
     chat.error = e && e.message ? e.message : errText(e);
@@ -73,4 +91,5 @@ export async function clearHistory(inspId) {
   const { error } = await q;
   if (error) { chat.error = errText(error); return; }
   chat.messages = [];
+  cacheWrite(inspId, []);
 }

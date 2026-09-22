@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildContext, suggestions, messageFromRow, MAX_CONTEXT } from "../src/logic/assistant";
+import { buildContext, suggestions, messageFromRow, readChatCache, putChatCache, CHAT_CACHE_MAX, MAX_CONTEXT } from "../src/logic/assistant";
 import { computeReport, visibleStages } from "../src/logic/report";
 import { modelApi } from "../src/data/index.js";
 import { CFG, OCTAVIA_CFG, mkInsp, answersBy } from "./helpers";
@@ -59,5 +59,24 @@ describe("підказки й повідомлення", () => {
     expect(messageFromRow({ id: "1", role: "user", content: "Привіт", created_at: "2026-09-23T10:00:00Z" })).toEqual({ id: "1", role: "user", content: "Привіт", at: Date.parse("2026-09-23T10:00:00Z") });
     expect(messageFromRow({ role: "system", content: "x" })).toBeNull();
     expect(messageFromRow(null)).toBeNull();
+  });
+});
+
+describe("локальний кеш розмов", () => {
+  it("сміття → порожній кеш; придатні повідомлення читаються", () => {
+    expect(readChatCache(null)).toEqual({});
+    expect(readChatCache("{oops")).toEqual({});
+    expect(readChatCache("[1]")).toEqual({});
+    const c = readChatCache(JSON.stringify({ none: [{ id: "1", role: "user", content: "Привіт", at: 5 }, { role: "system", content: "x" }, "str"] }));
+    expect(c.none).toEqual([{ id: "1", role: "user", content: "Привіт", at: 5 }]);
+  });
+  it("запис обрізає до 60 повідомлень і 10 розмов, поточну розмову не викидає", () => {
+    const many = Array.from({ length: 80 }, (_, k) => ({ id: "m" + k, role: k % 2 ? "assistant" : "user", content: "x" + k, at: k }));
+    let c = putChatCache({}, "a", many);
+    expect(c.a).toHaveLength(CHAT_CACHE_MAX.messages);
+    expect(c.a[0].id).toBe("m20");
+    for (let k = 0; k < 12; k++) c = putChatCache(c, "k" + k, [{ id: "1", role: "user", content: "q", at: 1 }]);
+    expect(Object.keys(c)).toHaveLength(CHAT_CACHE_MAX.convos);
+    expect(c.k11).toBeTruthy();
   });
 });

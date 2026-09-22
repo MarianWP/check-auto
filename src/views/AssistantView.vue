@@ -97,7 +97,7 @@ onMounted(load);
           </button>
         </div>
 
-        <p v-if="chat.loading" class="foot" style="margin-top: var(--s4)">Завантаження розмови…</p>
+        <p v-if="chat.loading && !chat.messages.length" class="foot" style="margin-top: var(--s4)">Завантаження розмови…</p>
         <section v-else-if="!chat.messages.length" class="chat-empty" aria-label="Підказки">
           <p class="empty-s">Як перевірити вузол, чим загрожує знайдене, скільки торгуватися. Відповіді орієнтовні: помічник не бачить авто і не заміняє СТО.</p>
           <div class="chips">
@@ -114,7 +114,7 @@ onMounted(load);
         </ol>
         <p v-if="chat.error" class="notice bad" role="alert"><AppIcon name="alert" /><span>{{ chat.error }}</span></p>
         <div v-if="chat.messages.length" class="chat-foot">
-          <span class="foot">{{ chat.remaining !== null ? 'Лишилося запитань сьогодні: ' + chat.remaining : 'Відповіді орієнтовні, перевіряй важливе на СТО.' }}</span>
+          <span class="foot">{{ chat.stale ? 'Показано збережену розмову: хмара не відповіла' : chat.remaining !== null ? 'Лишилося запитань сьогодні: ' + chat.remaining : 'Відповіді орієнтовні, перевіряй важливе на СТО.' }}</span>
           <button class="link" data-action="clear-chat" @click="askClear"><AppIcon name="trash" /><span>Очистити</span></button>
         </div>
       </template>

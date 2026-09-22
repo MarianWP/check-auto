@@ -53,3 +53,23 @@ export function suggestions(i, G) {
 
 /* Чергування ролей для показу і підрахунку: рядки бази → повідомлення чату. */
 export const messageFromRow = r => (r && (r.role === "user" || r.role === "assistant") && typeof r.content === "string" ? { id: r.id, role: r.role, content: r.content, at: r.created_at ? Date.parse(r.created_at) : 0 } : null);
+
+/* Локальний кеш розмов: { [ключ розмови]: [повідомлення] }. Не більше 10 розмов і 60 повідомлень у кожній. */
+export const CHAT_CACHE_KEY = "golfcheck.chat.v1";
+export const CHAT_CACHE_MAX = { convos: 10, messages: 60 };
+const isMsg = m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && m.content;
+export function readChatCache(text) {
+  let o = null;
+  try { o = text ? JSON.parse(text) : null; } catch (e) { return {}; }
+  if (!o || typeof o !== "object" || Array.isArray(o)) return {};
+  const out = {};
+  Object.keys(o).forEach(k => { if (Array.isArray(o[k])) out[k] = o[k].filter(isMsg).map(m => ({ id: String(m.id || ""), role: m.role, content: m.content, at: Number(m.at) || 0 })); });
+  return out;
+}
+export function putChatCache(cache, key, list) {
+  const out = Object.assign({}, cache || {});
+  out[key] = (Array.isArray(list) ? list : []).filter(isMsg).slice(-CHAT_CACHE_MAX.messages).map(m => ({ id: String(m.id || ""), role: m.role, content: m.content, at: Number(m.at) || 0 }));
+  const keys = Object.keys(out);
+  if (keys.length > CHAT_CACHE_MAX.convos) keys.filter(k => k !== key).slice(0, keys.length - CHAT_CACHE_MAX.convos).forEach(k => { delete out[k]; });
+  return out;
+}
