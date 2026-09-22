@@ -50,8 +50,7 @@ TG.onReady(() => {
 });
 
 /* Хмара (лише коли задано ключі Supabase): контент з адмінки, вхід через Telegram, синхронізація оглядів. */
-initContent();
-initAuth();
-initSync();
+/* Хмара не має права зламати локальну роботу: будь-яка помилка ініціалізації лише в консоль. */
+for (const init of [initContent, initAuth, initSync]) { try { init(); } catch (e) { console.error("[cloud] " + (e && e.message ? e.message : e)); } }
 
 registerSW({ immediate: true });

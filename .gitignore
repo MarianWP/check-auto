@@ -17,6 +17,7 @@ node_modules/
 dist/
 dev-dist/
 
-# Локальні ключі Supabase
+# Локальні ключі Supabase і службові файли CLI
 .env
 .env.local
+supabase/.temp/

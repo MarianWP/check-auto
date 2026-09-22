@@ -5,6 +5,7 @@ import AppIcon from "./AppIcon.vue";
 import TelegramLogin from "./TelegramLogin.vue";
 import TG from "../tg";
 import { auth, user, isAdmin, displayName, loginMiniApp, logout } from "../cloud/auth";
+import { CLOUD_ERROR } from "../cloud/client";
 import { sync, fullSync } from "../cloud/sync";
 import { dateStr } from "../store";
 import { go } from "../nav";
@@ -21,7 +22,8 @@ const syncText = computed(() => {
 </script>
 
 <template>
-  <section v-if="auth.enabled" aria-labelledby="h-account" data-account>
+  <div v-if="CLOUD_ERROR" class="notice warn" data-notice="cloud-error"><AppIcon name="alert" /><div><b>Хмару налаштовано з помилкою</b>{{ CLOUD_ERROR }}. Апка працює локально, вхід недоступний.</div></div>
+  <section v-else-if="auth.enabled" aria-labelledby="h-account" data-account>
     <h2 id="h-account" class="h2">Акаунт</h2>
 
     <div v-if="!user" class="card account">
