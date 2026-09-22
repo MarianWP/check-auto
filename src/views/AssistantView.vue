@@ -6,7 +6,6 @@ import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
 import ProfileButton from "../components/ProfileButton.vue";
-import ChipGroup from "../components/ChipGroup.vue";
 import TelegramLogin from "../components/TelegramLogin.vue";
 import { db, apiOf, computeReport, visibleStages, VERDICTS, sheet, reduced } from "../store";
 import { auth, user, loginMiniApp } from "../cloud/auth";
@@ -20,7 +19,9 @@ import TG from "../tg";
 const KEY = "golfcheck.assistantInsp";
 const inTelegram = TG.active;
 const list = computed(() => db.inspections.slice().sort((a, b) => b.updatedAt - a.updatedAt));
-const opts = computed(() => [{ id: "none", name: "Без огляду" }].concat(list.value.map(i => ({ id: i.id, name: (i.name || apiOf(i).label(i.cfg)).slice(0, 28) }))));
+const nameOf = i => i.name || apiOf(i).label(i.cfg);
+const pickLabel = computed(() => (insp.value ? nameOf(insp.value) : "Без огляду"));
+const pickSub = computed(() => (insp.value ? apiOf(insp.value).model.name + " · " + apiOf(insp.value).label(insp.value.cfg) : "Загальні питання про огляд і покупку"));
 const sel = ref((() => { try { const v = localStorage.getItem(KEY); return v && (v === "none" || db.inspections.some(i => i.id === v)) ? v : (list.value.find(i => !i.done) || { id: "none" }).id; } catch (e) { return "none"; } })());
 const insp = computed(() => list.value.find(i => i.id === sel.value) || null);
 const G = computed(() => (insp.value ? apiOf(insp.value) : null));
@@ -28,7 +29,12 @@ const text = ref("");
 const hints = computed(() => suggestions(insp.value, G.value));
 const ready = computed(() => auth.enabled && !!user.value);
 
-function pick(_k, v) { sel.value = v; try { localStorage.setItem(KEY, v); } catch (e) { /* немає доступу */ } }
+function pick(v) { sel.value = v; try { localStorage.setItem(KEY, v); } catch (e) { /* немає доступу */ } }
+/* Вибір огляду в аркуші знизу: компактно, скільки б оглядів не було. */
+function openPicker() {
+  const opt = (id, label) => ({ label, icon: sel.value === id ? "check" : undefined, fn: () => pick(id) });
+  sheet({ title: "Про який огляд запитуємо", actions: [opt("none", "Без огляду")].concat(list.value.map(i => opt(i.id, nameOf(i) + (i.done ? " · завершено" : "")))) });
+}
 function context() {
   const i = insp.value; if (!i) return "";
   const rep = computeReport(i);
@@ -66,7 +72,7 @@ onMounted(load);
     <NavBar root />
     <div class="content chat" :class="enter">
       <header class="page-head head-row">
-        <div><p class="kicker">Відповідає на питання про огляд</p><h1 class="title">Помічник</h1></div>
+        <div><p class="kicker">ШІ про огляд і покупку</p><h1 class="title">Помічник</h1></div>
         <ProfileButton />
       </header>
 
@@ -79,15 +85,18 @@ onMounted(load);
       </div>
 
       <template v-else>
-        <ChipGroup v-if="list.length" :list="opts" :sel="sel" k="insp" label="Про який огляд" @pick="pick" />
-        <p v-if="insp" class="hint" data-context>Помічник бачить конфігурацію, відповіді й знайдені проблеми цього огляду.</p>
+        <div v-if="list.length" class="group picker">
+          <button class="row" data-action="pick-insp" :aria-label="'Про який огляд: ' + pickLabel" @click="openPicker">
+            <AppIcon name="car" />
+            <div class="row-main"><div class="row-s">Про який огляд</div><div class="row-t" data-pick-label>{{ pickLabel }}</div><div v-if="insp" class="row-s">{{ pickSub }}</div></div>
+            <AppIcon name="chevDown" cls="chev" />
+          </button>
+        </div>
 
         <p v-if="chat.loading" class="foot" style="margin-top: var(--s4)">Завантаження розмови…</p>
         <section v-else-if="!chat.messages.length" class="chat-empty" aria-label="Підказки">
-          <div class="empty-ic"><AppIcon name="sparkles" cls="lg" /></div>
-          <h2 class="empty-t">Запитай про авто</h2>
           <p class="empty-s">Як перевірити вузол, чим загрожує знайдене, скільки торгуватися. Відповіді орієнтовні: помічник не бачить авто і не заміняє СТО.</p>
-          <div class="chips" style="justify-content: center">
+          <div class="chips">
             <button v-for="h in hints" :key="h" class="chip" data-action="hint" @click="send(h)">{{ h }}</button>
           </div>
         </section>

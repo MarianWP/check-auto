@@ -269,10 +269,12 @@ details.acc > summary .engine-meta { font-weight: 450; }
 .profile-initial { font-size: var(--fs-body); font-weight: 700; }
 
 /* ---------- Чат з помічником ---------- */
-.chat-empty { padding: var(--s5) 0 var(--s4); text-align: center; }
-.chat-empty .empty-ic { margin: 0 auto var(--s3); }
-.chat-empty .chips { margin-top: var(--s4); }
-.chat-empty .chip { text-align: center; }
+.chat-empty { padding: var(--s4) 0 var(--s3); }
+.chat-empty .empty-s { margin: 0; max-width: 60ch; }
+.chat-empty .chips { margin-top: var(--s3); }
+.picker { margin-top: var(--s3); }
+.picker .row-t { overflow-wrap: anywhere; }
+.picker .row-s + .row-t { margin-top: 2px; }
 .msgs { list-style: none; margin: var(--s4) 0 0; padding: 0; display: grid; gap: var(--s3); }
 .msg { display: flex; align-items: flex-end; gap: var(--s2); }
 .msg.me { justify-content: flex-end; }

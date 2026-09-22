@@ -55,19 +55,20 @@
   --bg-fade: rgba(16, 17, 18, 0);
 
   /* ---------- Типографіка ----------
+     Шкала на 1 px менша за початкову (2026-09-23, на прохання користувача: інтерфейс здавався завеликим).
      --u дорівнює 1px за типових налаштувань і росте разом із розміром тексту користувача
      (типовий розмір шрифту браузера, а на iOS — Dynamic Type). Кожен розмір обмежено зверху ×1.35,
      щоб збільшений текст не ламав розкладку, і знизу — проєктним значенням. */
   --font: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --u: calc(1rem / 16);
-  --fs-metric: clamp(34px, calc(34 * var(--u)), 46px);
-  --fs-title: clamp(30px, calc(30 * var(--u)), 40px);
-  --fs-h2: clamp(20px, calc(20 * var(--u)), 27px);
-  --fs-h3: clamp(18px, calc(18 * var(--u)), 24px);
-  --fs-body: clamp(17px, calc(17 * var(--u)), 23px);
-  --fs-body-s: clamp(16px, calc(16 * var(--u)), 21px);
-  --fs-cap: clamp(14px, calc(14 * var(--u)), 19px);
-  --fs-cap-s: clamp(13px, calc(13 * var(--u)), 17px);
+  --fs-metric: clamp(32px, calc(32 * var(--u)), 43px);
+  --fs-title: clamp(28px, calc(28 * var(--u)), 38px);
+  --fs-h2: clamp(19px, calc(19 * var(--u)), 26px);
+  --fs-h3: clamp(17px, calc(17 * var(--u)), 23px);
+  --fs-body: clamp(16px, calc(16 * var(--u)), 22px);
+  --fs-body-s: clamp(15px, calc(15 * var(--u)), 20px);
+  --fs-cap: clamp(13px, calc(13 * var(--u)), 18px);
+  --fs-cap-s: clamp(12px, calc(12 * var(--u)), 16px);
   --fs-tab: clamp(12px, calc(12 * var(--u)), 16px);
   --lh-body: 1.5;
   --lh-tight: 1.18;
