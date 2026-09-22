@@ -295,12 +295,15 @@ details.acc > summary .engine-meta { font-weight: 450; }
 .ai-loader path { opacity: 0; transition: opacity 300ms ease; }
 .ai-loader path.ready { opacity: 1; animation: ai-draw 2.5s infinite; }
 @keyframes ai-draw { 0% { stroke-dashoffset: var(--path-length); animation-timing-function: ease-in-out; } 50% { stroke-dashoffset: 0; animation-timing-function: ease-in-out; } 100% { stroke-dashoffset: calc(var(--path-length) * -1); } }
-.ai-shimmer { background: linear-gradient(90deg, var(--text-2) 0%, var(--text-2) 40%, var(--text) 50%, var(--text-2) 60%, var(--text-2) 100%); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: ai-shimmer 2s ease-in-out infinite; }
+.ai-shimmer { background: linear-gradient(90deg, var(--text-2) 0%, var(--text-2) 38%, var(--accent) 50%, var(--text-2) 62%, var(--text-2) 100%); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: ai-shimmer 2s ease-in-out infinite; }
 @keyframes ai-shimmer { 0% { background-position: -100% center; } 100% { background-position: 100% center; } }
 @media (prefers-reduced-motion: reduce) { .ai-loader path.ready, .ai-shimmer { animation: none; } .ai-shimmer { color: var(--text-2); background: none; } }
 .msg.me .msg-b { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--card); border: 1px solid var(--accent); border-bottom-right-radius: var(--s2); }
 .msg.pending .msg-b { color: var(--text-2); }
-.chat-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-top: var(--s4); }
+/* Підвал чату (ліміт, «Очистити»): поки повідомлень мало — притиснутий до низу над полем, коли чат довший за екран — одразу під останнім повідомленням. */
+.screen.chat-screen { display: flex; flex-direction: column; }
+.chat-screen .content.chat { flex: 1 0 auto; display: flex; flex-direction: column; }
+.chat-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-top: auto; padding-top: var(--s4); }
 .chat-foot .link { flex: none; }
 .chat-bar {
   order: 3;

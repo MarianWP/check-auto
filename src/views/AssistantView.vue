@@ -71,7 +71,7 @@ onMounted(load);
 </script>
 
 <template>
-  <AppScreen v-slot="{ enter }">
+  <AppScreen class="chat-screen" v-slot="{ enter }">
     <NavBar root />
     <div class="content chat" :class="enter">
       <header class="page-head head-row">
