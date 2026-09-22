@@ -13,6 +13,8 @@ if (cfg.enabled) {
 if (error) console.error("[cloud] " + error);
 
 export const CLOUD = !!client;
+export const CLOUD_URL = client ? cfg.url : "";
+export const CLOUD_KEY = client ? cfg.key : "";
 export const CLOUD_ERROR = error;
 export const TG_BOT = (import.meta.env.VITE_TG_BOT || "").trim().replace(/^@/, "");
 export const supabase = client;

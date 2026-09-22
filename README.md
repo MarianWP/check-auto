@@ -90,8 +90,12 @@ src/data/gearboxes.js   коробки передач
 src/data/models/        golf5.js, octavia5.js: роки, кузови, які двигуни й коробки, ціни, хвороби кузова, VIN
 src/logic/content.js    чиста логіка: власні пункти й фото з бази → пункти чек-листа
 src/cloud/              client.js (Supabase), auth.js (вхід через Telegram), sync.js (огляди у хмарі),
-                        content.js (власні пункти й фото), admin.js (запис для адмінки)
-supabase/               migrations/ (схема, RLS, сховище фото), functions/telegram-auth (перевірка входу)
+                        content.js (власні пункти й фото), admin.js (запис для адмінки), assistant.js (чат)
+src/logic/assistant.js  чиста логіка: контекст огляду для помічника, підказки
+src/logic/prefs.js      чиста логіка: тема і мова помічника (ключ golfcheck.prefs.v1)
+src/prefs.js            застосування теми до документа, meta theme-color і рамки Telegram
+supabase/               migrations/ (схема, RLS, сховище фото, чат), functions/telegram-auth (вхід),
+                        functions/assistant (проксі до Claude API зі стрімінгом і лімітом на добу)
 src/data/checklist.js   етапи і пункти чек-листа
 src/keyboard.js         екранна клавіатура: ховає нижні панелі, піднімає аркуш, показує поле з фокусом
 src/assets/styles/      tokens.css, base.css, layout.css, components.css, screens.css (index.css їх збирає)
@@ -100,14 +104,14 @@ src/components/         AppScreen (єдиний скролер), NavBar (вер�
                         SheetHost, ToastHost, InspCard, StageStrip (смужка етапів), CfgLabel, ChipGroup, SpecTiles,
                         InstallCard, StorageNotice, BackupCard, IssueRow, PriceBlock, EngineBlock, GearBlock,
                         CommonBlock, KitBlock, VinBlock, EngineRow, AppIcon, DotsRating, PhotoStrip, LightboxHost,
-                        DraftNotice, AccountCard, TelegramLogin, AdminGate
+                        DraftNotice, AccountCard, TelegramLogin, AdminGate, ProfileButton
 src/views/              HomeView, NewCheckView, CarView, GuideView, EngineView, CheckView, ReportView,
-                        AdminView, AdminItemsView, AdminItemView, AdminPhotosView
+                        AssistantView, ProfileView, AdminView, AdminItemsView, AdminItemView, AdminPhotosView
 tools/                  скрипти генерації іконок
 tests/                  юніт-тести (Vitest)
 ```
 
-Маршрути: `#/` мої огляди, `#/new` новий огляд, `#/guide` і `#/guide/:модель/:мотор` довідник, `#/car/:id` картка авто, `#/check/:id/:етап` чек-лист, `#/report/:id` звіт, `#/admin`, `#/admin/items`, `#/admin/items/:id`, `#/admin/photos` адмінка.
+Маршрути: `#/` мої огляди, `#/new` новий огляд, `#/guide` і `#/guide/:модель/:мотор` довідник, `#/car/:id` картка авто, `#/check/:id/:етап` чек-лист, `#/report/:id` звіт, `#/assistant` помічник, `#/profile` профіль, `#/admin`, `#/admin/items`, `#/admin/items/:id`, `#/admin/photos` адмінка.
 
 ## Моделі
 
@@ -153,6 +157,27 @@ tests/                  юніт-тести (Vitest)
    Після цього на головній у картці акаунта з'явиться «Адмінка».
 
 Адмінка: **Пункти чек-листа** (назва, як перевірити, чому важливо, етап, важливість, модель або всі, вартість, теги, обмеження за тегами двигуна чи коробки, увімкнено) і **Фото до проблем** (прив'язка до проблеми двигуна, коробки, хвороби моделі або пункту чек-листа; фото стискаються до 1600 px перед завантаженням). Нові пункти й фото з'являються у всіх користувачів після наступного запуску апки або входу.
+
+## Профіль і тема
+
+Кнопка з аватаром у шапці головної, довідника і помічника відкриває профіль: вхід через Telegram, стан синхронізації, вихід, посилання на адмінку, **тема** (темна, світла, як у системі) і **мова відповідей помічника** (українська, російська, англійська). Тема зберігається локально (`golfcheck.prefs.v1`) і перефарбовує також рамку Telegram та `theme-color`. Інтерфейс, чек-лист і довідник поки що лише українською.
+
+## Помічник ШІ
+
+Вкладка «Помічник» у нижній навігації: чат на базі Claude, який відповідає на питання про огляд. Разом із запитанням апка надсилає контекст обраного огляду: модель, конфігурацію, ціни, типові хвороби двигуна й коробки, відповіді користувача, знайдені проблеми з коментарями. Історія розмови зберігається у хмарі окремо для кожного огляду. Потрібні хмара і вхід через Telegram.
+
+Налаштування (після кроків із розділу «Хмара»):
+
+1. У SQL Editor виконай `supabase/migrations/20260923000000_assistant.sql` (таблиця assistant_messages з RLS).
+2. Ключ Claude API з console.anthropic.com у секрети функцій і деплой:
+   ```
+   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+   supabase functions deploy assistant
+   ```
+   Функція перевіряє сесію Supabase сама, тож `--no-verify-jwt` тут не потрібен.
+3. Необов'язково: `ASSISTANT_MODEL` (типово `claude-sonnet-5`) і `ASSISTANT_DAILY_LIMIT` (типово 30 запитань на користувача за добу) тими самими `supabase secrets set`.
+
+Ключ Claude API ніколи не потрапляє в клієнт: запити йдуть лише через Edge Function від залогінених користувачів.
 
 ## Як встановити на iPhone
 

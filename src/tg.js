@@ -11,13 +11,14 @@ const TG = (function () {
   "use strict";
   var api = { active: false, tg: null };
   var backFn = null, fired = false, queue = [];
-  /* Єдина темна тема: кольори шапки, підкладки і нижньої смуги Telegram завжди збігаються з фоном апки. */
+  /* Кольори шапки, підкладки і нижньої смуги Telegram завжди збігаються з фоном апки; фон задає src/prefs.js (тема). */
   var BG = "#101112";
+  api.setBg = function (color) { if (!color || color === BG) return; BG = color; if (api.active) applyTheme(); };
 
   function safe(fn) { try { return fn(); } catch (e) { return undefined; } }
   function v(ver) { return safe(function () { return !!(api.tg && api.tg.isVersionAtLeast(ver)); }) === true; }
 
-  /* Тема Telegram (світла чи темна) на палітру не впливає: лише фарбуємо рамку Telegram у наш фон.
+  /* Тема Telegram (світла чи темна) на палітру не впливає: лише фарбуємо рамку Telegram у фон нашої теми.
      Викликаємо і на themeChanged, бо Telegram після зміни теми повертає свої кольори. */
   function applyTheme() {
     var tg = api.tg;

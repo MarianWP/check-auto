@@ -16,6 +16,8 @@ import AdminView from "./views/AdminView.vue";
 import AdminItemsView from "./views/AdminItemsView.vue";
 import AdminItemView from "./views/AdminItemView.vue";
 import AdminPhotosView from "./views/AdminPhotosView.vue";
+import AssistantView from "./views/AssistantView.vue";
+import ProfileView from "./views/ProfileView.vue";
 
 const needInsp = to => insp(String(to.params.id)) ? true : "/";
 const needEngine = to => (modelDef(String(to.params.model)) && modelApi(String(to.params.model)).engine(String(to.params.id))) ? true : "/guide";
@@ -24,6 +26,8 @@ const routes = [
   { path: "/", name: "home", component: HomeView, meta: { tab: "home" } },
   { path: "/new", name: "new", component: NewCheckView, meta: { tab: "new" } },
   { path: "/guide", name: "guide", component: GuideView, meta: { tab: "guide" } },
+  { path: "/assistant", name: "assistant", component: AssistantView, meta: { tab: "assistant" } },
+  { path: "/profile", name: "profile", component: ProfileView, meta: { back: "/" } },
   { path: "/guide/:model/:id", name: "engine", component: EngineView, meta: { tab: "guide", back: "/guide" }, beforeEnter: needEngine },
   /* Старі посилання без моделі — Golf V. */
   { path: "/guide/:id", redirect: to => "/guide/" + DEFAULT_MODEL + "/" + to.params.id },

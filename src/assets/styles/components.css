@@ -260,3 +260,38 @@ details.acc > summary .engine-meta { font-weight: 450; }
 .tg-login { display: grid; gap: var(--s2); }
 .tg-login-box { min-height: 0; }
 .tg-login-box iframe { border-radius: var(--r-btn); }
+
+/* ---------- Шапка кореневого екрана з кнопкою профілю ---------- */
+.head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); }
+.head-row > div { min-width: 0; }
+.profile-btn { margin-top: var(--s1); overflow: hidden; }
+.profile-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.profile-initial { font-size: var(--fs-body); font-weight: 700; }
+
+/* ---------- Чат з помічником ---------- */
+.chat-empty { padding: var(--s5) 0 var(--s4); text-align: center; }
+.chat-empty .empty-ic { margin: 0 auto var(--s3); }
+.chat-empty .chips { margin-top: var(--s4); }
+.chat-empty .chip { text-align: center; }
+.msgs { list-style: none; margin: var(--s4) 0 0; padding: 0; display: grid; gap: var(--s3); }
+.msg { display: flex; align-items: flex-end; gap: var(--s2); }
+.msg.me { justify-content: flex-end; }
+.msg-ic { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--raised); color: var(--accent); }
+.msg-ic svg.i { width: 18px; height: 18px; }
+.msg-b { max-width: 88%; padding: var(--s3) var(--s4); border-radius: var(--r-card); font-size: var(--fs-body); line-height: var(--lh-body); white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.ai .msg-b { background: var(--card); border: 1px solid var(--line); border-bottom-left-radius: var(--s2); }
+.msg.me .msg-b { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--card); border: 1px solid var(--accent); border-bottom-right-radius: var(--s2); }
+.msg.pending .msg-b { color: var(--text-2); }
+.chat-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-top: var(--s4); }
+.chat-foot .link { flex: none; }
+.chat-bar {
+  order: 3;
+  flex: none;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  padding: var(--s2) max(var(--gutter), var(--sar)) calc(var(--s2) + var(--sab)) max(var(--gutter), var(--sal));
+}
+.chat-bar-in { max-width: var(--col); margin-inline: auto; display: flex; align-items: flex-end; gap: var(--s2); }
+.chat-input { flex: 1 1 auto; min-height: var(--h-btn); max-height: 160px; padding-top: 14px; padding-bottom: 14px; }
+/* Клавіатура відкрита: поле лишається над нею (без safe-area, бо клавіатура її перекриває). */
+html.kb-open .chat-bar { padding-bottom: var(--s2); margin-bottom: var(--kb); }

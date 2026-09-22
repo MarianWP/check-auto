@@ -7,7 +7,7 @@ import InspCard from "../components/InspCard.vue";
 import InstallCard from "../components/InstallCard.vue";
 import StorageNotice from "../components/StorageNotice.vue";
 import BackupCard from "../components/BackupCard.vue";
-import AccountCard from "../components/AccountCard.vue";
+import ProfileButton from "../components/ProfileButton.vue";
 import { db } from "../store";
 import { switchTab } from "../nav";
 
@@ -21,9 +21,9 @@ const hasAny = computed(() => list.value.length > 0);
   <AppScreen v-slot="{ enter }">
     <NavBar root />
     <div class="content" :class="enter">
-      <header class="page-head">
-        <p class="kicker">Golf Check · огляд авто перед покупкою</p>
-        <h1 class="title">Мої огляди</h1>
+      <header class="page-head head-row">
+        <div><p class="kicker">Golf Check · огляд авто перед покупкою</p><h1 class="title">Мої огляди</h1></div>
+        <ProfileButton />
       </header>
       <StorageNotice />
 
@@ -45,10 +45,9 @@ const hasAny = computed(() => list.value.length > 0);
         </section>
       </template>
 
-      <AccountCard />
       <InstallCard />
       <BackupCard />
-      <p class="foot center" style="margin-top: var(--s5)">Огляди зберігаються на цьому телефоні, а після входу через Telegram — ще й у хмарі. Резервна копія вбереже їх, якщо браузер очистить сховище.</p>
+      <p class="foot center" style="margin-top: var(--s5)">Огляди зберігаються на цьому телефоні, а після входу через Telegram у профілі — ще й у хмарі. Резервна копія вбереже їх, якщо браузер очистить сховище.</p>
     </div>
   </AppScreen>
 </template>

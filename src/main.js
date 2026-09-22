@@ -11,6 +11,7 @@ import { initKeyboard } from "./keyboard";
 import { initContent } from "./cloud/content";
 import { initAuth } from "./cloud/auth";
 import { initSync } from "./cloud/sync";
+import { initPrefs } from "./prefs";
 import "./assets/styles/index.css";
 
 const app = createApp(App);
@@ -50,6 +51,7 @@ TG.onReady(() => {
 });
 
 /* Хмара (лише коли задано ключі Supabase): контент з адмінки, вхід через Telegram, синхронізація оглядів. */
+initPrefs();
 /* Хмара не має права зламати локальну роботу: будь-яка помилка ініціалізації лише в консоль. */
 for (const init of [initContent, initAuth, initSync]) { try { init(); } catch (e) { console.error("[cloud] " + (e && e.message ? e.message : e)); } }
 

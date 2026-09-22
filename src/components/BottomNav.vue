@@ -9,7 +9,8 @@ import { switchTab } from "../nav";
 const route = useRoute();
 const tabs = [
   { id: "home", to: "/", label: "Огляди", icon: "clipboard" },
-  { id: "guide", to: "/guide", label: "Довідник", icon: "book" }
+  { id: "guide", to: "/guide", label: "Довідник", icon: "book" },
+  { id: "assistant", to: "/assistant", label: "Помічник", icon: "sparkles" }
 ];
 const active = computed(() => route.meta.tab);
 </script>
