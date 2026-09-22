@@ -1,6 +1,6 @@
 /* Резервна копія: експорт у файл JSON (або буфер обміну в Telegram) та імпорт зі злиттям без втрат. */
 import TG from "./tg";
-import { db, toast, replaceInspections, flush } from "./store";
+import { db, toast, replaceInspections, flush, aiModels, saveModels } from "./store";
 import { makeBackup, parseBackup, mergeInspections } from "./logic/storage";
 
 const fileName = () => "golf-check-" + new Date().toISOString().slice(0, 10) + ".json";
@@ -20,7 +20,7 @@ async function copyText(text) {
 /* Викликати прямо з обробника кліку: share і download потребують жесту користувача. */
 export async function exportBackup() {
   if (!db.inspections.length) { toast("Поки немає що зберігати"); return; }
-  const text = JSON.stringify(makeBackup(db.inspections), null, 2);
+  const text = JSON.stringify(makeBackup(db.inspections, Date.now(), aiModels()), null, 2);
   /* Вебв'ю Telegram не вміє завантажувати файли — віддаємо текст у буфер обміну. */
   if (TG.active) {
     toast(await copyText(text) ? "Копію скопійовано. Встав її у «Збережене»." : "Не вдалося скопіювати копію", 3500);
@@ -43,6 +43,7 @@ export function importBackupText(text) {
   let parsed;
   try { parsed = parseBackup(text); }
   catch (e) { toast(e.message, 4000); return null; }
+  if (parsed.models && parsed.models.length) saveModels();
   const res = mergeInspections(db.inspections, parsed.inspections);
   if (res.added || res.updated) { replaceInspections(res.list); flush(); }
   const parts = [];

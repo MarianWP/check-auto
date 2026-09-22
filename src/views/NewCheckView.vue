@@ -7,12 +7,14 @@ import DotsRating from "../components/DotsRating.vue";
 import ChipGroup from "../components/ChipGroup.vue";
 import DraftNotice from "../components/DraftNotice.vue";
 import { MODELS, modelApi } from "../data/index.js";
+import { FUELS as FUEL_LIST } from "../logic/generated";
 import { draft as d, setDraft, createInspection, costStr, reduced, ui } from "../store";
 import { go } from "../nav";
 
-const MODEL_OPTS = MODELS.map(m => ({ id: m.id, name: m.brand + " " + m.name + (m.draft ? " (чернетка)" : "") }));
-const FUELS = [{ id: "petrol", name: "Бензин" }, { id: "diesel", name: "Дизель" }];
+const MODEL_OPTS = computed(() => MODELS.map(m => ({ id: m.id, name: m.brand + " " + m.name + (m.draft ? " (чернетка)" : m.ai ? " (ШІ)" : "") })));
 const G = computed(() => modelApi(d.model));
+/* Види палива лише ті, що є серед двигунів моделі (у картках від ШІ може бути гібрид чи електро). */
+const FUELS = computed(() => { const set = new Set(G.value.ENGINES.map(e => e.fuel)); return FUEL_LIST.filter(f => set.has(f.id)); });
 const engines = computed(() => d.fuel ? G.value.ENGINES.filter(e => e.fuel === d.fuel) : []);
 const bodies = computed(() => d.engine ? G.value.engine(d.engine).bodies.map(id => { const b = G.value.body(id); return { id: b.id, name: b.name }; }) : []);
 const years = computed(() => d.body ? G.value.yearsFor(d.engine, d.body).map(y => ({ id: String(y), name: String(y) })) : []);
@@ -23,7 +25,7 @@ const yearSel = computed(() => d.year ? String(d.year) : null);
 const stepNow = computed(() => !d.fuel ? 2 : !d.engine ? 3 : !d.body ? 4 : !d.year ? 5 : !d.gear ? 6 : 7);
 const picked = computed(() => ({
   model: G.value.model.name,
-  fuel: d.fuel ? FUELS.find(f => f.id === d.fuel).name : "",
+  fuel: d.fuel ? (FUEL_LIST.find(f => f.id === d.fuel) || { name: d.fuel }).name : "",
   engine: d.engine ? G.value.engine(d.engine).name : "",
   body: d.body ? G.value.body(d.body).short : "",
   year: d.year ? String(d.year) : "",
@@ -60,6 +62,11 @@ onMounted(() => {
           <h2 id="st-model" class="step-t">Модель</h2><span class="step-val">{{ picked.model }}</span>
         </header>
         <ChipGroup :list="MODEL_OPTS" :sel="d.model" k="model" label="Модель" @pick="pick" />
+        <button class="row ai-row" data-action="generate" data-to="/generate" @click="go('/generate')">
+          <span class="ai-ic" aria-hidden="true"><AppIcon name="sparkles" /></span>
+          <span class="row-main"><span class="row-t">Іншого авто немає в списку?</span><span class="row-s">Впиши марку, модель і рік: ШІ складе картку авто і чек-лист саме під нього.</span></span>
+          <AppIcon name="chev" cls="chev" />
+        </button>
         <DraftNotice :model="d.model" />
       </section>
 

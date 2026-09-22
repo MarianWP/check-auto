@@ -16,7 +16,7 @@ import { MODELS, modelApi, DEFAULT_MODEL } from "../data/index.js";
 import { photosFor } from "../cloud/content";
 import { reduced } from "../store";
 
-const MODEL_OPTS = MODELS.map(m => ({ id: m.id, name: m.brand + " " + m.name + (m.draft ? " (чернетка)" : "") }));
+const MODEL_OPTS = computed(() => MODELS.map(m => ({ id: m.id, name: m.brand + " " + m.name + (m.draft ? " (чернетка)" : m.ai ? " (ШІ)" : "") })));
 const GKEY = "golfcheck.guideModel";
 const sel = ref((() => { try { return MODELS.some(m => m.id === localStorage.getItem(GKEY)) ? localStorage.getItem(GKEY) : DEFAULT_MODEL; } catch (e) { return DEFAULT_MODEL; } })());
 function pickModel(_k, v) { sel.value = v; try { localStorage.setItem(GKEY, v); } catch (e) { /* немає доступу */ } }

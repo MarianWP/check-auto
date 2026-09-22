@@ -295,3 +295,36 @@ details.acc > summary .engine-meta { font-weight: 450; }
 .chat-input { flex: 1 1 auto; min-height: var(--h-btn); max-height: 160px; padding-top: 14px; padding-bottom: 14px; }
 /* Клавіатура відкрита: поле лишається над нею (без safe-area, бо клавіатура її перекриває). */
 html.kb-open .chat-bar { padding-bottom: var(--s2); margin-bottom: var(--kb); }
+
+/* ---------- Назва у верхній смузі без дубля з великим заголовком сторінки ---------- */
+.topbar-title.dup { opacity: 0; transform: translateY(6px); transition: opacity 180ms ease, transform 220ms var(--ease-out); }
+.topbar-title.dup.passed { opacity: 1; transform: none; }
+
+/* ---------- «Інше авто»: ШІ готує картку ---------- */
+.ai-row { margin-top: var(--s3); border-radius: var(--r-card); background: var(--card); border: 1px solid var(--line); }
+.ai-row .row-t, .ai-row .row-s { display: block; }
+.ai-ic, .gen-orb { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent); }
+.ai-ic { flex: none; width: 44px; height: 44px; }
+.gen { display: grid; justify-items: center; gap: var(--s4); padding: var(--s6) 0 var(--s4); text-align: center; }
+.gen-orb { position: relative; width: 96px; height: 96px; }
+.gen-orb svg.i.lg { width: 40px; height: 40px; }
+.gen-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; animation: gen-ring 2.4s ease-out infinite; }
+.gen-ring.r2 { animation-delay: 1.2s; }
+.gen-orb.done .gen-ring { animation: none; }
+.gen-orb.done { background: var(--ok-soft); color: var(--ok); }
+@keyframes gen-ring { 0% { transform: scale(0.8); opacity: 0.7; } 100% { transform: scale(1.6); opacity: 0; } }
+.gen-t { font-size: var(--fs-h2); font-weight: 700; }
+.gen-sub { margin-top: calc(-1 * var(--s3)); color: var(--text-2); font-size: var(--fs-body-s); }
+.gen-bar { width: 100%; max-width: 360px; height: 8px; border-radius: var(--r-pill); background: var(--raised); overflow: hidden; }
+.gen-fill { display: block; height: 100%; border-radius: var(--r-pill); background: var(--accent); transition: width 300ms ease; }
+.gen-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); justify-items: start; text-align: left; }
+.gen-step { display: flex; align-items: center; gap: var(--s3); color: var(--text-3); font-size: var(--fs-body-s); font-weight: 600; transition: color 200ms ease; }
+.gen-step.on { color: var(--text); }
+.gen-step.done { color: var(--text-2); }
+.gen-dot { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line-field); color: var(--on-accent); }
+.gen-step.on .gen-dot { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); animation: gen-pulse 1.2s ease-in-out infinite; }
+.gen-step.done .gen-dot { border-color: var(--ok); background: var(--ok); color: #101112; }
+.gen-dot svg.i { width: 14px; height: 14px; stroke-width: 3; }
+@keyframes gen-pulse { 50% { box-shadow: 0 0 0 8px transparent; } }
+.gen .btn { width: auto; min-width: 200px; }
+@media (prefers-reduced-motion: reduce) { .gen-ring, .gen-step.on .gen-dot { animation: none; } }

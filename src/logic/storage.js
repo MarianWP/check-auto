@@ -1,10 +1,12 @@
 /* Чиста логіка сховища: перевірка записів, розбір збереженого стану, резервна копія, злиття.
    Без Vue, DOM і localStorage — покрито тестами у tests/storage.test.js. */
-import { modelApi, modelDef, DEFAULT_MODEL } from "../data/index.js";
+import { modelApi, modelDef, registerModel, DEFAULT_MODEL } from "../data/index.js";
+import { normalizeGenerated } from "./generated";
 
 export const KEY = "golfcheck.v1";
+export const MODELS_KEY = "golfcheck.models.v1";
 export const BACKUP_APP = "golf-check";
-export const BACKUP_VERSION = 2;
+export const BACKUP_VERSION = 3;
 
 const STATUSES = new Set(["ok", "bad", "skip", ""]);
 const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
@@ -89,9 +91,35 @@ export function parseState(text, now = Date.now()) {
   return { state: { inspections, hideInstall: d.hideInstall === true }, rejected, error: null };
 }
 
-/* Резервна копія: самодостатній JSON з позначкою застосунку і версією формату. */
-export function makeBackup(inspections, now = Date.now()) {
-  return { app: BACKUP_APP, version: BACKUP_VERSION, exportedAt: new Date(now).toISOString(), inspections: normalizeList(inspections, now).inspections };
+/* Модель, яку склав ШІ: перевіряємо через ту саму нормалізацію, що й відповідь сервера, і реєструємо. */
+export function normalizeModel(raw) {
+  if (!isObj(raw) || !raw.ai) return null;
+  /* Уже нормалізована модель тримає двигун і коробку у власних бібліотеках: збираємо з них «сиру» форму. */
+  const e = isObj(raw.engineLib) ? raw.engineLib.e1 : null;
+  const shaped = e ? Object.assign({}, raw, {
+    engine: e,
+    gearbox: Array.isArray(raw.gearboxLib) ? raw.gearboxLib[0] : null,
+    body: Array.isArray(raw.bodies) ? raw.bodies[0] : null,
+    price: Array.isArray(raw.engines) && raw.engines[0] ? raw.engines[0].price : null
+  }) : raw;
+  return normalizeGenerated(shaped, { id: raw.id, createdAt: raw.createdAt, source: raw.source });
+}
+/* Список моделей ШІ зі сховища або копії: придатні реєструються, сміття рахується. */
+export function parseModels(text) {
+  let list;
+  try { list = typeof text === "string" ? JSON.parse(text) : text; } catch (e) { return { models: [], rejected: 0 }; }
+  const models = []; let rejected = 0;
+  (Array.isArray(list) ? list : []).forEach(raw => {
+    const m = normalizeModel(raw);
+    if (!m) { rejected++; return; }
+    registerModel(m); models.push(m);
+  });
+  return { models, rejected };
+}
+
+/* Резервна копія: самодостатній JSON з позначкою застосунку і версією формату. Моделі ШІ їдуть разом. */
+export function makeBackup(inspections, now = Date.now(), models = []) {
+  return { app: BACKUP_APP, version: BACKUP_VERSION, exportedAt: new Date(now).toISOString(), models: (models || []).filter(m => m && m.ai), inspections: normalizeList(inspections, now).inspections };
 }
 
 /* Розбір копії. Кидає Error з текстом для користувача, якщо це не копія Golf Check. */
@@ -101,7 +129,9 @@ export function parseBackup(text, now = Date.now()) {
   if (!isObj(d) || !Array.isArray(d.inspections)) throw new Error("Це не копія Golf Check: немає списку оглядів.");
   if (d.app !== undefined && d.app !== BACKUP_APP) throw new Error("Це копія іншого застосунку.");
   if (Number.isFinite(d.version) && d.version > BACKUP_VERSION) throw new Error("Копію створено новішою версією Golf Check. Онови застосунок.");
-  return normalizeList(d.inspections, now);
+  /* Спершу моделі ШІ, інакше огляди на них не пройдуть перевірку конфігурації. */
+  const models = parseModels(d.models).models;
+  return Object.assign(normalizeList(d.inspections, now), { models });
 }
 
 /* Злиття без втрат: нові додаються, з однаковим id перемагає новіший updatedAt, наявні не видаляються. */

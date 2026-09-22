@@ -13,7 +13,7 @@ defineEmits(["pick"]);
 
 <template>
   <div class="chips" role="group" :aria-label="label || null">
-    <button v-for="o in list" :key="o.id" class="chip" :class="{ on: sel === o.id }" data-action="draft" :data-k="k" :data-v="o.id" :aria-pressed="sel === o.id" @click="$emit('pick', k, o.id)">
+    <button v-for="o in list" :key="o.id" type="button" class="chip" :class="{ on: sel === o.id }" data-action="draft" :data-k="k" :data-v="o.id" :aria-pressed="sel === o.id" @click="$emit('pick', k, o.id)">
       <AppIcon v-if="sel === o.id" name="check" /><span>{{ o.name }}</span>
     </button>
   </div>

@@ -4,8 +4,9 @@
 import { reactive, watch } from "vue";
 import { CLOUD, supabase, errText } from "./client";
 import { auth, user } from "./auth";
-import { db, replaceInspections, flush, toast } from "../store";
-import { normalizeList, mergeInspections } from "../logic/storage";
+import { db, replaceInspections, flush, toast, saveModels } from "../store";
+import { normalizeList, mergeInspections, parseModels } from "../logic/storage";
+import { normalizeGenerated } from "../logic/generated";
 
 export const sync = reactive({ state: "idle", lastAt: 0, error: "", pending: 0 });
 const SKEY = "golfcheck.sync.v1";
@@ -51,6 +52,12 @@ export async function pull() {
   if (!CLOUD || !user.value || !navigator.onLine) return;
   sync.state = "syncing";
   try {
+    /* Картки від ШІ: без них огляди на таких моделях не пройдуть перевірку. */
+    const cm = await supabase.from("custom_models").select("id, input, def, created_at").eq("user_id", user.value.id);
+    if (!cm.error && cm.data && cm.data.length) {
+      const defs = cm.data.map(r => normalizeGenerated(r.def, { id: r.id, createdAt: Date.parse(r.created_at) || Date.now(), source: Object.assign({}, r.input || {}, { year: Number((r.input || {}).year) }) })).filter(Boolean);
+      if (parseModels(defs).models.length) saveModels();
+    }
     const { data, error } = await supabase.from("inspections").select("*").eq("user_id", user.value.id);
     if (error) throw error;
     const incoming = normalizeList((data || []).map(fromRow)).inspections;

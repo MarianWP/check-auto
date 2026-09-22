@@ -93,9 +93,13 @@ src/cloud/              client.js (Supabase), auth.js (вхід через Teleg
                         content.js (власні пункти й фото), admin.js (запис для адмінки), assistant.js (чат)
 src/logic/assistant.js  чиста логіка: контекст огляду для помічника, підказки
 src/logic/prefs.js      чиста логіка: тема і мова помічника (ключ golfcheck.prefs.v1)
+src/logic/generated.js  чиста логіка: відповідь ШІ про «інше авто» → модель реєстру з власними бібліотеками
+src/cloud/generate.js   запит до Edge Function generate, реєстрація моделі
+src/data/brands.js      підказка марок для форми «інше авто»
 src/prefs.js            застосування теми до документа, meta theme-color і рамки Telegram
 supabase/               migrations/ (схема, RLS, сховище фото, чат), functions/telegram-auth (вхід),
-                        functions/assistant (проксі до OpenAI або Claude зі стрімінгом і лімітом на добу)
+                        functions/assistant (проксі до OpenAI або Claude зі стрімінгом і лімітом на добу),
+                        functions/generate (картка авто і чек-лист від ШІ для «іншого авто»)
 src/data/checklist.js   етапи і пункти чек-листа
 src/keyboard.js         екранна клавіатура: ховає нижні панелі, піднімає аркуш, показує поле з фокусом
 src/assets/styles/      tokens.css, base.css, layout.css, components.css, screens.css (index.css їх збирає)
@@ -106,12 +110,12 @@ src/components/         AppScreen (єдиний скролер), NavBar (вер�
                         CommonBlock, KitBlock, VinBlock, EngineRow, AppIcon, DotsRating, PhotoStrip, LightboxHost,
                         DraftNotice, AccountCard, TelegramLogin, AdminGate, ProfileButton
 src/views/              HomeView, NewCheckView, CarView, GuideView, EngineView, CheckView, ReportView,
-                        AssistantView, ProfileView, AdminView, AdminItemsView, AdminItemView, AdminPhotosView
+                        AssistantView, ProfileView, GenerateView, AdminView, AdminItemsView, AdminItemView, AdminPhotosView
 tools/                  скрипти генерації іконок
 tests/                  юніт-тести (Vitest)
 ```
 
-Маршрути: `#/` мої огляди, `#/new` новий огляд, `#/guide` і `#/guide/:модель/:мотор` довідник, `#/car/:id` картка авто, `#/check/:id/:етап` чек-лист, `#/report/:id` звіт, `#/assistant` помічник, `#/profile` профіль, `#/admin`, `#/admin/items`, `#/admin/items/:id`, `#/admin/photos` адмінка.
+Маршрути: `#/` мої огляди, `#/new` новий огляд, `#/guide` і `#/guide/:модель/:мотор` довідник, `#/car/:id` картка авто, `#/check/:id/:етап` чек-лист, `#/report/:id` звіт, `#/assistant` помічник, `#/profile` профіль, `#/generate` інше авто від ШІ, `#/admin`, `#/admin/items`, `#/admin/items/:id`, `#/admin/photos` адмінка.
 
 ## Моделі
 
@@ -157,6 +161,15 @@ tests/                  юніт-тести (Vitest)
    Після цього на головній у картці акаунта з'явиться «Адмінка».
 
 Адмінка: **Пункти чек-листа** (назва, як перевірити, чому важливо, етап, важливість, модель або всі, вартість, теги, обмеження за тегами двигуна чи коробки, увімкнено) і **Фото до проблем** (прив'язка до проблеми двигуна, коробки, хвороби моделі або пункту чек-листа; фото стискаються до 1600 px перед завантаженням). Нові пункти й фото з'являються у всіх користувачів після наступного запуску апки або входу.
+
+## Інше авто: картка від ШІ
+
+На кроці «Модель» є кнопка «Іншого авто немає в списку?». Форма (`#/generate`): марка з підказкою, модель і покоління, рік, паливо, двигун зі слів користувача, коробка, кузов. Edge Function `generate` просить GPT скласти JSON-картку: двигун із хворобами й регламентом ГРМ, коробку, хвороби покоління, ціни, VIN, комплектації, набір на огляд і 8–12 пунктів чек-листа саме для цього авто. Поки триває запит, екран показує кроки роботи і смугу прогресу. Відповідь нормалізує `src/logic/generated.js` (сміття не проходить), модель реєструється у тому самому реєстрі, що Golf V (`registerModel`, власні бібліотеки `engineLib`/`gearboxLib`), і огляд створюється одразу. Такі моделі позначені «(ШІ)» у конфігураторі й довіднику, зберігаються локально (`golfcheck.models.v1`), у резервній копії (версія 3) і в таблиці custom_models, звідки підтягуються на інших пристроях. Ліміт: 10 карток на користувача за добу (`GENERATE_DAILY_LIMIT`), модель `GENERATE_MODEL` або та сама, що в помічника.
+
+Налаштування: виконати `supabase/migrations/20260924000000_custom_models.sql` і задеплоїти функцію тим самим ключем OpenAI:
+```
+supabase functions deploy generate
+```
 
 ## Профіль і тема
 

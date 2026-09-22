@@ -2,17 +2,20 @@
    Чиста логіка (звіт, перевірка записів) живе у src/logic/ і покрита тестами. */
 import { reactive, watch } from "vue";
 import CL from "./data/checklist.js";
-import { apiOf, modelApi, modelDef, DEFAULT_MODEL } from "./data/index.js";
+import { apiOf, modelApi, modelDef, registerModel, MODELS, DEFAULT_MODEL } from "./data/index.js";
+import { aiItemsOf } from "./logic/generated";
 import { computeReport as computeReportPure, visibleStages as visibleStagesPure, stageProgress } from "./logic/report";
-import { KEY, parseState } from "./logic/storage";
+import { KEY, MODELS_KEY, parseState, parseModels } from "./logic/storage";
 
 export { stageProgress, MIN_DATA, FULL_COVERAGE } from "./logic/report";
 export { apiOf, modelApi, modelDef, MODELS, DEFAULT_MODEL } from "./data/index.js";
 
 /* Власні пункти чек-листа з адмінки (заповнює src/cloud/content.js). Тут — щоб звіт їх бачив без циклічного імпорту. */
 export const extraItems = reactive({ list: [] });
-export const visibleStages = i => visibleStagesPure(i, CL, extraItems.list);
-export const computeReport = i => computeReportPure(i, CL, extraItems.list);
+/* Власні пункти з адмінки + пункти, які ШІ склав для моделі цього огляду. */
+const extraFor = i => { const m = modelDef(i && i.model); return m && m.ai ? extraItems.list.concat(aiItemsOf(m)) : extraItems.list; };
+export const visibleStages = i => visibleStagesPure(i, CL, extraFor(i));
+export const computeReport = i => computeReportPure(i, CL, extraFor(i));
 
 export const SEV_LABEL = { crit: "Критично", major: "Важливо", minor: "Дрібниця" };
 const found = r => r.failCount ? " Уже знайдено проблем: " + r.failCount + "." : "";
@@ -62,6 +65,13 @@ function load() {
   if (raw && (res.error || res.rejected)) { try { localStorage.setItem(KEY + ".corrupt", raw); } catch (e) { /* немає місця або доступу */ } }
   return res.state;
 }
+/* Моделі ШІ читаються ДО оглядів: інакше огляд на такій моделі не пройде перевірку конфігурації. */
+function loadModels() { try { return parseModels(localStorage.getItem(MODELS_KEY)); } catch (e) { return { models: [], rejected: 0 }; } }
+loadModels();
+export const aiModels = () => MODELS.filter(m => m.ai);
+export function saveModels() { try { localStorage.setItem(MODELS_KEY, JSON.stringify(aiModels())); } catch (e) { /* немає місця або доступу */ } }
+/* Додає модель від ШІ (уже нормалізовану) у реєстр і сховище. */
+export function addModel(def) { registerModel(def); saveModels(); return def; }
 export const db = reactive(load());
 
 let saveT = null;
