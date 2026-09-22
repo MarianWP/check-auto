@@ -21,7 +21,7 @@ html[data-tg] #app { bottom: auto; height: var(--tg-viewport-height, 100%); tran
 .content {
   max-width: var(--col);
   margin-inline: auto;
-  padding: 0 max(var(--gutter), var(--sar)) var(--s6) max(var(--gutter), var(--sal));
+  padding: 0 max(var(--gutter), var(--sar)) var(--gutter) max(var(--gutter), var(--sal));
 }
 /* Вхід екрана анімуємо лише на .content: скролер і верхня смуга не рухаються. */
 .content.enter-fwd { animation: content-fwd 240ms var(--ease-out); }

@@ -8,6 +8,7 @@ import AppIcon from "../components/AppIcon.vue";
 import ProfileButton from "../components/ProfileButton.vue";
 import TelegramLogin from "../components/TelegramLogin.vue";
 import AiThinking from "../components/AiThinking.vue";
+import AiText from "../components/AiText.vue";
 import { db, apiOf, computeReport, visibleStages, VERDICTS, sheet, reduced } from "../store";
 import { auth, user, loginMiniApp } from "../cloud/auth";
 import { CLOUD_ERROR } from "../cloud/client";
@@ -108,7 +109,7 @@ onMounted(load);
             <!-- Поки відповідь ще не почалася: анімований контур замість іконки і текст із мерехтінням; далі текст без бульбашки. -->
             <span v-if="m.role === 'assistant' && !(m.pending && !m.content)" class="msg-ic" aria-hidden="true"><AppIcon name="sparkles" /></span>
             <AiThinking v-if="m.pending && !m.content" />
-            <div v-else class="msg-b">{{ m.content }}</div>
+            <div v-else class="msg-b"><AiText v-if="m.role === 'assistant'" :text="m.content" :live="!!m.pending" /><template v-else>{{ m.content }}</template></div>
           </li>
         </ol>
         <p v-if="chat.error" class="notice bad" role="alert"><AppIcon name="alert" /><span>{{ chat.error }}</span></p>

@@ -1,7 +1,7 @@
 /* Чиста логіка помічника: контекст поточного огляду для моделі й підказки запитань.
    Контекст — звичайний текст, який Edge Function додає до системного промпту. */
 
-export const MAX_CONTEXT = 6000;
+export const MAX_CONTEXT = 9000;
 const clip = (s, n) => { s = String(s || "").replace(/\s+/g, " ").trim(); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
 
 /* i — огляд, G — API моделі (apiOf), rep — computeReport, stages — visibleStages, verdict — текст вердикту. */
@@ -12,14 +12,6 @@ export function buildContext({ i, G, rep, stages, verdict, stageNow }) {
   L.push("Авто: " + G.model.full + ", " + G.label(i.cfg) + (i.name ? " (" + i.name + ")" : ""));
   if (i.price) L.push("Ціна продавця: $" + i.price);
   if (price) L.push("Ринковий діапазон для такої конфігурації: $" + Math.round(price.lo) + "–" + Math.round(price.hi));
-  if (e) {
-    L.push("Двигун " + e.name + " (" + e.codes + "), надійність " + e.reliability + " з 5: " + clip(e.summary, 300));
-    if (e.timing && e.timing.text) L.push("ГРМ: " + clip(e.timing.text, 160));
-    if (e.issues && e.issues.length) L.push("Типові проблеми двигуна: " + e.issues.map(x => x.t).join("; "));
-  }
-  if (g) L.push("Коробка " + g.name + (g.issues && g.issues.length ? ". Типові проблеми: " + g.issues.map(x => x.t).join("; ") : ""));
-  if (b) L.push("Кузов: " + b.name);
-  if (G.COMMON && G.COMMON.length) L.push("Хвороби моделі: " + G.COMMON.map(x => x.t).join("; "));
   if (rep) {
     L.push("", "Стан огляду: перевірено " + rep.pct + " % (" + rep.answered + " з " + rep.total + "), критичних перевірено " + rep.critChecked + " з " + rep.critTotal + ". Поточний вердикт: " + (verdict || rep.verdict) + ".");
     const fails = ["crit", "major", "minor"].flatMap(k => rep.fails[k].map(f => ({ k, f })));
@@ -30,11 +22,21 @@ export function buildContext({ i, G, rep, stages, verdict, stageNow }) {
     if (rep.critUnchecked.length) L.push("Критичні пункти ще без перевірки: " + rep.critUnchecked.slice(0, 12).map(x => x.it.t).join("; "));
     if (rep.cost && rep.cost.hi) L.push("Орієнтовний бюджет на усунення знайденого: $" + rep.cost.lo + "–" + rep.cost.hi);
   }
+  if (e) {
+    L.push("Двигун " + e.name + " (" + e.codes + "), надійність " + e.reliability + " з 5: " + clip(e.summary, 300));
+    if (e.timing && e.timing.text) L.push("ГРМ: " + clip(e.timing.text, 160));
+    if (e.issues && e.issues.length) { L.push("Типові проблеми двигуна:"); e.issues.forEach(x => L.push("- " + x.t + (x.d ? ": " + clip(x.d, 160) : "") + (x.cost && x.cost[1] ? " ($" + x.cost[0] + "–" + x.cost[1] + ")" : ""))); }
+  }
+  if (g) { L.push("Коробка " + g.name + (g.summary ? ": " + clip(g.summary, 200) : "")); if (g.issues && g.issues.length) { L.push("Типові проблеми коробки:"); g.issues.forEach(x => L.push("- " + x.t + (x.d ? ": " + clip(x.d, 140) : ""))); } }
+  if (b) L.push("Кузов: " + b.name);
+  if (G.COMMON && G.COMMON.length) { L.push("Хвороби моделі:"); G.COMMON.slice(0, 16).forEach(x => L.push("- " + x.t + (x.d ? ": " + clip(x.d, 120) : "") + (x.cost && x.cost[1] ? " ($" + x.cost[0] + "–" + x.cost[1] + ")" : ""))); }
   if (stageNow && stages) {
     const s = stages.find(x => x.id === stageNow);
     if (s) L.push("", "Користувач зараз на етапі «" + s.name + "». Пункти етапу: " + s.items.map(x => x.t).join("; "));
   }
-  return clip(L.join("\n").replace(/ +\n/g, "\n"), MAX_CONTEXT).replace(/\n /g, "\n");
+  /* Обрізаємо за довжиною, зберігаючи рядки: модель читає списки через тире. */
+  const out = L.map(x => x.replace(/[ \t]+/g, " ").trim()).join("\n");
+  return out.length > MAX_CONTEXT ? out.slice(0, MAX_CONTEXT - 1) + "…" : out;
 }
 
 /* Підказки для порожнього чату: з оглядом — про це авто, без огляду — загальні. */

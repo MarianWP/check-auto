@@ -289,15 +289,25 @@ details.acc > summary .engine-meta { font-weight: 450; }
 .msg-b { max-width: 88%; padding: var(--s3) var(--s4); border-radius: var(--r-card); font-size: var(--fs-body); line-height: var(--lh-body); white-space: pre-wrap; overflow-wrap: anywhere; }
 .msg.ai { align-items: flex-start; }
 .msg.ai .msg-b { max-width: none; padding: 2px 0 0; border-radius: 0; background: none; border: 0; }
-/* «ШІ думає»: контур малюється по колу, текст мерехтить (як у референсі користувача). */
+/* «ШІ думає»: іконка помічника пульсує кольором, по сірому тексту лінійно біжить вузька світла смуга
+   (два шари фону: смуга з прозорими краями поверх суцільного базового кольору; --spread задає ширину смуги). */
 .ai-think { display: inline-flex; align-items: center; gap: var(--s2); min-height: 28px; font-size: var(--fs-body-s); font-weight: 600; color: var(--text-2); }
-.ai-loader { flex: none; color: var(--accent); }
-.ai-loader path { opacity: 0; transition: opacity 300ms ease; }
-.ai-loader path.ready { opacity: 1; animation: ai-draw 2.5s infinite; }
-@keyframes ai-draw { 0% { stroke-dashoffset: var(--path-length); animation-timing-function: ease-in-out; } 50% { stroke-dashoffset: 0; animation-timing-function: ease-in-out; } 100% { stroke-dashoffset: calc(var(--path-length) * -1); } }
-.ai-shimmer { background: linear-gradient(90deg, var(--text-2) 0%, var(--text-2) 38%, var(--accent) 50%, var(--text-2) 62%, var(--text-2) 100%); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: ai-shimmer 2s ease-in-out infinite; }
-@keyframes ai-shimmer { 0% { background-position: -100% center; } 100% { background-position: 100% center; } }
-@media (prefers-reduced-motion: reduce) { .ai-loader path.ready, .ai-shimmer { animation: none; } .ai-shimmer { color: var(--text-2); background: none; } }
+.ai-pulse { flex: none; display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; color: var(--accent); animation: ai-pulse 1.6s ease-in-out infinite; }
+.ai-pulse svg.i { width: 20px; height: 20px; }
+@keyframes ai-pulse { 0%, 100% { color: var(--text-2); transform: scale(0.94); } 50% { color: var(--accent); transform: scale(1.08); } }
+.ai-shimmer {
+  --spread: 20px;
+  position: relative; display: inline-block; color: transparent;
+  background-image: linear-gradient(90deg, transparent calc(50% - var(--spread)), var(--text), transparent calc(50% + var(--spread))), linear-gradient(var(--text-2), var(--text-2));
+  background-size: 250% 100%, auto; background-repeat: no-repeat, padding-box; background-position: 100% center;
+  -webkit-background-clip: text; background-clip: text;
+  animation: ai-shimmer 2s linear infinite;
+}
+@keyframes ai-shimmer { from { background-position: 100% center; } to { background-position: 0% center; } }
+/* Набір тексту відповіді: символи з'являються плавно, курсор блимає лише поки текст ще надходить. */
+.ai-caret { display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -0.15em; background: var(--accent); animation: ai-caret 0.9s steps(2, start) infinite; }
+@keyframes ai-caret { to { visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .ai-pulse, .ai-shimmer, .ai-caret { animation: none; } .ai-shimmer { color: var(--text-2); background: none; } }
 .msg.me .msg-b { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--card); border: 1px solid var(--accent); border-bottom-right-radius: var(--s2); }
 .msg.pending .msg-b { color: var(--text-2); }
 /* Підвал чату (ліміт, «Очистити»): поки повідомлень мало — притиснутий до низу над полем, коли чат довший за екран — одразу під останнім повідомленням. */

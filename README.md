@@ -188,7 +188,7 @@ supabase functions deploy generate
    supabase functions deploy assistant
    ```
    Функція перевіряє сесію Supabase сама, тож `--no-verify-jwt` тут не потрібен.
-3. Необов'язково: `ASSISTANT_MODEL` (типово `gpt-5-mini`) і `ASSISTANT_DAILY_LIMIT` (типово 30 запитань на користувача за добу) тими самими `supabase secrets set`. Якщо замість `OPENAI_API_KEY` задати `ANTHROPIC_API_KEY`, функція піде до Claude (типова модель `claude-sonnet-5`).
+3. Необов'язково: `ASSISTANT_MODEL` (типово `gpt-5`; для економії можна `gpt-5-mini`) і `ASSISTANT_DAILY_LIMIT` (типово 30 запитань на користувача за добу) тими самими `supabase secrets set`. Якщо замість `OPENAI_API_KEY` задати `ANTHROPIC_API_KEY`, функція піде до Claude (типова модель `claude-sonnet-5`).
 
 Ключ API ніколи не потрапляє в клієнт: запити йдуть лише через Edge Function від залогінених користувачів.
 

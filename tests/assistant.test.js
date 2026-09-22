@@ -20,6 +20,7 @@ describe("контекст огляду для помічника", () => {
     expect(ctx).toContain("Двигун " + G.engine("mpi14").name);
     expect(ctx).toContain("Коробка " + G.gearbox("m5").name);
     expect(ctx).toContain("Хвороби моделі:");
+    expect(ctx).toMatch(/Типові проблеми двигуна:\n- .+: .+/);
     expect(ctx).toContain("Не рекомендуємо");
     expect(ctx).toContain("(дублікат). Коментар користувача: Власник у техпаспорті інший");
     expect(ctx).toContain("Критичні пункти ще без перевірки:");
