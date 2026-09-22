@@ -27,6 +27,17 @@ const SYSTEM = `Ти помічник у застосунку Golf Check: він
 
 type Msg = { role: "user" | "assistant"; content: string };
 
+// Зрозуміле пояснення помилки провайдера: 429 в OpenAI майже завжди означає нуль коштів, а не перевантаження.
+function providerError(provider: string, status: number, body: string): string {
+  const who = provider === "openai" ? "OpenAI" : "Claude";
+  if (/insufficient_quota|billing|exceeded your current quota/i.test(body)) return "На акаунті " + who + " немає коштів: поповни Billing на platform.openai.com і спробуй знову.";
+  if (status === 401) return "Ключ " + who + " API недійсний: перевір секрет у Supabase.";
+  if (status === 404 || /model_not_found|does not exist|not found/i.test(body)) return "Модель " + MODEL + " недоступна для цього ключа: зміни ASSISTANT_MODEL або GENERATE_MODEL.";
+  if (status === 429) return "Забагато запитів до " + who + " одночасно, спробуй за хвилину.";
+  if (status === 400) return "Провайдер відхилив запит (" + body.slice(0, 120) + ").";
+  return "Помічник тимчасово недоступний (" + who + " " + status + ").";
+}
+
 // OpenAI Chat Completions зі стрімінгом. Для моделей GPT-5 ліміт задається як max_completion_tokens.
 function openaiStream(messages: Msg[], system: string): Promise<Response> {
   return fetch("https://api.openai.com/v1/chat/completions", {
@@ -117,8 +128,7 @@ Deno.serve(async (req) => {
   if (!up.ok || !up.body) {
     const t = await up.text().catch(() => "");
     console.error(PROVIDER, up.status, t.slice(0, 300));
-    const who = PROVIDER === "openai" ? "OpenAI" : "Claude";
-    return json({ error: up.status === 401 ? "Ключ " + who + " API недійсний" : up.status === 429 ? "Сервіс перевантажено, спробуй за хвилину" : "Помічник тимчасово недоступний" }, 502);
+    return json({ error: providerError(PROVIDER, up.status, t) }, 502);
   }
 
   // Стрімимо текст клієнту і паралельно збираємо повну відповідь для збереження.

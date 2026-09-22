@@ -15,6 +15,18 @@ const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 
 const STAGES = "docs (документи), body (кузов), wheels (колеса і гальма), engine (двигун на холодну), start (запуск), interior (салон), electrics (електрика), chassis (підвіска і ходова), drive (тест-драйв), after (після поїздки)";
+
+// Зрозуміле пояснення помилки провайдера: 429 в OpenAI майже завжди означає нуль коштів, а не перевантаження.
+function providerError(provider: string, status: number, body: string): string {
+  const who = provider === "openai" ? "OpenAI" : "Claude";
+  if (/insufficient_quota|billing|exceeded your current quota/i.test(body)) return "На акаунті " + who + " немає коштів: поповни Billing на platform.openai.com і спробуй знову.";
+  if (status === 401) return "Ключ " + who + " API недійсний: перевір секрет у Supabase.";
+  if (status === 404 || /model_not_found|does not exist|not found/i.test(body)) return "Модель " + MODEL + " недоступна для цього ключа: зміни ASSISTANT_MODEL або GENERATE_MODEL.";
+  if (status === 429) return "Забагато запитів до " + who + " одночасно, спробуй за хвилину.";
+  if (status === 400) return "Провайдер відхилив запит (" + body.slice(0, 120) + ").";
+  return "Помічник тимчасово недоступний (" + who + " " + status + ").";
+}
+
 const GEAR_NAMES: Record<string, string> = { manual: "механічна", at: "автоматична гідротрансформаторна", dsg: "роботизована (DSG / DCT / AMT)", cvt: "варіатор", unknown: "невідомо (обери найпоширенішу для цього авто і року)" };
 const FUEL_NAMES: Record<string, string> = { petrol: "бензин", diesel: "дизель", hybrid: "гібрид", electric: "електро" };
 
@@ -53,13 +65,13 @@ async function callOpenAI(system: string, user: string): Promise<string> {
   const body: Record<string, unknown> = { model: MODEL, response_format: { type: "json_object" }, max_completion_tokens: MAX_TOKENS, messages: [{ role: "system", content: system }, { role: "user", content: user }] };
   if (/^gpt-5/.test(MODEL)) body.reasoning_effort = "low";
   const r = await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + OPENAI_KEY }, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error("openai " + r.status + " " + (await r.text()).slice(0, 300));
+  if (!r.ok) { const t = await r.text(); console.error("openai", r.status, t.slice(0, 300)); throw new Error(providerError("openai", r.status, t)); }
   const j = await r.json();
   return j.choices?.[0]?.message?.content ?? "";
 }
 async function callAnthropic(system: string, user: string): Promise<string> {
   const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" }, body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, system, messages: [{ role: "user", content: user + " Відповідь: лише JSON." }] }) });
-  if (!r.ok) throw new Error("anthropic " + r.status + " " + (await r.text()).slice(0, 300));
+  if (!r.ok) { const t = await r.text(); console.error("anthropic", r.status, t.slice(0, 300)); throw new Error(providerError("anthropic", r.status, t)); }
   const j = await r.json();
   return (j.content ?? []).map((c: { text?: string }) => c.text ?? "").join("");
 }
@@ -95,13 +107,11 @@ Deno.serve(async (req) => {
   if (used >= DAILY_LIMIT) return json({ error: `Ліміт ${DAILY_LIMIT} карток на добу вичерпано. Спробуй завтра.`, remaining: 0 }, 429);
 
   let def: unknown;
-  try {
-    const text = PROVIDER === "openai" ? await callOpenAI(SYSTEM, userPrompt(input)) : await callAnthropic(SYSTEM, userPrompt(input));
-    def = extractJson(text);
-  } catch (e) {
-    console.error("generate", (e as Error).message);
-    return json({ error: "ШІ не зміг скласти картку. Спробуй ще раз або уточни дані." }, 502);
-  }
+  let text = "";
+  try { text = PROVIDER === "openai" ? await callOpenAI(SYSTEM, userPrompt(input)) : await callAnthropic(SYSTEM, userPrompt(input)); }
+  catch (e) { return json({ error: (e as Error).message }, 502); }
+  try { def = extractJson(text); }
+  catch (e) { console.error("generate json", (e as Error).message, text.slice(0, 200)); return json({ error: "ШІ не зміг скласти картку. Спробуй ще раз або уточни дані." }, 502); }
   const d = def as Record<string, unknown>;
   if (!d || typeof d !== "object" || !d.engine) return json({ error: "ШІ повернув неповні дані, спробуй ще раз" }, 502);
 
