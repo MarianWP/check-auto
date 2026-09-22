@@ -54,13 +54,8 @@ onUnmounted(() => { clearInterval(timer); });
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar back="/new" back-label="новий огляд" title="Інше авто" />
+    <NavBar back="/new" back-label="новий огляд" title="Інше авто" kicker="Новий огляд · ШІ" lead="Впиши, що знаєш про авто. ШІ збере типові хвороби, ціни й складе чек-лист саме під цю модель." />
     <div class="content" :class="enter">
-      <header class="page-head">
-        <p class="kicker">Новий огляд · ШІ</p>
-        <h1 class="title">Інше авто</h1>
-        <p class="lead">Впиши, що знаєш про авто. ШІ збере типові хвороби, ціни й складе чек-лист саме під цю модель.</p>
-      </header>
 
       <div v-if="CLOUD_ERROR" class="notice warn" data-notice="gen-off"><AppIcon name="alert" /><div><b>Хмару налаштовано з помилкою</b>{{ CLOUD_ERROR }}. Картки від ШІ поки недоступні.</div></div>
       <div v-else-if="!auth.enabled" class="notice info" data-notice="gen-off"><AppIcon name="alert" /><div><b>Потрібна хмара</b>Картки від ШІ з'являться, коли адміністратор підключить Supabase і ключ OpenAI. Golf V і Octavia доступні без цього.</div></div>

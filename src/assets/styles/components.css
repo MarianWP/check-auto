@@ -296,9 +296,11 @@ details.acc > summary .engine-meta { font-weight: 450; }
 /* Клавіатура відкрита: поле лишається над нею (без safe-area, бо клавіатура її перекриває). */
 html.kb-open .chat-bar { padding-bottom: var(--s2); margin-bottom: var(--kb); }
 
-/* ---------- Назва у верхній смузі без дубля з великим заголовком сторінки ---------- */
-.topbar-title.dup { opacity: 0; transform: translateY(6px); transition: opacity 180ms ease, transform 220ms var(--ease-out); }
-.topbar-title.dup.passed { opacity: 1; transform: none; }
+/* ---------- Шапка вкладеного екрана: підпис і пояснення одразу під смугою із заголовком ---------- */
+.head-sub { max-width: var(--col); margin-inline: auto; padding: 0 max(var(--gutter), var(--sar)) var(--s2) max(var(--gutter), var(--sal)); }
+.head-sub .kicker { margin-bottom: 0; }
+.head-sub .lead { margin-top: var(--s1); }
+.head-sub + .content > :first-child { margin-top: var(--s3); }
 
 /* ---------- «Інше авто»: ШІ готує картку ---------- */
 .ai-row { margin-top: var(--s3); border-radius: var(--r-card); background: var(--card); border: 1px solid var(--line); }

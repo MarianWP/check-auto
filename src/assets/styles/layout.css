@@ -51,7 +51,9 @@
   padding-inline: max(var(--s2), var(--sal)) max(var(--gutter), var(--sar));
 }
 .topbar-row.no-back { padding-left: max(var(--gutter), var(--sal)); }
-.topbar-title { flex: 1 1 auto; min-width: 0; font-size: var(--fs-h3); font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+/* Заголовок сторінки живе тут: великий, поки екран угорі, трохи менший після скролу (висота рядка не змінюється). */
+.topbar-title { flex: 1 1 auto; min-width: 0; margin: 0; font-size: var(--fs-h2); font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; overflow-wrap: anywhere; transition: font-size 180ms ease; }
+.topbar.scrolled .topbar-title { font-size: var(--fs-h3); }
 .topbar-meta { flex: none; font-size: var(--fs-body-s); font-weight: 600; color: var(--text-2); }
 
 /* ---------- Тост: якір нульової висоти між екраном і нижніми панелями ---------- */

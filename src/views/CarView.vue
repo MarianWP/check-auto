@@ -24,13 +24,8 @@ const checkTo = computed(() => "/check/" + i.id + "/" + (i.stage || 0));
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar back="/" back-label="мої огляди" title="Картка авто" />
+    <NavBar back="/" back-label="мої огляди" :title="e.name + ' · ' + i.cfg.year" :kicker="G.model.full + (i.name ? ' · ' + i.name : '')" :lead="b.name + ' · ' + g.name" />
     <div class="content" :class="enter">
-      <header class="page-head">
-        <p class="kicker">{{ G.model.full }}<template v-if="i.name"> · {{ i.name }}</template></p>
-        <h1 class="title">{{ e.name }} · {{ i.cfg.year }}</h1>
-        <p class="lead">{{ b.name }} · {{ g.name }}</p>
-      </header>
       <DraftNotice :model="G.id" />
       <SpecTiles :e="e" style="margin-top: var(--s4)" />
       <PriceBlock :i="i" :price="price" />

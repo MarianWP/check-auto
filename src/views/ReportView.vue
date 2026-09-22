@@ -28,12 +28,8 @@ const fair = computed(() => {
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar back="/" back-label="мої огляди" title="Звіт" />
+    <NavBar back="/" back-label="мої огляди" :kicker="(i.name || G.model.full) + ' · ' + dateStr(i.updatedAt)"><template #title><CfgLabel :cfg="i.cfg" :model="G.id" /></template></NavBar>
     <div class="content" :class="enter">
-      <header class="page-head">
-        <p class="kicker">{{ i.name || G.model.full }} · {{ dateStr(i.updatedAt) }}</p>
-        <h1 class="title"><CfgLabel :cfg="i.cfg" :model="G.id" /></h1>
-      </header>
 
       <!-- 1. Вердикт -->
       <section class="verdict" :class="'v-' + rep.verdict" :data-verdict="rep.verdict" aria-labelledby="h-verdict">

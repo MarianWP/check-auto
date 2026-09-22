@@ -19,12 +19,8 @@ function pickLang(_k, v) { setPref("lang", v); toast("Помічник відп�
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar back="/" back-label="мої огляди" title="Профіль" />
+    <NavBar back="/" back-label="мої огляди" title="Профіль" kicker="Golf Check · акаунт, тема, мова" />
     <div class="content" :class="enter">
-      <header class="page-head">
-        <p class="kicker">Golf Check</p>
-        <h1 class="title">Профіль</h1>
-      </header>
 
       <AccountCard />
       <div v-if="!auth.enabled && !CLOUD_ERROR" class="notice info" data-notice="no-cloud"><AppIcon name="alert" /><div><b>Хмару не підключено</b>Вхід через Telegram, синхронізація між пристроями і помічник з'являться, коли адміністратор задасть ключі Supabase у збірці. Огляди зберігаються на цьому телефоні.</div></div>

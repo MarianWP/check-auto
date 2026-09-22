@@ -42,7 +42,7 @@ onMounted(() => { const c = document.querySelector("#stages .stage.current"); if
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar :back="'/car/' + id" back-label="картка авто" :title="'Етап ' + (n + 1) + ' з ' + stages.length">
+    <NavBar :back="'/car/' + id" back-label="картка авто" :title="st.name" :kicker="'Етап ' + (n + 1) + ' з ' + stages.length + ' · ' + G.model.name + ' · ' + G.engine(i.cfg.engine).name + ' · ' + i.cfg.year" :lead="st.intro">
       <template #right><span class="topbar-meta num">{{ overallPct }} % огляду</span></template>
       <template #extra>
         <div class="progress thin" role="progressbar" aria-label="Загальний прогрес огляду" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="overallPct"><i id="prog" :style="{ transform: 'scaleX(' + (overallPct / 100).toFixed(3) + ')' }"></i></div>
@@ -56,11 +56,6 @@ onMounted(() => { const c = document.querySelector("#stages .stage.current"); if
     </nav>
 
     <div class="content" :class="enter">
-      <header class="page-head">
-        <p class="kicker">{{ G.model.name }} · {{ G.engine(i.cfg.engine).name }} · {{ i.cfg.year }}</p>
-        <h1 class="title">{{ st.name }}</h1>
-        <p class="lead">{{ st.intro }}</p>
-      </header>
 
       <div class="items">
         <article v-for="(it, k) in st.items" :key="it.id" class="item" :data-item="it.id" :data-s="ans(it).s || ''">

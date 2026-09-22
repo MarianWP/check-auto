@@ -24,13 +24,8 @@ function newFrom() { resetDraft({ model, fuel: e.fuel, engine: e.id }); ui.scrol
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar back="/guide" back-label="довідник" title="Двигун" />
+    <NavBar back="/guide" back-label="довідник" :title="e.name" :kicker="G.model.name + ' · ' + fuelLabel + ' · ' + e.years[0] + '–' + e.years[1]" :lead="e.codes" />
     <div class="content" :class="enter">
-      <header class="page-head">
-        <p class="kicker">{{ G.model.name }} · {{ fuelLabel }} · {{ e.years[0] }}–{{ e.years[1] }}</p>
-        <h1 class="title">{{ e.name }}</h1>
-        <p class="lead">{{ e.codes }}</p>
-      </header>
       <DraftNotice :model="model" />
       <SpecTiles :e="e" style="margin-top: var(--s4)" />
       <section aria-labelledby="h-eprice">

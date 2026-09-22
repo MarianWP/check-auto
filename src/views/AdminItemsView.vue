@@ -21,13 +21,8 @@ onMounted(async () => { if (isAdmin.value) rows.value = await listItems(); loadi
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar back="/admin" back-label="адмінка" title="Пункти чек-листа" />
+    <NavBar back="/admin" back-label="адмінка" title="Власні пункти" kicker="Адмінка · чек-лист" lead="Додаються до вбудованого чек-листа в кінці етапу. Можна обмежити моделлю або тегами двигуна й коробки." />
     <div class="content" :class="enter">
-      <header class="page-head">
-        <p class="kicker">Адмінка</p>
-        <h1 class="title">Власні пункти</h1>
-        <p class="lead">Додаються до вбудованого чек-листа в кінці етапу. Можна обмежити моделлю або тегами двигуна й коробки.</p>
-      </header>
       <AdminGate />
       <div class="btn-stack" style="margin-top: var(--s4)"><button class="btn" data-action="add-item" @click="go('/admin/items/new')"><AppIcon name="plus" /><span>Додати пункт</span></button></div>
 

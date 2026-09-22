@@ -55,13 +55,8 @@ function askDelete(p) {
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar back="/admin" back-label="адмінка" title="Фото до проблем" />
+    <NavBar back="/admin" back-label="адмінка" title="Фото до проблем" kicker="Адмінка · фото" lead="Покажи, як виглядає хвороба або що саме перевіряти. Фото бачать усі користувачі в довіднику, картці авто і чек-листі." />
     <div class="content" :class="enter">
-      <header class="page-head">
-        <p class="kicker">Адмінка</p>
-        <h1 class="title">Фото до проблем</h1>
-        <p class="lead">Покажи, як виглядає хвороба або що саме перевіряти. Фото бачать усі користувачі в довіднику, картці авто і чек-листі.</p>
-      </header>
       <AdminGate />
 
       <div class="card fields" style="margin-top: var(--s4)">

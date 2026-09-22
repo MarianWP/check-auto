@@ -15,12 +15,8 @@ const photosCount = computed(() => content.photos.length);
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar back="/" back-label="мої огляди" title="Адмінка" />
+    <NavBar back="/" back-label="мої огляди" title="Адмінка" kicker="Golf Check · власні пункти й фото" />
     <div class="content" :class="enter">
-      <header class="page-head">
-        <p class="kicker">Golf Check</p>
-        <h1 class="title">Адмінка</h1>
-      </header>
 
       <div v-if="!auth.enabled" class="notice info"><AppIcon name="alert" /><div><b>Хмару не підключено</b>Задай ключі Supabase у збірці, щоб адмінка запрацювала.</div></div>
       <div v-else-if="!user" class="notice warn"><AppIcon name="alert" /><div><b>Потрібен вхід</b>Увійди через Telegram на головній.</div></div>
