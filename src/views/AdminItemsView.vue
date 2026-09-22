@@ -4,6 +4,7 @@ import { ref, computed, onMounted } from "vue";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
+import SecTitle from "../components/SecTitle.vue";
 import AdminGate from "../components/AdminGate.vue";
 import CL from "../data/checklist.js";
 import { isAdmin } from "../cloud/auth";
@@ -29,7 +30,7 @@ onMounted(async () => { if (isAdmin.value) rows.value = await listItems(); loadi
       <p v-if="loading" class="foot" style="margin-top: var(--s4)">Завантаження…</p>
       <div v-else-if="!rows.length" class="empty"><h2 class="empty-t">Поки що немає власних пунктів</h2><p class="empty-s">Перший пункт з'явиться у чек-листі всіх користувачів одразу після збереження.</p></div>
       <section v-for="g in groups" :key="g.stage.id" :aria-label="g.stage.name">
-        <h2 class="h2">{{ g.stage.name }}</h2>
+        <SecTitle icon="clipboard">{{ g.stage.name }}</SecTitle>
         <div class="group">
           <button v-for="r in g.items" :key="r.id" class="row" :class="{ 'is-off': !r.enabled }" data-action="edit-item" :data-id="r.id" @click="go('/admin/items/' + r.id)">
             <div class="row-main">

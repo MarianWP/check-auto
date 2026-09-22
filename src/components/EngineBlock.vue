@@ -1,4 +1,5 @@
 <script setup>
+import SecTitle from "./SecTitle.vue";
 import IssueRow from "./IssueRow.vue";
 import { photosFor } from "../cloud/content";
 
@@ -7,7 +8,7 @@ defineProps({ e: { type: Object, required: true } });
 
 <template>
   <section aria-labelledby="h-engine">
-    <h2 id="h-engine" class="h2">Про двигун {{ e.name }}</h2>
+    <SecTitle id="h-engine" icon="cog">Про двигун {{ e.name }}</SecTitle>
     <div class="card">
       <p class="prose">{{ e.summary }}</p>
       <p class="callout"><b class="strong">Вердикт:</b> {{ e.verdict }}</p>
@@ -18,7 +19,7 @@ defineProps({ e: { type: Object, required: true } });
     </div>
   </section>
   <section aria-labelledby="h-engine-issues">
-    <h2 id="h-engine-issues" class="h2">Типові проблеми двигуна</h2>
+    <SecTitle id="h-engine-issues" icon="wrench">Типові проблеми двигуна</SecTitle>
     <div class="group"><IssueRow v-for="(x, k) in e.issues" :key="k" :x="x" :photos="photosFor('engine', e.id, k)" /></div>
   </section>
 </template>

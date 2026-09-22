@@ -1,4 +1,5 @@
 <script setup>
+import SecTitle from "./SecTitle.vue";
 import { modelApi } from "../data/index.js";
 
 const props = defineProps({ model: { type: String, default: "golf5" } });
@@ -9,7 +10,7 @@ const plants = G.PLANTS;
 
 <template>
   <section id="sec-vin" class="anchor" aria-labelledby="h-vin">
-    <h2 id="h-vin" class="h2">VIN, роки і заводи</h2>
+    <SecTitle id="h-vin" icon="hash">VIN, роки і заводи</SecTitle>
     <div class="group">
       <div class="row-block"><p class="prose">{{ vin.intro }}</p></div>
       <div class="row-block"><dl class="kv"><template v-for="(r, k) in vin.rows" :key="k"><dt>{{ r[0] }}</dt><dd>{{ r[1] }}</dd></template></dl></div>

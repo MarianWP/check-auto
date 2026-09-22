@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from "vue";
 import AppIcon from "./AppIcon.vue";
+import SecTitle from "./SecTitle.vue";
 import { money, fmtN, apiOf } from "../store";
 
 const props = defineProps({ i: { type: Object, required: true }, price: { type: Object, required: true } });
@@ -17,7 +18,7 @@ const cmp = computed(() => {
 
 <template>
   <section aria-labelledby="h-price">
-    <h2 id="h-price" class="h2">Ринкова ціна в Україні</h2>
+    <SecTitle id="h-price" icon="coins">Ринкова ціна в Україні</SecTitle>
     <div class="card price">
       <div class="price-v">{{ money(price.lo) }} – {{ fmtN(price.hi) }}</div>
       <div v-if="cmp" class="price-cmp"><span class="muted">Продавець просить</span><b>{{ money(i.price) }}:</b><span :class="cmp.cls" class="strong">{{ cmp.txt }}</span></div>

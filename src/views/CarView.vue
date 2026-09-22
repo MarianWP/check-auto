@@ -4,6 +4,7 @@ import { useRoute } from "vue-router";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
+import SecTitle from "../components/SecTitle.vue";
 import SpecTiles from "../components/SpecTiles.vue";
 import PriceBlock from "../components/PriceBlock.vue";
 import EngineBlock from "../components/EngineBlock.vue";
@@ -32,7 +33,7 @@ const checkTo = computed(() => "/check/" + i.id + "/" + (i.stage || 0));
       <EngineBlock :e="e" />
       <GearBlock :g="g" />
       <section aria-labelledby="h-body">
-        <h2 id="h-body" class="h2">Кузов: {{ b.name }}</h2>
+        <SecTitle id="h-body" icon="car">Кузов: {{ b.name }}</SecTitle>
         <div class="card"><p class="prose">{{ b.note }}</p></div>
       </section>
       <CommonBlock :model="G.id" />

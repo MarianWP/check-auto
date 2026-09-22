@@ -12,7 +12,9 @@ const MAP = {
   car: "car", clipboard: "clipboard-check", wrench: "wrench", circleCheck: "circle-check", external: "external-link", download: "download", upload: "upload",
   arrowLeft: "arrow-left", arrowRight: "arrow-right", chevDown: "chevron-down", pencil: "pencil", fileText: "file-text",
   circleX: "circle-x", circleAlert: "circle-alert", circleDashed: "circle-dashed", comment: "message-square-text",
-  sparkles: "sparkles", send: "send-horizontal", user: "user"
+  sparkles: "sparkles", send: "send-horizontal", user: "user",
+  cog: "cog", settings: "settings", coins: "coins", stethoscope: "stethoscope", backpack: "backpack", hash: "hash", layers: "layers", list: "list",
+  gauge: "gauge", palette: "palette", languages: "languages", image: "image", fuel: "fuel", droplet: "droplet"
 };
 
 const out = {};

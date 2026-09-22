@@ -221,6 +221,14 @@ html.kb-open .sheet { padding-bottom: var(--s2); }
 .sheet-btn svg.i { color: var(--text-2); }
 .sheet-btn:active { background: var(--raised); }
 .sheet-btn.danger, .sheet-btn.danger svg.i { color: var(--bad); }
+/* Варіанти вибору в аркуші: рядок з перемикачем праворуч, обраний з оранжевою рамкою і заливкою. */
+.sheet-btn.choice { border: 2px solid transparent; border-radius: var(--r-ctl); margin-bottom: var(--s1); background: var(--raised); }
+.sheet-btn.choice.on { border-color: var(--accent); background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--raised); }
+.sheet-main { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.sheet-sub { font-size: var(--fs-cap); font-weight: 500; color: var(--text-2); }
+.sheet-radio { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line-field); }
+.sheet-btn.choice.on .sheet-radio { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.sheet-radio svg.i { width: 14px; height: 14px; stroke-width: 3; color: inherit; }
 
 @media (hover: hover) and (pointer: fine) {
   .tabs .tab:not(.on):hover, .sheet-btn:hover { background: var(--raised); }

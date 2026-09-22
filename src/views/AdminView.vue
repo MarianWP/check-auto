@@ -4,6 +4,7 @@ import { computed } from "vue";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
+import SecTitle from "../components/SecTitle.vue";
 import { auth, user, isAdmin } from "../cloud/auth";
 import { content } from "../cloud/content";
 import { extraItems, MODELS } from "../store";
@@ -36,7 +37,7 @@ const photosCount = computed(() => content.photos.length);
           </button>
         </div>
         <section aria-labelledby="h-models">
-          <h2 id="h-models" class="h2">Моделі</h2>
+          <SecTitle id="h-models" icon="car">Моделі</SecTitle>
           <div class="group">
             <div v-for="m in MODELS" :key="m.id" class="row-block"><div class="row-t">{{ m.brand }} {{ m.name }}<span v-if="m.draft" class="sev sev-minor" style="margin-left: var(--s2)">чернетка</span></div><div class="row-s">{{ m.years[0] }}–{{ m.years[1] }} · двигунів: {{ m.engines.length }} · кузовів: {{ m.bodies.length }}</div></div>
           </div>

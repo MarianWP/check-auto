@@ -3,6 +3,7 @@ import { computed } from "vue";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
+import SecTitle from "../components/SecTitle.vue";
 import InspCard from "../components/InspCard.vue";
 import InstallCard from "../components/InstallCard.vue";
 import StorageNotice from "../components/StorageNotice.vue";
@@ -36,11 +37,11 @@ const hasAny = computed(() => list.value.length > 0);
 
       <template v-else>
         <section v-if="active.length" aria-labelledby="h-active">
-          <h2 id="h-active" class="h2">В процесі</h2>
+          <SecTitle id="h-active" icon="clipboard">В процесі</SecTitle>
           <div class="cards"><InspCard v-for="(i, k) in active" :key="i.id" :i="i" :featured="k === 0" /></div>
         </section>
         <section v-if="done.length" aria-labelledby="h-done">
-          <h2 id="h-done" class="h2">Завершені</h2>
+          <SecTitle id="h-done" icon="circleCheck">Завершені</SecTitle>
           <div class="cards"><InspCard v-for="i in done" :key="i.id" :i="i" /></div>
         </section>
       </template>

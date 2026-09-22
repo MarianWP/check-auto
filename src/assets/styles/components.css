@@ -6,7 +6,12 @@
 .title { font-size: var(--fs-title); font-weight: 500; line-height: var(--lh-tight); letter-spacing: -0.02em; overflow-wrap: anywhere; }
 .lead { margin-top: var(--s2); max-width: 60ch; font-size: var(--fs-body-s); color: var(--text-2); }
 .page-head + section > .h2 { margin-top: var(--s5); }
-.h2 { margin: var(--s6) 0 var(--s3); font-size: var(--fs-h2); font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
+/* Заголовок блока: іконка у плитці ліворуч і трохи більший відступ зверху, щоб блоки не зливалися. */
+.h2 { display: flex; align-items: center; gap: var(--s3); margin: calc(var(--s6) + var(--s2)) 0 var(--s4); font-size: var(--fs-h2); font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
+.h2-ic { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 12px; background: var(--raised); color: var(--text); }
+.h2-ic svg.i { width: 20px; height: 20px; }
+.h2-t { min-width: 0; overflow-wrap: anywhere; }
+.card .h2, .fields .h2 { margin-top: 0; }
 .foot { font-size: var(--fs-cap); line-height: 1.45; color: var(--text-2); }
 .prose { font-size: var(--fs-body); line-height: var(--lh-body); }
 .prose + .prose { margin-top: var(--s3); }
@@ -332,3 +337,12 @@ html.kb-open .chat-bar { padding-bottom: var(--s2); margin-bottom: var(--kb); }
 @keyframes gen-pulse { 50% { box-shadow: 0 0 0 8px transparent; } }
 .gen .btn { width: auto; min-width: 200px; }
 @media (prefers-reduced-motion: reduce) { .gen-ring, .gen-step.on .gen-dot { animation: none; } }
+
+/* ---------- Профіль як у Telegram ---------- */
+.profile-hero { display: grid; justify-items: center; gap: var(--s1); padding: var(--s5) 0 var(--s3); text-align: center; }
+.avatar-xl { display: inline-flex; align-items: center; justify-content: center; width: 96px; height: 96px; margin-bottom: var(--s2); border-radius: 50%; background: var(--raised); color: var(--text); font-size: var(--fs-metric); font-weight: 700; object-fit: cover; }
+.avatar-xl svg.i.lg { width: 44px; height: 44px; color: var(--text-2); }
+.profile-name { font-size: var(--fs-h2); font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.profile-sub { font-size: var(--fs-body-s); color: var(--text-2); }
+.row.danger .row-t, .row.danger > svg.i { color: var(--bad); }
+.row:disabled { opacity: 0.6; }

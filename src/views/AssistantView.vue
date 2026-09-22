@@ -32,8 +32,8 @@ const ready = computed(() => auth.enabled && !!user.value);
 function pick(v) { sel.value = v; try { localStorage.setItem(KEY, v); } catch (e) { /* немає доступу */ } }
 /* Вибір огляду в аркуші знизу: компактно, скільки б оглядів не було. */
 function openPicker() {
-  const opt = (id, label) => ({ label, icon: sel.value === id ? "check" : undefined, fn: () => pick(id) });
-  sheet({ title: "Про який огляд запитуємо", actions: [opt("none", "Без огляду")].concat(list.value.map(i => opt(i.id, nameOf(i) + (i.done ? " · завершено" : "")))) });
+  const opt = (id, label, sub, icon) => ({ label, sub, icon, on: sel.value === id, fn: () => pick(id) });
+  sheet({ title: "Про який огляд запитуємо", actions: [opt("none", "Без огляду", "Загальні питання", "comment")].concat(list.value.map(i => opt(i.id, nameOf(i), apiOf(i).model.name + " · " + apiOf(i).label(i.cfg) + (i.done ? " · завершено" : ""), "car"))) });
 }
 function context() {
   const i = insp.value; if (!i) return "";

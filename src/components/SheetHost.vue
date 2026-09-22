@@ -65,6 +65,8 @@ watch(() => ui.sheet, (o, prev) => {
         <div class="sheet-list">
           <template v-for="(a, k) in ui.sheet.actions" :key="k">
             <button v-if="a.primary" class="btn" :data-k="k" @click="run(k)"><AppIcon v-if="a.icon" :name="a.icon" /><span>{{ a.label }}</span></button>
+            <!-- Варіант вибору (on задано): рядок з перемикачем праворуч, обраний виділено; звичайна дія — як була. -->
+            <button v-else-if="a.on !== undefined" class="sheet-btn choice" :class="{ on: a.on }" :data-k="k" role="radio" :aria-checked="a.on" @click="run(k)"><AppIcon v-if="a.icon" :name="a.icon" /><span class="sheet-main"><span>{{ a.label }}</span><span v-if="a.sub" class="sheet-sub">{{ a.sub }}</span></span><span class="sheet-radio" aria-hidden="true"><AppIcon v-if="a.on" name="check" /></span></button>
             <button v-else class="sheet-btn" :class="{ danger: a.danger }" :data-k="k" @click="run(k)"><AppIcon v-if="a.icon" :name="a.icon" /><span>{{ a.label }}</span></button>
           </template>
         </div>

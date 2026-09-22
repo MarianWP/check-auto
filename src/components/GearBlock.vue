@@ -1,4 +1,5 @@
 <script setup>
+import SecTitle from "./SecTitle.vue";
 import DotsRating from "./DotsRating.vue";
 import IssueRow from "./IssueRow.vue";
 import { photosFor } from "../cloud/content";
@@ -8,7 +9,7 @@ defineProps({ g: { type: Object, required: true } });
 
 <template>
   <section aria-labelledby="h-gear">
-    <h2 id="h-gear" class="h2">Коробка: {{ g.name }}</h2>
+    <SecTitle id="h-gear" icon="settings">Коробка: {{ g.name }}</SecTitle>
     <div class="group">
       <div class="row-block">
         <p class="prose">{{ g.summary }}</p>

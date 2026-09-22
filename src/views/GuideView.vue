@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
+import SecTitle from "../components/SecTitle.vue";
 import DotsRating from "../components/DotsRating.vue";
 import EngineRow from "../components/EngineRow.vue";
 import IssueRow from "../components/IssueRow.vue";
@@ -55,15 +56,15 @@ function jump(id) {
 
       <div :key="sel">
         <section id="sec-petrol" class="anchor" aria-labelledby="h-petrol">
-          <h2 id="h-petrol" class="h2">Бензинові двигуни</h2>
+          <SecTitle id="h-petrol" icon="fuel">Бензинові двигуни</SecTitle>
           <div class="group"><EngineRow v-for="e in petrol" :key="e.id" :e="e" :model="sel" /></div>
         </section>
         <section id="sec-diesel" class="anchor" aria-labelledby="h-diesel">
-          <h2 id="h-diesel" class="h2">Дизельні двигуни</h2>
+          <SecTitle id="h-diesel" icon="droplet">Дизельні двигуни</SecTitle>
           <div class="group"><EngineRow v-for="e in diesel" :key="e.id" :e="e" :model="sel" /></div>
         </section>
         <section id="sec-gears" class="anchor" aria-labelledby="h-gears">
-          <h2 id="h-gears" class="h2">Коробки передач</h2>
+          <SecTitle id="h-gears" icon="settings">Коробки передач</SecTitle>
           <div class="group">
             <details v-for="g in gearboxes" :key="g.id" class="acc">
               <summary><span class="grow">{{ g.name }}<span class="engine-meta"><DotsRating :r="g.reliability" /><span>{{ g.reliability }} з 5</span></span></span><AppIcon name="chevDown" cls="turn" /></summary>
@@ -73,11 +74,11 @@ function jump(id) {
           </div>
         </section>
         <section id="sec-bodies" class="anchor" aria-labelledby="h-bodies">
-          <h2 id="h-bodies" class="h2">Кузови</h2>
+          <SecTitle id="h-bodies" icon="car">Кузови</SecTitle>
           <div class="group"><div v-for="b in G.BODIES" :key="b.id" class="row-block"><h3 class="row-t">{{ b.name }} <span class="muted" style="font-weight: 450">{{ b.years[0] }}–{{ b.years[1] }}</span></h3><p class="issue-d">{{ b.note }}</p></div></div>
         </section>
         <section id="sec-trims" class="anchor" aria-labelledby="h-trims">
-          <h2 id="h-trims" class="h2">Комплектації</h2>
+          <SecTitle id="h-trims" icon="list">Комплектації</SecTitle>
           <div class="group"><div v-for="t in G.TRIMS" :key="t.name" class="row-block"><h3 class="row-t">{{ t.name }}</h3><p class="issue-d">{{ t.note }}</p></div></div>
         </section>
         <CommonBlock :model="sel" />

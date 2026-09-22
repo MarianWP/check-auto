@@ -5,6 +5,7 @@ import { reactive, ref, computed } from "vue";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
+import SecTitle from "../components/SecTitle.vue";
 import PhotoStrip from "../components/PhotoStrip.vue";
 import AdminGate from "../components/AdminGate.vue";
 import CL from "../data/checklist.js";
@@ -67,7 +68,7 @@ function askDelete(p) {
       </div>
 
       <section aria-labelledby="h-cur">
-        <h2 id="h-cur" class="h2">{{ f.kind === 'item' ? targetName : (issues[f.idx] ? issues[f.idx].t : targetName) }}</h2>
+        <SecTitle id="h-cur" icon="image">{{ f.kind === 'item' ? targetName : (issues[f.idx] ? issues[f.idx].t : targetName) }}</SecTitle>
         <div class="card fields">
           <PhotoStrip :photos="photos" />
           <p v-if="!photos.length" class="foot">Фото ще немає.</p>

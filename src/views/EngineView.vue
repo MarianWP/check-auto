@@ -3,6 +3,7 @@ import { useRoute } from "vue-router";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
+import SecTitle from "../components/SecTitle.vue";
 import SpecTiles from "../components/SpecTiles.vue";
 import EngineBlock from "../components/EngineBlock.vue";
 import DraftNotice from "../components/DraftNotice.vue";
@@ -29,7 +30,7 @@ function newFrom() { resetDraft({ model, fuel: e.fuel, engine: e.id }); ui.scrol
       <DraftNotice :model="model" />
       <SpecTiles :e="e" style="margin-top: var(--s4)" />
       <section aria-labelledby="h-eprice">
-        <h2 id="h-eprice" class="h2">Ринкова ціна</h2>
+        <SecTitle id="h-eprice" icon="coins">Ринкова ціна</SecTitle>
         <div class="card price">
           <div class="price-v">{{ money(price.lo) }} – {{ fmtN(price.hi) }}</div>
           <p class="foot">Для кузова «{{ G.body(refBody).name }}» {{ e.years[1] }} року. Кузов, рік і коробка змінюють ціну на 5–15 %.</p>
@@ -37,7 +38,7 @@ function newFrom() { resetDraft({ model, fuel: e.fuel, engine: e.id }); ui.scrol
       </section>
       <EngineBlock :e="e" />
       <section aria-labelledby="h-combos">
-        <h2 id="h-combos" class="h2">Доступні комбінації</h2>
+        <SecTitle id="h-combos" icon="layers">Доступні комбінації</SecTitle>
         <div class="card"><dl class="kv"><dt>Кузови</dt><dd>{{ bodies }}</dd><dt>Коробки</dt><dd>{{ gears }}</dd></dl></div>
       </section>
       <div class="btn-stack"><button class="btn" data-action="new-from" :data-id="e.id" @click="newFrom"><AppIcon name="plus" /><span>Новий огляд із цим двигуном</span></button></div>

@@ -1,6 +1,7 @@
 <script setup>
 /* Резервна копія оглядів: експорт у файл (у Telegram — у буфер обміну) та відновлення зі злиттям. */
 import AppIcon from "./AppIcon.vue";
+import SecTitle from "./SecTitle.vue";
 import { tgState } from "../tg";
 import { exportBackup, importBackupFile, importBackupFromClipboard } from "../backup";
 
@@ -13,7 +14,7 @@ function onFile(ev) {
 
 <template>
   <section aria-labelledby="h-backup">
-    <h2 id="h-backup" class="h2">Резервна копія</h2>
+    <SecTitle id="h-backup" icon="download">Резервна копія</SecTitle>
     <div class="group">
       <button class="row" data-action="backup-export" @click="exportBackup()">
         <AppIcon name="download" />
