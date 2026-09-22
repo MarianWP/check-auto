@@ -6,13 +6,13 @@ import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
 import CfgLabel from "../components/CfgLabel.vue";
 import PriceBlock from "../components/PriceBlock.vue";
-import G from "../data/golf";
-import { insp, computeReport, VERDICTS, FULL_COVERAGE, money, fmtN, costStr, dateStr } from "../store";
+import { insp, computeReport, VERDICTS, FULL_COVERAGE, money, fmtN, costStr, dateStr, apiOf } from "../store";
 import { go } from "../nav";
 import { share, confirmDelete } from "../actions";
 
 const route = useRoute();
 const i = insp(String(route.params.id));
+const G = apiOf(i);
 const rep = computed(() => computeReport(i));
 const price = G.priceFor(i.cfg);
 const V = computed(() => VERDICTS[rep.value.verdict]);
@@ -31,8 +31,8 @@ const fair = computed(() => {
     <NavBar back="/" back-label="мої огляди" title="Звіт" />
     <div class="content" :class="enter">
       <header class="page-head">
-        <p class="kicker">{{ i.name || 'Volkswagen Golf V' }} · {{ dateStr(i.updatedAt) }}</p>
-        <h1 class="title"><CfgLabel :cfg="i.cfg" /></h1>
+        <p class="kicker">{{ i.name || G.model.full }} · {{ dateStr(i.updatedAt) }}</p>
+        <h1 class="title"><CfgLabel :cfg="i.cfg" :model="G.id" /></h1>
       </header>
 
       <!-- 1. Вердикт -->

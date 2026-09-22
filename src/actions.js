@@ -1,13 +1,14 @@
-/* Глобальні дії над перевіркою: меню, перейменування, видалення, поділитися, копіювати. */
-import G from "./data/golf";
+/* Глобальні дії над оглядом: меню, перейменування, видалення, поділитися, копіювати. */
 import TG from "./tg";
-import { insp, sheet, toast, rename, remove, reportText } from "./store";
+import { insp, sheet, toast, rename, remove, reportText, apiOf } from "./store";
 import { go, nav } from "./nav";
 import router from "./router";
 
+const labelOf = i => i.name || apiOf(i).label(i.cfg);
+
 export function menu(id) {
   const i = insp(id); if (!i) return;
-  sheet({ title: i.name || G.label(i.cfg), actions: [
+  sheet({ title: labelOf(i), actions: [
     { icon: "car", label: "Картка авто", fn: () => go("/car/" + id) },
     { icon: "clipboard", label: "Чек-лист", fn: () => go("/check/" + id + "/" + (i.stage || 0)) },
     { icon: "fileText", label: "Звіт", fn: () => go("/report/" + id) },
@@ -17,13 +18,13 @@ export function menu(id) {
 }
 export function renameSheet(id) {
   const i = insp(id); if (!i) return;
-  sheet({ title: "Перейменувати огляд", input: { label: "Назва огляду", value: i.name || "", placeholder: G.label(i.cfg) }, actions: [
+  sheet({ title: "Перейменувати огляд", input: { label: "Назва огляду", value: i.name || "", placeholder: apiOf(i).label(i.cfg) }, actions: [
     { label: "Зберегти", primary: true, fn: v => rename(i, v) }
   ] });
 }
 export function confirmDelete(id) {
   const i = insp(id); if (!i) return;
-  sheet({ title: "Видалити огляд «" + (i.name || G.label(i.cfg)) + "»?", text: "Відповіді й коментарі зникнуть. Повернути їх можна буде лише з резервної копії.", actions: [
+  sheet({ title: "Видалити огляд «" + labelOf(i) + "»?", text: "Відповіді й коментарі зникнуть. Повернути їх можна буде лише з резервної копії.", actions: [
     { icon: "trash", label: "Видалити огляд", danger: true, fn: () => {
       remove(id);
       const r = router.currentRoute.value;

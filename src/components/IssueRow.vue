@@ -1,8 +1,9 @@
 <script setup>
 import AppIcon from "./AppIcon.vue";
+import PhotoStrip from "./PhotoStrip.vue";
 import { costStr, SEV_LABEL } from "../store";
 
-defineProps({ x: { type: Object, required: true } });
+defineProps({ x: { type: Object, required: true }, photos: { type: Array, default: () => [] } });
 </script>
 
 <template>
@@ -13,5 +14,6 @@ defineProps({ x: { type: Object, required: true } });
       <span v-if="x.sev" class="sev" :class="'sev-' + x.sev"><AppIcon v-if="x.sev === 'crit'" name="alert" />{{ SEV_LABEL[x.sev] }}</span>
       <span v-if="x.cost && x.cost[1]" class="issue-c">≈ {{ costStr(x.cost) }}</span>
     </div>
+    <PhotoStrip :photos="photos" />
   </div>
 </template>

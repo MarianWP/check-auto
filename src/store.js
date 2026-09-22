@@ -1,11 +1,18 @@
-/* Golf Check — стан застосунку (Vue reactive): перевірки, чернетка, інтерфейс, збереження.
+/* Golf Check — стан застосунку (Vue reactive): огляди, чернетка, інтерфейс, збереження.
    Чиста логіка (звіт, перевірка записів) живе у src/logic/ і покрита тестами. */
 import { reactive, watch } from "vue";
-import G from "./data/golf";
-import { computeReport } from "./logic/report";
+import CL from "./data/checklist.js";
+import { apiOf, modelApi, modelDef, DEFAULT_MODEL } from "./data/index.js";
+import { computeReport as computeReportPure, visibleStages as visibleStagesPure, stageProgress } from "./logic/report";
 import { KEY, parseState } from "./logic/storage";
 
-export { visibleStages, computeReport, stageProgress, MIN_DATA, FULL_COVERAGE } from "./logic/report";
+export { stageProgress, MIN_DATA, FULL_COVERAGE } from "./logic/report";
+export { apiOf, modelApi, modelDef, MODELS, DEFAULT_MODEL } from "./data/index.js";
+
+/* Власні пункти чек-листа з адмінки (заповнює src/cloud/content.js). Тут — щоб звіт їх бачив без циклічного імпорту. */
+export const extraItems = reactive({ list: [] });
+export const visibleStages = i => visibleStagesPure(i, CL, extraItems.list);
+export const computeReport = i => computeReportPure(i, CL, extraItems.list);
 
 export const SEV_LABEL = { crit: "Критично", major: "Важливо", minor: "Дрібниця" };
 const found = r => r.failCount ? " Уже знайдено проблем: " + r.failCount + "." : "";
@@ -26,8 +33,8 @@ export const uid = () => Date.now().toString(36) + Math.random().toString(36).sl
 export const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 export const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-/* ---------- Стан інтерфейсу: аркуш дій, тост, ціль прокрутки ---------- */
-export const ui = reactive({ sheet: null, toast: null, scrollTarget: null });
+/* ---------- Стан інтерфейсу: аркуш дій, тост, перегляд фото, ціль прокрутки ---------- */
+export const ui = reactive({ sheet: null, toast: null, lightbox: null, scrollTarget: null });
 let toastT = null;
 export function toast(msg, ms) {
   ui.toast = { id: Date.now(), msg };
@@ -36,6 +43,8 @@ export function toast(msg, ms) {
 }
 export const sheet = o => { ui.sheet = o; };
 export const closeSheet = () => { ui.sheet = null; };
+export const openLightbox = (url, caption) => { ui.lightbox = { url, caption: caption || "" }; };
+export const closeLightbox = () => { ui.lightbox = null; };
 
 /* ---------- Сховище: localStorage, формат golfcheck.v1 ----------
    storage.ok       — чи вдається зберігати; false = зміни живуть лише до закриття апки.
@@ -82,14 +91,17 @@ export const dismissLoadNotice = () => { storage.rejected = 0; storage.loadError
 export const insp = id => db.inspections.find(i => i.id === id);
 export const replaceInspections = list => { db.inspections = list; };
 
-/* ---------- Чернетка нової перевірки ---------- */
-const emptyDraft = () => ({ fuel: null, engine: null, body: null, year: null, gear: null, name: "", price: "" });
+/* ---------- Чернетка нового огляду ---------- */
+const emptyDraft = () => ({ model: DEFAULT_MODEL, fuel: null, engine: null, body: null, year: null, gear: null, name: "", price: "" });
 export const draft = reactive(emptyDraft());
 export const resetDraft = patch => { Object.assign(draft, emptyDraft(), patch || {}); };
 /* Повертає id секції, до якої варто прокрутити після вибору. */
 export function setDraft(k, v) {
-  if (k === "fuel") {
-    if (draft.fuel !== v) Object.assign(draft, emptyDraft(), { fuel: v, name: draft.name, price: draft.price });
+  const G = modelApi(draft.model);
+  if (k === "model") {
+    if (draft.model !== v && modelDef(v)) Object.assign(draft, emptyDraft(), { model: v, name: draft.name, price: draft.price });
+  } else if (k === "fuel") {
+    if (draft.fuel !== v) Object.assign(draft, emptyDraft(), { model: draft.model, fuel: v, name: draft.name, price: draft.price });
   } else if (k === "engine") {
     draft.engine = v;
     const e = G.engine(v);
@@ -104,12 +116,12 @@ export function setDraft(k, v) {
     draft.year = parseInt(v, 10);
     if (!G.gearsFor(draft.engine, draft.year).some(g => g.id === draft.gear)) draft.gear = null;
   } else if (k === "gear") draft.gear = v;
-  return !draft.engine ? "s-engine" : !draft.body ? "s-body" : !draft.year ? "s-year" : !draft.gear ? "s-gear" : "s-final";
+  return !draft.fuel ? "s-fuel" : !draft.engine ? "s-engine" : !draft.body ? "s-body" : !draft.year ? "s-year" : !draft.gear ? "s-gear" : "s-final";
 }
 export function createInspection() {
   if (!draft.gear) return null;
   const i = {
-    id: uid(), createdAt: Date.now(), updatedAt: Date.now(),
+    id: uid(), model: draft.model, createdAt: Date.now(), updatedAt: Date.now(),
     name: String(draft.name || "").trim().slice(0, 60),
     price: parseInt(String(draft.price || "").replace(/\D/g, ""), 10) || 0,
     cfg: { engine: draft.engine, body: draft.body, year: draft.year, gear: draft.gear },
@@ -120,7 +132,7 @@ export function createInspection() {
   return insp(i.id);
 }
 
-/* ---------- Мутації перевірки (i — reactive-об'єкт зі сховища) ---------- */
+/* ---------- Мутації огляду (i — reactive-об'єкт зі сховища) ---------- */
 const ans = (i, id) => { if (!i.answers[id]) i.answers[id] = {}; return i.answers[id]; };
 const touch = i => { i.updatedAt = Date.now(); };
 export const answer = (i, itemId, s) => { const a = ans(i, itemId); a.s = a.s === s ? "" : s; touch(i); };
@@ -139,8 +151,9 @@ export const hideInstall = () => { db.hideInstall = true; };
 
 /* ---------- Текст звіту ---------- */
 export function reportText(i) {
+  const G = apiOf(i);
   const rep = computeReport(i), price = G.priceFor(i.cfg), V = VERDICTS[rep.verdict];
-  const L = ["Golf Check — звіт огляду", G.label(i.cfg) + (i.name ? " · " + i.name : ""), dateStr(i.updatedAt), ""];
+  const L = ["Golf Check — звіт огляду", G.model.full + " · " + G.label(i.cfg) + (i.name ? " · " + i.name : ""), dateStr(i.updatedAt), ""];
   L.push("Вердикт: " + V.t + " (оцінка перевіреного " + rep.score + " зі 100)");
   L.push("Повнота огляду: " + rep.pct + " % (" + rep.answered + " з " + rep.total + " пунктів, критичних " + rep.critChecked + " з " + rep.critTotal + "), проблем: " + rep.failCount);
   if (i.price) L.push("Ціна продавця: " + money(i.price));

@@ -1,10 +1,10 @@
 /* Чиста логіка сховища: перевірка записів, розбір збереженого стану, резервна копія, злиття.
    Без Vue, DOM і localStorage — покрито тестами у tests/storage.test.js. */
-import G from "../data/golf";
+import { modelApi, modelDef, DEFAULT_MODEL } from "../data/index.js";
 
 export const KEY = "golfcheck.v1";
 export const BACKUP_APP = "golf-check";
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
 
 const STATUSES = new Set(["ok", "bad", "skip", ""]);
 const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
@@ -12,9 +12,13 @@ const isObj = v => v !== null && typeof v === "object" && !Array.isArray(v);
 const str = (v, max) => (typeof v === "string" ? v : "").slice(0, max);
 const posInt = v => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
 
-/* Чи існує така конфігурація у довіднику: мотор, кузов для нього, рік для пари, коробка для року. */
-export function validConfig(cfg) {
-  if (!isObj(cfg)) return false;
+/* Модель запису: невідома або відсутня (старі записи) — Golf V. */
+export const modelOf = raw => (raw && typeof raw.model === "string" && modelDef(raw.model)) ? raw.model : DEFAULT_MODEL;
+
+/* Чи існує така конфігурація у довіднику моделі: мотор, кузов для нього, рік для пари, коробка для року. */
+export function validConfig(cfg, modelId = DEFAULT_MODEL) {
+  if (!isObj(cfg) || !modelDef(modelId)) return false;
+  const G = modelApi(modelId);
   const e = G.engine(cfg.engine);
   if (!e || !e.bodies.includes(cfg.body)) return false;
   if (!Number.isInteger(cfg.year) || !G.yearsFor(cfg.engine, cfg.body).includes(cfg.year)) return false;
@@ -40,14 +44,16 @@ function normalizeAnswers(raw) {
   return out;
 }
 
-/* Повертає чистий запис перевірки або null, якщо запис непридатний (немає id, невідома конфігурація). */
+/* Повертає чистий запис огляду або null, якщо запис непридатний (немає id, невідома конфігурація). */
 export function normalizeInspection(raw, now = Date.now()) {
   if (!isObj(raw)) return null;
   const id = str(raw.id, 40);
-  if (!id || !validConfig(raw.cfg)) return null;
+  const model = modelOf(raw);
+  if (!id || !validConfig(raw.cfg, model)) return null;
   const createdAt = posInt(raw.createdAt) || now;
   return {
     id,
+    model,
     createdAt,
     updatedAt: posInt(raw.updatedAt) || createdAt,
     name: str(raw.name, 60).trim(),
@@ -92,7 +98,7 @@ export function makeBackup(inspections, now = Date.now()) {
 export function parseBackup(text, now = Date.now()) {
   let d;
   try { d = JSON.parse(String(text || "").trim()); } catch (e) { throw new Error("Це не файл копії: не вдалося прочитати JSON."); }
-  if (!isObj(d) || !Array.isArray(d.inspections)) throw new Error("Це не копія Golf Check: немає списку перевірок.");
+  if (!isObj(d) || !Array.isArray(d.inspections)) throw new Error("Це не копія Golf Check: немає списку оглядів.");
   if (d.app !== undefined && d.app !== BACKUP_APP) throw new Error("Це копія іншого застосунку.");
   if (Number.isFinite(d.version) && d.version > BACKUP_VERSION) throw new Error("Копію створено новішою версією Golf Check. Онови застосунок.");
   return normalizeList(d.inspections, now);

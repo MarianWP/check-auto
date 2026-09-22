@@ -1,5 +1,6 @@
 <script setup>
 import IssueRow from "./IssueRow.vue";
+import { photosFor } from "../cloud/content";
 
 defineProps({ e: { type: Object, required: true } });
 </script>
@@ -18,6 +19,6 @@ defineProps({ e: { type: Object, required: true } });
   </section>
   <section aria-labelledby="h-engine-issues">
     <h2 id="h-engine-issues" class="h2">Типові проблеми двигуна</h2>
-    <div class="group"><IssueRow v-for="(x, k) in e.issues" :key="k" :x="x" /></div>
+    <div class="group"><IssueRow v-for="(x, k) in e.issues" :key="k" :x="x" :photos="photosFor('engine', e.id, k)" /></div>
   </section>
 </template>

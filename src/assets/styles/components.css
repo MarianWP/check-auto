@@ -219,3 +219,44 @@ details.acc > summary .engine-meta { font-weight: 450; }
   .icon-btn.tonal:hover { background: var(--raised-2); }
   .chip:not(.on):hover { background: var(--raised-2); }
 }
+
+/* ---------- Випадний список (нативний select у стилі поля) ---------- */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: calc(var(--s4) + 24px);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23B0B4BB' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--s3) center;
+}
+.select option { background: var(--card); color: var(--text); }
+.field-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); align-items: end; }
+.check { display: flex; align-items: center; gap: var(--s3); min-height: var(--h-field); font-size: var(--fs-body-s); font-weight: 600; cursor: pointer; }
+.check input { appearance: none; -webkit-appearance: none; flex: none; display: grid; place-items: center; width: 44px; height: 44px; margin: 0 calc(-1 * var(--s2)); background: none; border: 0; cursor: pointer; }
+.check input::before { content: ""; width: 24px; height: 24px; border: 2px solid var(--line-field); border-radius: 6px; background: var(--raised) center / 16px no-repeat; transition: background-color 120ms ease, border-color 120ms ease; }
+.check input:checked::before { border-color: var(--accent); background-color: var(--accent); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23101112' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E"); }
+.check input:focus-visible { outline: none; }
+.check input:focus-visible::before { outline: 2px solid var(--text); outline-offset: 2px; }
+.row.is-off { opacity: 0.55; }
+.card > .row { margin-inline: calc(-1 * var(--s4)); width: calc(100% + 2 * var(--s4)); border-top: 1px solid var(--line); margin-bottom: calc(-1 * var(--s4)); border-radius: 0 0 var(--r-card) var(--r-card); }
+
+/* ---------- Фото до проблем ---------- */
+.photo-strip { display: flex; gap: var(--s2); margin-top: var(--s3); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+.photo-strip::-webkit-scrollbar { display: none; }
+.thumb { flex: none; width: 112px; height: 84px; border-radius: var(--r-ctl); overflow: hidden; background: var(--raised); }
+.thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.photo-row { display: flex; align-items: center; gap: var(--s2); font-size: var(--fs-body-s); }
+.lightbox { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 70; display: grid; place-items: center; align-content: center; gap: var(--s3); padding: calc(var(--sat) + var(--s6)) var(--s4) calc(var(--sab) + var(--s6)); background: rgba(0, 0, 0, 0.92); transition: opacity 220ms ease; }
+.lightbox img { max-width: 100%; max-height: 78vh; border-radius: var(--r-ctl); }
+.lightbox-cap { max-width: 60ch; font-size: var(--fs-body-s); color: var(--text-2); text-align: center; }
+.lightbox-close { position: absolute; top: calc(var(--sat) + var(--s3)); right: var(--s3); }
+
+/* ---------- Акаунт ---------- */
+.account { display: grid; gap: var(--s4); }
+.account-head { display: flex; align-items: center; gap: var(--s3); }
+.avatar { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: var(--raised); color: var(--text); font-size: var(--fs-h3); font-weight: 700; object-fit: cover; }
+.btn-row { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.btn-row .btn { flex: 1 1 140px; width: auto; }
+.tg-login { display: grid; gap: var(--s2); }
+.tg-login-box { min-height: 0; }
+.tg-login-box iframe { border-radius: var(--r-btn); }

@@ -10,12 +10,13 @@ import EngineBlock from "../components/EngineBlock.vue";
 import GearBlock from "../components/GearBlock.vue";
 import CommonBlock from "../components/CommonBlock.vue";
 import KitBlock from "../components/KitBlock.vue";
-import G from "../data/golf";
-import { insp, computeReport } from "../store";
+import DraftNotice from "../components/DraftNotice.vue";
+import { insp, computeReport, apiOf } from "../store";
 import { go } from "../nav";
 
 const route = useRoute();
 const i = insp(String(route.params.id));
+const G = apiOf(i);
 const e = G.engine(i.cfg.engine), b = G.body(i.cfg.body), g = G.gearbox(i.cfg.gear), price = G.priceFor(i.cfg);
 const rep = computed(() => computeReport(i));
 const checkTo = computed(() => "/check/" + i.id + "/" + (i.stage || 0));
@@ -26,10 +27,11 @@ const checkTo = computed(() => "/check/" + i.id + "/" + (i.stage || 0));
     <NavBar back="/" back-label="мої огляди" title="Картка авто" />
     <div class="content" :class="enter">
       <header class="page-head">
-        <p class="kicker">Volkswagen Golf V<template v-if="i.name"> · {{ i.name }}</template></p>
+        <p class="kicker">{{ G.model.full }}<template v-if="i.name"> · {{ i.name }}</template></p>
         <h1 class="title">{{ e.name }} · {{ i.cfg.year }}</h1>
         <p class="lead">{{ b.name }} · {{ g.name }}</p>
       </header>
+      <DraftNotice :model="G.id" />
       <SpecTiles :e="e" style="margin-top: var(--s4)" />
       <PriceBlock :i="i" :price="price" />
       <EngineBlock :e="e" />
@@ -38,8 +40,8 @@ const checkTo = computed(() => "/check/" + i.id + "/" + (i.stage || 0));
         <h2 id="h-body" class="h2">Кузов: {{ b.name }}</h2>
         <div class="card"><p class="prose">{{ b.note }}</p></div>
       </section>
-      <CommonBlock />
-      <KitBlock />
+      <CommonBlock :model="G.id" />
+      <KitBlock :model="G.id" />
     </div>
   </AppScreen>
 

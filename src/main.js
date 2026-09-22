@@ -1,4 +1,4 @@
-/* Golf Check — точка входу: застосунок, роутер, директиви, service worker, хуки Telegram. */
+/* Golf Check — точка входу: застосунок, роутер, директиви, service worker, хмара, хуки Telegram. */
 import { createApp } from "vue";
 import { registerSW } from "virtual:pwa-register";
 import App from "./App.vue";
@@ -8,6 +8,9 @@ import { reload, flush, probeStorage } from "./store";
 import { autosize } from "./directives";
 import { isExternalUrl } from "./logic/links";
 import { initKeyboard } from "./keyboard";
+import { initContent } from "./cloud/content";
+import { initAuth } from "./cloud/auth";
+import { initSync } from "./cloud/sync";
 import "./assets/styles/index.css";
 
 const app = createApp(App);
@@ -45,5 +48,10 @@ window.addEventListener("pagehide", flush);
 TG.onReady(() => {
   if (/tgWebApp/.test(router.currentRoute.value.path) || /tgWebApp/.test(location.hash)) router.replace("/");
 });
+
+/* Хмара (лише коли задано ключі Supabase): контент з адмінки, вхід через Telegram, синхронізація оглядів. */
+initContent();
+initAuth();
+initSync();
 
 registerSW({ immediate: true });

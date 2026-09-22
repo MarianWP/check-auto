@@ -64,7 +64,7 @@ npm run icons    # перегенерувати PNG-іконки і src/icons.js
 npm test         # юніт-тести логіки (Vitest)
 ```
 
-Тести лежать у `tests/`: розрахунок вердикту й повноти (`report.test.js`), цілісність і фільтрація чек-листа (`checklist.test.js`), сумісність конфігурацій довідника (`golf.test.js`), перевірка збережених даних і резервної копії (`storage.test.js`). Ті самі тести запускаються в GitHub Actions перед збіркою: якщо тест падає, деплою немає.
+Тести лежать у `tests/`: розрахунок вердикту й повноти (`report.test.js`), цілісність і фільтрація чек-листа (`checklist.test.js`), реєстр моделей і сумісність конфігурацій для кожної моделі (`golf.test.js`), перевірка збережених даних і резервної копії (`storage.test.js`), власні пункти й фото з адмінки (`content.test.js`). Ті самі тести запускаються в GitHub Actions перед збіркою: якщо тест падає, деплою немає.
 
 ## Файли
 
@@ -84,7 +84,14 @@ src/logic/storage.js    чиста логіка: перевірка записі
 src/backup.js           експорт та імпорт резервної копії
 src/tg.js               інтеграція з Telegram Mini App (тема, повний екран, кнопка «Назад»)
 src/icons.js            іконки Lucide (генерується)
-src/data/golf.js        довідник: мотори, коробки, кузови, ціни, хвороби
+src/data/index.js       реєстр моделей: modelApi(id) збирає довідник моделі з бібліотеки двигунів
+src/data/engines.js     бібліотека двигунів VAG (технічні дані, хвороби, надійність)
+src/data/gearboxes.js   коробки передач
+src/data/models/        golf5.js, octavia5.js: роки, кузови, які двигуни й коробки, ціни, хвороби кузова, VIN
+src/logic/content.js    чиста логіка: власні пункти й фото з бази → пункти чек-листа
+src/cloud/              client.js (Supabase), auth.js (вхід через Telegram), sync.js (огляди у хмарі),
+                        content.js (власні пункти й фото), admin.js (запис для адмінки)
+supabase/               migrations/ (схема, RLS, сховище фото), functions/telegram-auth (перевірка входу)
 src/data/checklist.js   етапи і пункти чек-листа
 src/keyboard.js         екранна клавіатура: ховає нижні панелі, піднімає аркуш, показує поле з фокусом
 src/assets/styles/      tokens.css, base.css, layout.css, components.css, screens.css (index.css їх збирає)
@@ -92,13 +99,21 @@ src/assets/fonts/       Manrope Variable: латиниця і кирилиця
 src/components/         AppScreen (єдиний скролер), NavBar (верхня смуга), BottomNav (розділи + кнопка «+»),
                         SheetHost, ToastHost, InspCard, StageStrip (смужка етапів), CfgLabel, ChipGroup, SpecTiles,
                         InstallCard, StorageNotice, BackupCard, IssueRow, PriceBlock, EngineBlock, GearBlock,
-                        CommonBlock, KitBlock, VinBlock, EngineRow, AppIcon, DotsRating
-src/views/              HomeView, NewCheckView, CarView, GuideView, EngineView, CheckView, ReportView
+                        CommonBlock, KitBlock, VinBlock, EngineRow, AppIcon, DotsRating, PhotoStrip, LightboxHost,
+                        DraftNotice, AccountCard, TelegramLogin, AdminGate
+src/views/              HomeView, NewCheckView, CarView, GuideView, EngineView, CheckView, ReportView,
+                        AdminView, AdminItemsView, AdminItemView, AdminPhotosView
 tools/                  скрипти генерації іконок
 tests/                  юніт-тести (Vitest)
 ```
 
-Маршрути: `#/` мої огляди, `#/new` новий огляд, `#/guide` і `#/guide/:мотор` довідник, `#/car/:id` картка моделі, `#/check/:id/:етап` чек-лист, `#/report/:id` звіт.
+Маршрути: `#/` мої огляди, `#/new` новий огляд, `#/guide` і `#/guide/:модель/:мотор` довідник, `#/car/:id` картка авто, `#/check/:id/:етап` чек-лист, `#/report/:id` звіт, `#/admin`, `#/admin/items`, `#/admin/items/:id`, `#/admin/photos` адмінка.
+
+## Моделі
+
+Довідник і чек-лист працюють для кількох моделей. Двигуни й коробки VAG лежать у спільній бібліотеці (`src/data/engines.js`, `gearboxes.js`), а кожна модель у `src/data/models/` описує лише своє: роки, кузови, які двигуни з якими коробками і в які роки ставилися, діапазони цін, хвороби кузова, VIN, комплектації. Зараз є **Volkswagen Golf V** (перевірені дані) і **Škoda Octavia A5** зі статусом чернетки (`draft: true`): апка показує попередження, поки ціни й роки не перевірить людина, яка знає авто.
+
+Щоб додати модель: скопіюй `src/data/models/octavia5.js`, зміни `id`, роки, кузови, список двигунів (id з бібліотеки) і ціни, підключи файл у `src/data/index.js`. Тести `golf.test.js` і `checklist.test.js` самі перевірять кожну конфігурацію нової моделі. Огляд запам'ятовує модель у полі `model`; старі записи без поля вважаються Golf V.
 
 ## Публікація (GitHub Pages)
 
@@ -114,6 +129,31 @@ tests/                  юніт-тести (Vitest)
 2. Або `/mybots` → бот → **Bot Settings → Menu Button** → той самий URL. Тоді апка відкривається кнопкою меню в чаті з ботом.
 3. Усередині Telegram апка сама розгортається на весь екран, підхоплює світлу/темну тему, а «Поділитися звітом» надсилає текст у чат. Кнопка «Назад» там лише нативна від Telegram: власну кнопку в шапці апка ховає.
 
+## Хмара: вхід через Telegram, синхронізація, адмінка (Supabase)
+
+Без хмари апка працює повністю локально. З хмарою додається: вхід через Telegram, огляди на всіх пристроях користувача, власні пункти чек-листа й фото до проблем, які адміністратор додає з апки й бачать усі.
+
+У клієнт потрапляє лише **анонімний ключ** Supabase: доступ до даних захищають політики RLS у базі. Токен бота і сервісний ключ живуть тільки в секретах Edge Function.
+
+1. **Проєкт Supabase.** Створи проєкт на supabase.com. У **SQL Editor** виконай `supabase/migrations/20260922000000_init.sql`: таблиці profiles, inspections, checklist_items, photos, політики RLS і публічне сховище `photos`.
+2. **Edge Function для входу.** Встанови Supabase CLI, потім:
+   ```
+   supabase login
+   supabase link --project-ref <ref>
+   supabase secrets set TELEGRAM_BOT_TOKEN=<токен від BotFather>
+   supabase functions deploy telegram-auth --no-verify-jwt
+   ```
+   Функція перевіряє підпис даних Telegram (initData у Mini App або Login Widget на сайті), створює користувача `tg<id>@telegram.golfcheck.local` і повертає одноразовий токен входу.
+3. **Ключі у збірці.** GitHub → Settings → Secrets and variables → Actions: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (Settings → API у Supabase), `VITE_TG_BOT` (ім'я бота без @). Локально ті самі змінні у `.env` (зразок у `.env.example`).
+4. **Login Widget на сайті.** У BotFather: `/setdomain` → бот → `marianwp.github.io`. У Telegram Mini App вхід автоматичний, без віджета.
+5. **Права адміністратора.** Увійди в апку хоча б раз, потім у SQL Editor:
+   ```
+   update public.profiles set role = 'admin' where tg_id = <твій Telegram id>;
+   ```
+   Після цього на головній у картці акаунта з'явиться «Адмінка».
+
+Адмінка: **Пункти чек-листа** (назва, як перевірити, чому важливо, етап, важливість, модель або всі, вартість, теги, обмеження за тегами двигуна чи коробки, увімкнено) і **Фото до проблем** (прив'язка до проблеми двигуна, коробки, хвороби моделі або пункту чек-листа; фото стискаються до 1600 px перед завантаженням). Нові пункти й фото з'являються у всіх користувачів після наступного запуску апки або входу.
+
 ## Як встановити на iPhone
 
 1. Відкрий посилання в **Safari** (не в Chrome і не в месенджері).
@@ -123,7 +163,7 @@ tests/                  юніт-тести (Vitest)
 
 ## Як оновити дані
 
-- Ціни та хвороби моторів: `src/data/golf.js`. Середня ринкова ціна у `MARKET.avg`, діапазони по моторах у полі `price` кожного двигуна.
+- Двигуни та їхні хвороби: `src/data/engines.js`. Ціни, роки й кузови для моделі: `src/data/models/<модель>.js` (`market.avg`, поле `price` у кожному посиланні на двигун).
 - Пункти чек-листа: `src/data/checklist.js`. Поле `only` обмежує пункт тегами мотора чи коробки (`belt`, `chain`, `turbo`, `dsg`, `manual`, `petrol`, `diesel`, `pd`, `dpf`, `vr6`, `twincharger`).
 - Service worker оновлюється сам при кожній збірці (хеші файлів), окремо піднімати версію не треба.
 - Іконки: `npm run icons` (Lucide-джерела у `tools/lucide/`).

@@ -1,7 +1,8 @@
 <script setup>
-import G from "../data/golf";
+import { modelApi } from "../data/index.js";
 
-const kit = G.KIT;
+const props = defineProps({ model: { type: String, default: "golf5" } });
+const kit = modelApi(props.model).KIT;
 </script>
 
 <template>

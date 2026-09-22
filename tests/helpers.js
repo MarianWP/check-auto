@@ -1,22 +1,25 @@
-import G from "../src/data/golf";
+import { modelApi, MODELS, DEFAULT_MODEL } from "../src/data/index.js";
 import { visibleStages } from "../src/logic/report";
 
 export const CFG = { engine: "mpi14", body: "h3", year: 2003, gear: "m5" };
+export const OCTAVIA_CFG = { engine: "tsi122", body: "combi", year: 2011, gear: "dsg7" };
 
-/* Усі конфігурації, які дозволяє конфігуратор: мотор → кузов → рік → коробка. */
-export function allConfigs() {
+/* Усі конфігурації, які дозволяє конфігуратор для моделі: мотор → кузов → рік → коробка. */
+export function allConfigs(modelId = DEFAULT_MODEL) {
+  const G = modelApi(modelId);
   const out = [];
   G.ENGINES.forEach(e => e.bodies.forEach(b => G.yearsFor(e.id, b).forEach(y => G.gearsFor(e.id, y).forEach(g => {
     out.push({ engine: e.id, body: b, year: y, gear: g.id });
   }))));
   return out;
 }
+export const allModelIds = () => MODELS.map(m => m.id);
 
-export function mkInsp(cfg = CFG, answers = {}) {
-  return { id: "t1", createdAt: 1000, updatedAt: 1000, name: "", price: 0, cfg, answers, stage: 0, done: false };
+export function mkInsp(cfg = CFG, answers = {}, model = DEFAULT_MODEL) {
+  return { id: "t1", model, createdAt: 1000, updatedAt: 1000, name: "", price: 0, cfg, answers, stage: 0, done: false };
 }
 
-export const items = (cfg = CFG) => visibleStages(mkInsp(cfg)).flatMap(s => s.items);
+export const items = (cfg = CFG, model = DEFAULT_MODEL) => visibleStages(mkInsp(cfg, {}, model)).flatMap(s => s.items);
 
 /* answers з функції (item, index) → "ok" | "bad" | "skip" | "" */
 export function answersBy(cfg, fn) {

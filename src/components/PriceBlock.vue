@@ -1,10 +1,10 @@
 <script setup>
 import { computed } from "vue";
 import AppIcon from "./AppIcon.vue";
-import G from "../data/golf";
-import { money, fmtN } from "../store";
+import { money, fmtN, apiOf } from "../store";
 
 const props = defineProps({ i: { type: Object, required: true }, price: { type: Object, required: true } });
+const G = apiOf(props.i);
 const M = G.MARKET;
 const cmp = computed(() => {
   const i = props.i, p = props.price;
@@ -21,7 +21,7 @@ const cmp = computed(() => {
     <div class="card price">
       <div class="price-v">{{ money(price.lo) }} – {{ fmtN(price.hi) }}</div>
       <div v-if="cmp" class="price-cmp"><span class="muted">Продавець просить</span><b>{{ money(i.price) }}:</b><span :class="cmp.cls" class="strong">{{ cmp.txt }}</span></div>
-      <p class="foot">Орієнтовно для цієї конфігурації. Середня по всіх Golf V на auto.ria — {{ money(M.avg) }} ({{ M.updated }}). Дизель дорожчий, бензин дешевший, ГБО — найдешевше.</p>
+      <p class="foot">Орієнтовно для цієї конфігурації. Середня по всіх {{ G.model.name }} на auto.ria — {{ money(M.avg) }} ({{ M.updated }}). Дизель дорожчий, бензин дешевший, ГБО — найдешевше.</p>
       <a class="link" :href="M.search" target="_blank" rel="noopener">Актуальні оголошення на auto.ria<AppIcon name="external" cls="sm" /></a>
     </div>
   </section>

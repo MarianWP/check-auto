@@ -4,19 +4,23 @@ import { useRoute } from "vue-router";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
-import G from "../data/golf";
+import PhotoStrip from "../components/PhotoStrip.vue";
 import TG from "../tg";
-import { insp, visibleStages, stageProgress, clamp, costStr, SEV_LABEL as SEV, answer as saveAnswer, toggleTag as saveTag, setComment as saveComment, finish as finishInsp } from "../store";
+import { photosFor } from "../cloud/content";
+import { insp, visibleStages, stageProgress, clamp, costStr, apiOf, SEV_LABEL as SEV, answer as saveAnswer, toggleTag as saveTag, setComment as saveComment, finish as finishInsp } from "../store";
 import { go } from "../nav";
 
 const route = useRoute();
 const id = String(route.params.id);
 const i = insp(id);
-const stages = visibleStages(i);
-const n = clamp(parseInt(route.params.n || "0", 10) || 0, 0, stages.length - 1);
+const G = apiOf(i);
+/* Власні пункти з адмінки можуть з'явитися після завантаження, тому етапи — computed. */
+const stages = computed(() => visibleStages(i));
+const n = clamp(parseInt(route.params.n || "0", 10) || 0, 0, stages.value.length - 1);
 if (i.stage !== n) i.stage = n;
-const st = stages[n], tags = G.tagsFor(i.cfg), last = n === stages.length - 1;
-const prog = computed(() => stageProgress(i, stages));
+const st = computed(() => stages.value[n]);
+const tags = G.tagsFor(i.cfg), last = n === stages.value.length - 1;
+const prog = computed(() => stageProgress(i, stages.value));
 const overallPct = computed(() => { const p = prog.value; return Math.round(p.reduce((s, x) => s + x.answered, 0) / p.reduce((s, x) => s + x.total, 0) * 100); });
 const cur = computed(() => prog.value[n]);
 /* Статус «skip» у сховищі лишається незмінним; у інтерфейсі це «Не перевірено». */
@@ -28,7 +32,7 @@ const noteTags = it => Object.keys(it.notes || {}).filter(t => tags.has(t));
 const costWhy = it => it.cost && it.cost[1] ? " Орієнтовна вартість усунення: " + costStr(it.cost) + "." : "";
 const stageCls = k => { const p = prog.value[k]; return k === n ? "current" : p.answered >= p.total ? "done" : p.answered ? "part" : ""; };
 const stageDone = k => k !== n && prog.value[k].answered >= prog.value[k].total;
-const stageHint = k => { const p = prog.value[k]; return stages[k].name + ": " + p.answered + " з " + p.total; };
+const stageHint = k => { const p = prog.value[k]; return stages.value[k].name + ": " + p.answered + " з " + p.total; };
 function answer(it, s) { saveAnswer(i, it.id, s); TG.haptic("light"); }
 function toggleTag(it, t) { saveTag(i, it.id, t); TG.haptic("select"); }
 function setComment(it, ev) { saveComment(i, it.id, ev.target.value); }
@@ -53,6 +57,7 @@ onMounted(() => { const c = document.querySelector("#stages .stage.current"); if
 
     <div class="content" :class="enter">
       <header class="page-head">
+        <p class="kicker">{{ G.model.name }} · {{ G.engine(i.cfg.engine).name }} · {{ i.cfg.year }}</p>
         <h1 class="title">{{ st.name }}</h1>
         <p class="lead">{{ st.intro }}</p>
       </header>
@@ -66,7 +71,8 @@ onMounted(() => { const c = document.querySelector("#stages .stage.current"); if
           <h2 class="item-t">{{ it.t }}</h2>
           <p class="how">{{ it.how }}</p>
           <div v-for="t in noteTags(it)" :key="t" class="note"><AppIcon name="alert" /><span>{{ it.notes[t] }}</span></div>
-          <details class="why">
+          <PhotoStrip :photos="photosFor('item', it.id, 0)" />
+          <details v-if="it.why || (it.cost && it.cost[1])" class="why">
             <summary><span>Чому це важливо</span><AppIcon name="chevDown" cls="turn" /></summary>
             <p>{{ it.why }}{{ costWhy(it) }}</p>
           </details>

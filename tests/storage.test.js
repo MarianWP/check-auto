@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { validConfig, normalizeInspection, normalizeList, parseState, makeBackup, parseBackup, mergeInspections, BACKUP_APP } from "../src/logic/storage";
-import { CFG, mkInsp, allConfigs } from "./helpers";
+import { CFG, OCTAVIA_CFG, mkInsp, allConfigs } from "./helpers";
 
 const NOW = 5000;
 
@@ -55,7 +55,15 @@ describe("нормалізація запису перевірки", () => {
 
   it("відсутні поля отримують безпечні значення", () => {
     const n = normalizeInspection({ id: "x2", cfg: CFG }, NOW);
-    expect(n).toEqual({ id: "x2", createdAt: NOW, updatedAt: NOW, name: "", price: 0, cfg: CFG, answers: {}, stage: 0, done: false });
+    expect(n).toEqual({ id: "x2", model: "golf5", createdAt: NOW, updatedAt: NOW, name: "", price: 0, cfg: CFG, answers: {}, stage: 0, done: false });
+  });
+
+  it("модель: старий запис без поля → golf5; Octavia приймається; конфігурація Golf під моделлю Octavia → відкидається", () => {
+    expect(normalizeInspection({ id: "o1", cfg: OCTAVIA_CFG, model: "octavia5" }, NOW).model).toBe("octavia5");
+    expect(normalizeInspection({ id: "o2", cfg: CFG, model: "octavia5" }, NOW)).toBeNull();
+    expect(normalizeInspection({ id: "o3", cfg: CFG, model: "lada" }, NOW).model).toBe("golf5");
+    expect(validConfig(OCTAVIA_CFG, "octavia5")).toBe(true);
+    expect(validConfig(OCTAVIA_CFG)).toBe(false);
   });
 
   it("без id або з невідомою конфігурацією запис відкидається", () => {

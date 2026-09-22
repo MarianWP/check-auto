@@ -4,8 +4,7 @@ import { computed } from "vue";
 import AppIcon from "./AppIcon.vue";
 import StageStrip from "./StageStrip.vue";
 import CfgLabel from "./CfgLabel.vue";
-import G from "../data/golf";
-import { computeReport, visibleStages, stageProgress, dateStr, clamp, VERDICTS } from "../store";
+import { computeReport, visibleStages, stageProgress, dateStr, clamp, VERDICTS, apiOf } from "../store";
 import { go } from "../nav";
 import { menu } from "../actions";
 
@@ -13,6 +12,7 @@ const props = defineProps({
   i: { type: Object, required: true },
   featured: { type: Boolean, default: false }
 });
+const G = apiOf(props.i);
 const rep = computed(() => computeReport(props.i));
 const stages = computed(() => visibleStages(props.i));
 const prog = computed(() => stageProgress(props.i, stages.value));
@@ -29,7 +29,7 @@ const V = computed(() => VERDICTS[rep.value.verdict]);
     <header class="insp-head">
       <div class="insp-titles">
         <h3 class="insp-title">{{ title }}</h3>
-        <p class="insp-cfg"><CfgLabel :cfg="i.cfg" :mode="i.name ? 'short' : 'rest'" /></p>
+        <p class="insp-cfg"><CfgLabel :cfg="i.cfg" :model="G.id" :mode="i.name ? 'short' : 'rest'" /></p>
         <p class="insp-date">{{ i.done ? 'Завершено' : 'Розпочато' }} {{ dateStr(i.done ? i.updatedAt : i.createdAt) }}</p>
       </div>
       <button class="icon-btn" data-action="menu" :data-id="i.id" :aria-label="'Дії з оглядом «' + title + '»'" @click="menu(i.id)"><AppIcon name="more" /></button>

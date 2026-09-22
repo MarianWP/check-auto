@@ -5,25 +5,29 @@ import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
 import DotsRating from "../components/DotsRating.vue";
 import ChipGroup from "../components/ChipGroup.vue";
-import G from "../data/golf";
+import DraftNotice from "../components/DraftNotice.vue";
+import { MODELS, modelApi } from "../data/index.js";
 import { draft as d, setDraft, createInspection, costStr, reduced, ui } from "../store";
 import { go } from "../nav";
 
+const MODEL_OPTS = MODELS.map(m => ({ id: m.id, name: m.brand + " " + m.name + (m.draft ? " (чернетка)" : "") }));
 const FUELS = [{ id: "petrol", name: "Бензин" }, { id: "diesel", name: "Дизель" }];
-const engines = computed(() => d.fuel ? G.ENGINES.filter(e => e.fuel === d.fuel) : []);
-const bodies = computed(() => d.engine ? G.engine(d.engine).bodies.map(id => { const b = G.body(id); return { id: b.id, name: b.name }; }) : []);
-const years = computed(() => d.body ? G.yearsFor(d.engine, d.body).map(y => ({ id: String(y), name: String(y) })) : []);
-const gears = computed(() => d.year ? G.gearsFor(d.engine, d.year).map(g => ({ id: g.id, name: g.name })) : []);
+const G = computed(() => modelApi(d.model));
+const engines = computed(() => d.fuel ? G.value.ENGINES.filter(e => e.fuel === d.fuel) : []);
+const bodies = computed(() => d.engine ? G.value.engine(d.engine).bodies.map(id => { const b = G.value.body(id); return { id: b.id, name: b.name }; }) : []);
+const years = computed(() => d.body ? G.value.yearsFor(d.engine, d.body).map(y => ({ id: String(y), name: String(y) })) : []);
+const gears = computed(() => d.year ? G.value.gearsFor(d.engine, d.year).map(g => ({ id: g.id, name: g.name })) : []);
 const yearSel = computed(() => d.year ? String(d.year) : null);
 
-/* Крок, на якому зараз користувач: перший невибраний (6 — останній, про авто). */
-const stepNow = computed(() => !d.fuel ? 1 : !d.engine ? 2 : !d.body ? 3 : !d.year ? 4 : !d.gear ? 5 : 6);
+/* Крок, на якому зараз користувач: перший невибраний (7 — останній, про авто). */
+const stepNow = computed(() => !d.fuel ? 2 : !d.engine ? 3 : !d.body ? 4 : !d.year ? 5 : !d.gear ? 6 : 7);
 const picked = computed(() => ({
+  model: G.value.model.name,
   fuel: d.fuel ? FUELS.find(f => f.id === d.fuel).name : "",
-  engine: d.engine ? G.engine(d.engine).name : "",
-  body: d.body ? G.body(d.body).short : "",
+  engine: d.engine ? G.value.engine(d.engine).name : "",
+  body: d.body ? G.value.body(d.body).short : "",
   year: d.year ? String(d.year) : "",
-  gear: d.gear ? G.gearbox(d.gear).short : ""
+  gear: d.gear ? G.value.gearbox(d.gear).short : ""
 }));
 
 function scrollTo(id) {
@@ -45,14 +49,23 @@ onMounted(() => {
     <NavBar root />
     <div class="content" :class="enter">
       <header class="page-head">
-        <p class="kicker">Крок {{ stepNow }} з 6</p>
+        <p class="kicker">Крок {{ stepNow }} з 7</p>
         <h1 class="title">Новий огляд</h1>
-        <p class="lead">Обери конфігурацію авто. Чек-лист підлаштується під двигун і коробку.</p>
+        <p class="lead">Обери модель і конфігурацію авто. Чек-лист підлаштується під двигун і коробку.</p>
       </header>
+
+      <section id="s-model" class="step done" aria-labelledby="st-model">
+        <header class="step-head">
+          <span class="step-no" aria-hidden="true"><AppIcon name="check" /></span>
+          <h2 id="st-model" class="step-t">Модель</h2><span class="step-val">{{ picked.model }}</span>
+        </header>
+        <ChipGroup :list="MODEL_OPTS" :sel="d.model" k="model" label="Модель" @pick="pick" />
+        <DraftNotice :model="d.model" />
+      </section>
 
       <section id="s-fuel" class="step" :class="{ done: !!d.fuel }" aria-labelledby="st-fuel">
         <header class="step-head">
-          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.fuel" name="check" /><template v-else>1</template></span>
+          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.fuel" name="check" /><template v-else>2</template></span>
           <h2 id="st-fuel" class="step-t">Паливо</h2><span v-if="d.fuel" class="step-val">{{ picked.fuel }}</span>
         </header>
         <ChipGroup :list="FUELS" :sel="d.fuel" k="fuel" label="Паливо" @pick="pick" />
@@ -60,7 +73,7 @@ onMounted(() => {
 
       <section v-if="d.fuel" id="s-engine" class="step" :class="{ done: !!d.engine }" aria-labelledby="st-engine">
         <header class="step-head">
-          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.engine" name="check" /><template v-else>2</template></span>
+          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.engine" name="check" /><template v-else>3</template></span>
           <h2 id="st-engine" class="step-t">Двигун</h2><span v-if="d.engine" class="step-val">{{ picked.engine }}</span>
         </header>
         <div class="opts" role="group" aria-label="Двигун">
@@ -77,7 +90,7 @@ onMounted(() => {
 
       <section v-if="d.engine" id="s-body" class="step" :class="{ done: !!d.body }" aria-labelledby="st-body">
         <header class="step-head">
-          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.body" name="check" /><template v-else>3</template></span>
+          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.body" name="check" /><template v-else>4</template></span>
           <h2 id="st-body" class="step-t">Кузов</h2><span v-if="d.body" class="step-val">{{ picked.body }}</span>
         </header>
         <ChipGroup :list="bodies" :sel="d.body" k="body" label="Кузов" @pick="pick" />
@@ -85,7 +98,7 @@ onMounted(() => {
 
       <section v-if="d.body" id="s-year" class="step" :class="{ done: !!d.year }" aria-labelledby="st-year">
         <header class="step-head">
-          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.year" name="check" /><template v-else>4</template></span>
+          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.year" name="check" /><template v-else>5</template></span>
           <h2 id="st-year" class="step-t">Рік випуску</h2><span v-if="d.year" class="step-val">{{ picked.year }}</span>
         </header>
         <ChipGroup :list="years" :sel="yearSel" k="year" label="Рік випуску" @pick="pick" />
@@ -94,7 +107,7 @@ onMounted(() => {
 
       <section v-if="d.year" id="s-gear" class="step" :class="{ done: !!d.gear }" aria-labelledby="st-gear">
         <header class="step-head">
-          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.gear" name="check" /><template v-else>5</template></span>
+          <span class="step-no" aria-hidden="true"><AppIcon v-if="d.gear" name="check" /><template v-else>6</template></span>
           <h2 id="st-gear" class="step-t">Коробка передач</h2><span v-if="d.gear" class="step-val">{{ picked.gear }}</span>
         </header>
         <ChipGroup :list="gears" :sel="d.gear" k="gear" label="Коробка передач" @pick="pick" />
@@ -102,7 +115,7 @@ onMounted(() => {
 
       <section v-if="d.gear" id="s-final" class="step" aria-labelledby="st-final">
         <header class="step-head">
-          <span class="step-no" aria-hidden="true">6</span>
+          <span class="step-no" aria-hidden="true">7</span>
           <h2 id="st-final" class="step-t">Про це авто</h2>
         </header>
         <div class="card fields">

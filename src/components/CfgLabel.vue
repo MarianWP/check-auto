@@ -1,16 +1,20 @@
 <script setup>
-/* Рядок конфігурації авто. Короткі частини («5-дв.», «МКПП-5», рік) не розриваються посередині при переносі. */
+/* Рядок конфігурації авто. Короткі частини («5-дв.», «МКПП-5», рік) не розриваються посередині при переносі.
+   Спереду завжди коротка назва моделі, бо оглядів може бути кілька різних моделей. */
 import { computed } from "vue";
-import G from "../data/golf";
+import { modelApi } from "../data/index.js";
 
 const props = defineProps({
   cfg: { type: Object, required: true },
-  /* short: двигун · рік · кузов · коробка (скорочено); rest: кузов · коробка (повні назви, без двигуна й року) */
+  model: { type: String, default: "golf5" },
+  /* short: модель · двигун · рік · кузов · коробка (скорочено); rest: модель · кузов · коробка (повні назви) */
   mode: { type: String, default: "short" }
 });
 const parts = computed(() => {
+  const G = modelApi(props.model);
   const e = G.engine(props.cfg.engine), b = G.body(props.cfg.body), g = G.gearbox(props.cfg.gear);
-  return props.mode === "rest" ? [b.name, g.name] : [e.name, String(props.cfg.year), b.short, g.short];
+  const base = [G.model.short];
+  return props.mode === "rest" ? base.concat([b && b.name, g && g.name]).filter(Boolean) : base.concat([e && e.name, String(props.cfg.year), b && b.short, g && g.short]).filter(Boolean);
 });
 </script>
 

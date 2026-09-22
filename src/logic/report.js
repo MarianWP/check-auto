@@ -1,7 +1,7 @@
-/* Чиста логіка звіту: фільтрація чек-листа під конфігурацію, прогрес, оцінка і вердикт.
+/* Чиста логіка звіту: чек-лист під конфігурацію (вбудований + власні пункти з адмінки), прогрес, оцінка і вердикт.
    Без Vue і без DOM — покрито тестами у tests/report.test.js. */
-import G from "../data/golf";
-import CL from "../data/checklist";
+import { apiOf, modelIdOf } from "../data/index.js";
+import CL from "../data/checklist.js";
 
 export const W = { crit: 3, major: 2, minor: 1 };
 /* Менше цієї частки перевірених пунктів — «Недостатньо даних». */
@@ -10,13 +10,25 @@ export const MIN_DATA = 0.4;
    і лише коли перевірено всі критичні пункти. */
 export const FULL_COVERAGE = 0.8;
 
-/* Етапи з пунктами, які стосуються конфігурації авто (поле only = усі теги мають збігтися). */
-export function visibleStages(i, checklist = CL) {
-  const tags = G.tagsFor(i.cfg);
-  return checklist.map(s => Object.assign({}, s, { items: s.items.filter(it => !it.only || it.only.every(t => tags.has(t))) }));
+/* Вбудований чек-лист + власні пункти (з адмінки) для моделі огляду. Власний пункт має stage (id етапу),
+   model (null = для всіх моделей) і ті самі поля, що вбудований; sort задає порядок серед власних. */
+export function checklistFor(i, checklist = CL, extra = []) {
+  const model = modelIdOf(i);
+  const mine = (extra || []).filter(it => it && it.enabled !== false && (!it.model || it.model === model));
+  if (!mine.length) return checklist;
+  return checklist.map(s => {
+    const add = mine.filter(it => it.stage === s.id).sort((a, b) => (a.sort || 0) - (b.sort || 0));
+    return add.length ? Object.assign({}, s, { items: s.items.concat(add) }) : s;
+  });
 }
 
-/* Прогрес по етапах для панелі чек-листа: «пропустити» теж вважається відповіддю. */
+/* Етапи з пунктами, які стосуються конфігурації авто (поле only = усі теги мають збігтися). */
+export function visibleStages(i, checklist = CL, extra = []) {
+  const tags = apiOf(i).tagsFor(i.cfg);
+  return checklistFor(i, checklist, extra).map(s => Object.assign({}, s, { items: s.items.filter(it => !it.only || it.only.every(t => tags.has(t))) }));
+}
+
+/* Прогрес по етапах для панелі чек-листа: «не перевірено» теж вважається відповіддю. */
 export function stageProgress(i, stages) {
   return stages.map(s => {
     let answered = 0;
@@ -30,9 +42,9 @@ export function stageProgress(i, stages) {
    2. Замало даних (< MIN_DATA) — «Недостатньо даних».
    3. Низька оцінка перевіреного (< 65) — «Не рекомендуємо»: знайдені проблеми реальні й при неповному огляді.
    4. Позитивний висновок потребує повноти: >= FULL_COVERAGE і всі критичні пункти перевірені, інакше «Огляд неповний».
-   «Перевірено» означає відповідь «ок» або «проблема»; «пропустити» повноти не додає. */
-export function computeReport(i, checklist = CL) {
-  const stages = visibleStages(i, checklist);
+   «Перевірено» означає відповідь «ок» або «проблема»; «не перевірено» повноти не додає. */
+export function computeReport(i, checklist = CL, extra = []) {
+  const stages = visibleStages(i, checklist, extra);
   let total = 0, okW = 0, ansW = 0, ok = 0, lo = 0, hi = 0, critTotal = 0;
   const fails = { crit: [], major: [], minor: [] }, skipped = [], unanswered = [], critUnchecked = [];
   stages.forEach((stage, si) => stage.items.forEach(it => {
