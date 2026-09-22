@@ -71,7 +71,7 @@ onMounted(load);
       </header>
 
       <div v-if="CLOUD_ERROR" class="notice warn" data-notice="assistant-off"><AppIcon name="alert" /><div><b>Хмару налаштовано з помилкою</b>{{ CLOUD_ERROR }}. Помічник поки недоступний.</div></div>
-      <div v-else-if="!auth.enabled" class="notice info" data-notice="assistant-off"><AppIcon name="alert" /><div><b>Помічник працює через хмару</b>Він з'явиться, коли адміністратор підключить Supabase і ключ Claude API. Чек-лист і довідник працюють без нього.</div></div>
+      <div v-else-if="!auth.enabled" class="notice info" data-notice="assistant-off"><AppIcon name="alert" /><div><b>Помічник працює через хмару</b>Він з'явиться, коли адміністратор підключить Supabase і ключ OpenAI. Чек-лист і довідник працюють без нього.</div></div>
       <div v-else-if="!user" class="card account" data-notice="assistant-login">
         <p class="prose">Увійди через Telegram, щоб ставити запитання помічнику. Він бачить твій огляд і відповідає саме про це авто.</p>
         <button v-if="inTelegram" class="btn" data-action="login" :disabled="auth.busy" @click="loginMiniApp()"><AppIcon name="share" /><span>{{ auth.busy ? 'Входимо…' : 'Увійти через Telegram' }}</span></button>

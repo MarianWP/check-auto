@@ -1,5 +1,5 @@
 /* Чат з помічником: історія з бази (RLS: лише свої рядки), запитання через Edge Function assistant
-   зі стрімінгом відповіді. Ключ Claude API живе тільки в секретах функції. */
+   зі стрімінгом відповіді. Ключ OpenAI живе тільки в секретах функції. */
 import { reactive } from "vue";
 import { CLOUD, CLOUD_URL, CLOUD_KEY, supabase, errText } from "./client";
 import { messageFromRow } from "../logic/assistant";

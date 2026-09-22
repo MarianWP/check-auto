@@ -1,12 +1,15 @@
-// Edge Function assistant: чат з помічником на базі Claude для питань про огляд авто.
+// Edge Function assistant: чат з помічником (GPT від OpenAI; Claude як запасний провайдер) для питань про огляд авто.
 // Приймає { message, context?, inspection_id?, lang? } від залогіненого користувача (JWT Supabase у Authorization),
 // підвантажує останні репліки цієї розмови з бази, стрімить відповідь як text/plain і зберігає обидві репліки.
-// Секрети: ANTHROPIC_API_KEY (обов'язково), ASSISTANT_MODEL, ASSISTANT_DAILY_LIMIT (типово 30),
+// Секрети: OPENAI_API_KEY (основний) або ANTHROPIC_API_KEY (запасний; провайдер обирається за наявним ключем),
+// ASSISTANT_MODEL (типово gpt-5-mini для OpenAI, claude-sonnet-5 для Anthropic), ASSISTANT_DAILY_LIMIT (типово 30),
 // SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (є в середовищі функцій).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const API_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
-const MODEL = Deno.env.get("ASSISTANT_MODEL") || "claude-sonnet-5";
+const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
+const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+const PROVIDER = OPENAI_KEY ? "openai" : ANTHROPIC_KEY ? "anthropic" : "";
+const MODEL = Deno.env.get("ASSISTANT_MODEL") || (PROVIDER === "openai" ? "gpt-5-mini" : "claude-sonnet-5");
 const DAILY_LIMIT = Number(Deno.env.get("ASSISTANT_DAILY_LIMIT") || 30);
 const MAX_MESSAGE = 1500, MAX_CONTEXT = 8000, HISTORY = 12, MAX_TOKENS = 1024;
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Expose-Headers": "x-remaining" };
@@ -24,15 +27,23 @@ const SYSTEM = `Ти помічник у застосунку Golf Check: він
 
 type Msg = { role: "user" | "assistant"; content: string };
 
+// OpenAI Chat Completions зі стрімінгом. Для моделей GPT-5 ліміт задається як max_completion_tokens.
+function openaiStream(messages: Msg[], system: string): Promise<Response> {
+  return fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: "Bearer " + OPENAI_KEY },
+    body: JSON.stringify({ model: MODEL, stream: true, max_completion_tokens: MAX_TOKENS, messages: [{ role: "system", content: system }, ...messages] })
+  });
+}
 function anthropicStream(messages: Msg[], system: string): Promise<Response> {
   return fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "content-type": "application/json", "x-api-key": API_KEY, "anthropic-version": "2023-06-01" },
+    headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, stream: true, system, messages })
   });
 }
 
-// Розбір SSE від Anthropic: беремо лише text_delta.
+// Розбір SSE обох провайдерів: OpenAI дає choices[0].delta.content і рядок [DONE], Anthropic — content_block_delta/text_delta.
 function textDeltas(body: ReadableStream<Uint8Array>): ReadableStream<string> {
   const dec = new TextDecoder(); let buf = "";
   return body.pipeThrough(new TransformStream<Uint8Array, string>({
@@ -41,10 +52,14 @@ function textDeltas(body: ReadableStream<Uint8Array>): ReadableStream<string> {
       const lines = buf.split("\n"); buf = lines.pop() ?? "";
       for (const line of lines) {
         if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (payload === "[DONE]") continue;
         try {
-          const ev = JSON.parse(line.slice(5).trim());
-          if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") ctrl.enqueue(ev.delta.text);
-          else if (ev.type === "error") ctrl.enqueue("\n\n[Помилка сервісу: " + (ev.error?.message ?? "невідома") + "]");
+          const ev = JSON.parse(payload);
+          const openaiText = ev.choices?.[0]?.delta?.content;
+          if (typeof openaiText === "string") ctrl.enqueue(openaiText);
+          else if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") ctrl.enqueue(ev.delta.text);
+          else if (ev.type === "error" || ev.error) ctrl.enqueue("\n\n[Помилка сервісу: " + (ev.error?.message ?? "невідома") + "]");
         } catch { /* неповний рядок, дочекаємося решти */ }
       }
     }
@@ -53,7 +68,7 @@ function textDeltas(body: ReadableStream<Uint8Array>): ReadableStream<string> {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
-  if (!API_KEY) return json({ error: "ANTHROPIC_API_KEY не задано у секретах функції" }, 500);
+  if (!PROVIDER) return json({ error: "OPENAI_API_KEY (або ANTHROPIC_API_KEY) не задано у секретах функції" }, 500);
   const authHeader = req.headers.get("Authorization") ?? "";
   const token = authHeader.replace(/^Bearer\s+/i, "");
   if (!token) return json({ error: "Потрібен вхід" }, 401);
@@ -86,7 +101,7 @@ Deno.serve(async (req) => {
   q = inspectionId ? q.eq("inspection_id", inspectionId) : q.is("inspection_id", null);
   const { data: hist } = await q;
   const history: Msg[] = ((hist ?? []) as Msg[]).reverse();
-  // Anthropic вимагає чергування ролей і перший хід від користувача.
+  // Чергування ролей і перший хід від користувача: так вимагає Anthropic, а OpenAI це не заважає.
   const messages: Msg[] = [];
   for (const m of history) {
     if (messages.length === 0 && m.role !== "user") continue;
@@ -98,11 +113,12 @@ Deno.serve(async (req) => {
 
   let system = SYSTEM + "\nМова відповіді: " + LANGS[lang] + ".";
   if (context) system += "\n\nКонтекст поточного огляду:\n" + context;
-  const up = await anthropicStream(messages, system);
+  const up = await (PROVIDER === "openai" ? openaiStream(messages, system) : anthropicStream(messages, system));
   if (!up.ok || !up.body) {
     const t = await up.text().catch(() => "");
-    console.error("anthropic", up.status, t.slice(0, 300));
-    return json({ error: up.status === 401 ? "Ключ Claude API недійсний" : up.status === 429 ? "Сервіс перевантажено, спробуй за хвилину" : "Помічник тимчасово недоступний" }, 502);
+    console.error(PROVIDER, up.status, t.slice(0, 300));
+    const who = PROVIDER === "openai" ? "OpenAI" : "Claude";
+    return json({ error: up.status === 401 ? "Ключ " + who + " API недійсний" : up.status === 429 ? "Сервіс перевантажено, спробуй за хвилину" : "Помічник тимчасово недоступний" }, 502);
   }
 
   // Стрімимо текст клієнту і паралельно збираємо повну відповідь для збереження.

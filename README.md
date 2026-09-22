@@ -95,7 +95,7 @@ src/logic/assistant.js  чиста логіка: контекст огляду �
 src/logic/prefs.js      чиста логіка: тема і мова помічника (ключ golfcheck.prefs.v1)
 src/prefs.js            застосування теми до документа, meta theme-color і рамки Telegram
 supabase/               migrations/ (схема, RLS, сховище фото, чат), functions/telegram-auth (вхід),
-                        functions/assistant (проксі до Claude API зі стрімінгом і лімітом на добу)
+                        functions/assistant (проксі до OpenAI або Claude зі стрімінгом і лімітом на добу)
 src/data/checklist.js   етапи і пункти чек-листа
 src/keyboard.js         екранна клавіатура: ховає нижні панелі, піднімає аркуш, показує поле з фокусом
 src/assets/styles/      tokens.css, base.css, layout.css, components.css, screens.css (index.css їх збирає)
@@ -164,20 +164,20 @@ tests/                  юніт-тести (Vitest)
 
 ## Помічник ШІ
 
-Вкладка «Помічник» у нижній навігації: чат на базі Claude, який відповідає на питання про огляд. Разом із запитанням апка надсилає контекст обраного огляду: модель, конфігурацію, ціни, типові хвороби двигуна й коробки, відповіді користувача, знайдені проблеми з коментарями. Історія розмови зберігається у хмарі окремо для кожного огляду. Потрібні хмара і вхід через Telegram.
+Вкладка «Помічник» у нижній навігації: чат на базі GPT (OpenAI), який відповідає на питання про огляд. Разом із запитанням апка надсилає контекст обраного огляду: модель, конфігурацію, ціни, типові хвороби двигуна й коробки, відповіді користувача, знайдені проблеми з коментарями. Історія розмови зберігається у хмарі окремо для кожного огляду. Потрібні хмара і вхід через Telegram.
 
 Налаштування (після кроків із розділу «Хмара»):
 
 1. У SQL Editor виконай `supabase/migrations/20260923000000_assistant.sql` (таблиця assistant_messages з RLS).
-2. Ключ Claude API з console.anthropic.com у секрети функцій і деплой:
+2. Ключ OpenAI з platform.openai.com у секрети функцій і деплой:
    ```
-   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+   supabase secrets set OPENAI_API_KEY=sk-...
    supabase functions deploy assistant
    ```
    Функція перевіряє сесію Supabase сама, тож `--no-verify-jwt` тут не потрібен.
-3. Необов'язково: `ASSISTANT_MODEL` (типово `claude-sonnet-5`) і `ASSISTANT_DAILY_LIMIT` (типово 30 запитань на користувача за добу) тими самими `supabase secrets set`.
+3. Необов'язково: `ASSISTANT_MODEL` (типово `gpt-5-mini`) і `ASSISTANT_DAILY_LIMIT` (типово 30 запитань на користувача за добу) тими самими `supabase secrets set`. Якщо замість `OPENAI_API_KEY` задати `ANTHROPIC_API_KEY`, функція піде до Claude (типова модель `claude-sonnet-5`).
 
-Ключ Claude API ніколи не потрапляє в клієнт: запити йдуть лише через Edge Function від залогінених користувачів.
+Ключ API ніколи не потрапляє в клієнт: запити йдуть лише через Edge Function від залогінених користувачів.
 
 ## Як встановити на iPhone
 
