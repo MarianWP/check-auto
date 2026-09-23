@@ -6,7 +6,7 @@
 // ASSISTANT_REASONING (глибина роздумів моделей GPT-5/o: minimal | low | medium | high, типово low),
 // SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (є в середовищі функцій).
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { cutByLimit, emptyReplyError, firstText, isReasoningModel, openaiBody, sseEvents, type Ev } from "../_shared/llm.ts";
+import { cutByLimit, emptyReplyError, firstText, isReasoningModel, openaiBody, replyStream, sseEvents, type Ev } from "../_shared/llm.ts";
 
 const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
 const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
@@ -137,31 +137,12 @@ Deno.serve(async (req) => {
   // Порожній обмін не зберігаємо: інакше в історії лишилося б запитання без відповіді.
   if (!events) return json({ error: emptyReplyError(reason), remaining }, 502);
 
-  // Стрімимо текст клієнту і паралельно збираємо повну відповідь для збереження.
-  const enc = new TextEncoder();
-  const src = events;
-  let full = first, sent = false;
-  const out = new ReadableStream<Uint8Array>({
-    async pull(ctrl) {
-      if (!sent) { sent = true; ctrl.enqueue(enc.encode(first)); return; }
-      let step: IteratorResult<Ev>;
-      try { step = await src.next(); }
-      catch (e) { console.error("stream", String(e)); ctrl.error(new Error("Відповідь перервалася")); return; }
-      if (step.done) {
-        const rows = [{ user_id: userId, inspection_id: inspectionId, role: "user", content: message },
-          { user_id: userId, inspection_id: inspectionId, role: "assistant", content: full.trim() }];
-        const { error } = await admin.from("assistant_messages").insert(rows);
-        if (error) { console.error("save", error.message); ctrl.error(new Error("Не вдалося зберегти розмову")); return; }
-        ctrl.close();
-        return;
-      }
-      const ev = step.value;
-      let t = ev.text ?? "";
-      if (ev.error) t += "\n\n[Помилка сервісу: " + ev.error + "]";
-      else if (ev.finish && cutByLimit(ev.finish)) t += "…";
-      if (t) { full += t; ctrl.enqueue(enc.encode(t)); }
-    },
-    async cancel() { await src.return(undefined); }
+  // Стрімимо текст клієнту і паралельно збираємо повну відповідь; наприкінці зберігаємо обидві репліки.
+  const out = replyStream(first, events, async full => {
+    const rows = [{ user_id: userId, inspection_id: inspectionId, role: "user", content: message },
+      { user_id: userId, inspection_id: inspectionId, role: "assistant", content: full }];
+    const { error } = await admin.from("assistant_messages").insert(rows);
+    if (error) { console.error("save", error.message); throw new Error("Не вдалося зберегти розмову"); }
   });
   return new Response(out, { headers: { ...CORS, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "x-remaining": String(remaining) } });
 });

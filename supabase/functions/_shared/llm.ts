@@ -70,6 +70,36 @@ export async function firstText(events: AsyncGenerator<Ev>): Promise<{ first: st
 
 export const cutByLimit = (reason: string) => reason === "length" || reason === "max_tokens";
 
+// Потік відповіді клієнту: перший шматок тексту, далі решта подій. Коли модель закінчила, викликається save(повний текст);
+// помилка save обриває потік, щоб клієнт знав, що розмову не збережено.
+// Кожен виклик pull мусить або віддати шматок, або закрити потік: якщо pull повернеться ні з чим, браузерний потік
+// більше його не викличе і відповідь «зависне» (так було з фінальною подією finish_reason без тексту).
+export function replyStream(first: string, events: AsyncGenerator<Ev>, save: (full: string) => Promise<void>): ReadableStream<Uint8Array> {
+  const enc = new TextEncoder();
+  let full = first, sent = false;
+  return new ReadableStream<Uint8Array>({
+    async pull(ctrl) {
+      if (!sent) { sent = true; ctrl.enqueue(enc.encode(first)); return; }
+      for (;;) {
+        let step: IteratorResult<Ev>;
+        try { step = await events.next(); }
+        catch (e) { console.error("stream", String(e)); ctrl.error(new Error("Відповідь перервалася")); return; }
+        if (step.done) {
+          try { await save(full.trim()); } catch (e) { ctrl.error(e instanceof Error ? e : new Error(String(e))); return; }
+          ctrl.close();
+          return;
+        }
+        const ev = step.value;
+        let t = ev.text ?? "";
+        if (ev.error) t += "\n\n[Помилка сервісу: " + ev.error + "]";
+        else if (ev.finish && cutByLimit(ev.finish)) t += "…";
+        if (t) { full += t; ctrl.enqueue(enc.encode(t)); return; }
+      }
+    },
+    async cancel() { await events.return(undefined); }
+  });
+}
+
 // Зрозумілий текст для користувача, коли модель так і не написала жодного слова.
 export function emptyReplyError(reason: string): string {
   if (cutByLimit(reason)) return "Модель витратила весь ліміт на роздуми й не дала відповіді. Спробуй ще раз або постав коротше запитання.";

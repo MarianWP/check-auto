@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseLine, sseEvents, firstText, openaiBody, isReasoningModel, emptyReplyError } from "../supabase/functions/_shared/llm.ts";
+import { parseLine, sseEvents, firstText, openaiBody, isReasoningModel, emptyReplyError, replyStream } from "../supabase/functions/_shared/llm.ts";
 
 /* Тіло відповіді провайдера з довільною нарізкою на шматки (як приходить мережею). */
 function body(text, cut = 7) {
@@ -73,4 +73,31 @@ describe("перше слово", () => {
     await gen.return(undefined);
     expect(cancelled).toBe(true);
   });
+});
+
+describe("потік відповіді клієнту", () => {
+  async function readAll(stream) {
+    const reader = stream.getReader(), dec = new TextDecoder(); let text = "";
+    for (;;) { const { value, done } = await reader.read(); if (done) return text; text += dec.decode(value); }
+  }
+  const start = async text => { const gen = sseEvents(body(text)); const r = await firstText(gen); return { gen, first: r.first }; };
+  it("закривається після фінальної події без тексту і зберігає розмову", async () => {
+    const { gen, first } = await start(sse([delta("Перевір"), delta(" ремінь."), { choices: [{ delta: {}, finish_reason: "stop" }] }, "[DONE]"]));
+    const saved = [];
+    const text = await readAll(replyStream(first, gen, async full => { saved.push(full); }));
+    expect(text).toBe("Перевір ремінь.");
+    expect(saved).toEqual(["Перевір ремінь."]);
+  }, 2000);
+  it("пропускає порожні службові події посеред відповіді", async () => {
+    const { gen, first } = await start(sse([delta("a"), { choices: [{ delta: { content: "" } }] }, { choices: [{ delta: {} }] }, delta("b"), { choices: [{ delta: {}, finish_reason: "stop" }] }]));
+    expect(await readAll(replyStream(first, gen, async () => {}))).toBe("ab");
+  }, 2000);
+  it("обрізана лімітом відповідь закінчується трикрапкою", async () => {
+    const { gen, first } = await start(sse([delta("Довга"), { choices: [{ delta: {}, finish_reason: "length" }] }]));
+    expect(await readAll(replyStream(first, gen, async () => {}))).toBe("Довга…");
+  }, 2000);
+  it("помилка збереження обриває потік, щоб клієнт це побачив", async () => {
+    const { gen, first } = await start(sse([delta("a"), { choices: [{ delta: {}, finish_reason: "stop" }] }]));
+    await expect(readAll(replyStream(first, gen, async () => { throw new Error("Не вдалося зберегти розмову"); }))).rejects.toThrow(/зберегти/);
+  }, 2000);
 });
