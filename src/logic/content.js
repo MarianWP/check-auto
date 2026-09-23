@@ -48,6 +48,13 @@ export function photoFromRow(r) {
   if (!r || !r.id || !r.path || !["engine", "gearbox", "common", "item"].includes(r.kind)) return null;
   return { id: r.id, model: r.model || null, kind: r.kind, target: String(r.target), idx: int(r.idx) ?? 0, path: r.path, caption: str(r.caption, 200), key: photoKey(r.kind, r.target, int(r.idx) ?? 0) };
 }
+/* Мініатюра лежить поруч з оригіналом: x.jpg → x.thumb.jpg. У фото, завантажених раніше, її немає —
+   тоді інтерфейс бере оригінал. */
+export const thumbPath = path => String(path || "").replace(/(\.jpe?g)?$/i, ".thumb.jpg");
+/* Розмір мініатюри: смужка показує 112×84, тож 3× для екранів iPhone. */
+export const THUMB = { w: 336, h: 252 };
+/* Масштаб, за якого фото w×h накриває мініатюру (object-fit: cover), не збільшуючи оригінал. */
+export const thumbScale = (w, h) => Math.min(1, Math.max(THUMB.w / w, THUMB.h / h));
 export function photosFor(list, kind, target, idx, model) {
   const key = photoKey(kind, target, idx);
   return (list || []).filter(p => p.key === key && (!p.model || !model || p.model === model));

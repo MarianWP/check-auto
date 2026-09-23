@@ -2,6 +2,7 @@
    Без Vue і без DOM — покрито тестами у tests/report.test.js. */
 import { apiOf, modelIdOf } from "../data/index.js";
 import CL from "../data/checklist.js";
+import { hydrateSnapshot } from "./snapshot";
 
 export const W = { crit: 3, major: 2, minor: 1 };
 /* Менше цієї частки перевірених пунктів — «Недостатньо даних». */
@@ -24,7 +25,7 @@ export function checklistFor(i, checklist = CL, extra = []) {
 
 /* Етапи з пунктами, які стосуються конфігурації авто (поле only = усі теги мають збігтися). */
 export function visibleStages(i, checklist = CL, extra = []) {
-  if (i.checklistSnapshot) return i.checklistSnapshot;
+  if (i.checklistSnapshot) return hydrateSnapshot(i.checklistSnapshot);
   const tags = apiOf(i).tagsFor(i.cfg);
   return checklistFor(i, checklist, extra).map(s => Object.assign({}, s, { items: s.items.filter(it => !it.only || it.only.every(t => tags.has(t))) }));
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeSupabaseUrl, normalizeKey, cloudConfig } from "../src/logic/cloud";
+import { normalizeSupabaseUrl, normalizeKey, cloudConfig, authStorageKey, storedSession } from "../src/logic/cloud";
 
 describe("адреса Supabase із секрету збірки", () => {
   it("повна адреса лишається, зайві пробіли і слеш прибираються", () => {
@@ -35,5 +35,20 @@ describe("підсумок налаштувань хмари", () => {
   });
   it("робочі значення → увімкнено", () => {
     expect(cloudConfig({ VITE_SUPABASE_URL: "abcdefghijklmnopqrst", VITE_SUPABASE_ANON_KEY: "sb_publishable_x" })).toEqual({ url: "https://abcdefghijklmnopqrst.supabase.co", key: "sb_publishable_x", enabled: true, error: "" });
+  });
+});
+
+describe("сесія з минулого запуску", () => {
+  it("ключ збігається з типовим ключем supabase-js", () => {
+    expect(authStorageKey("https://abcdefghijklmnopqrst.supabase.co")).toBe("sb-abcdefghijklmnopqrst-auth-token");
+    expect(authStorageKey("не адреса")).toBe("");
+  });
+  it("повертає сесію лише з токеном і id користувача", () => {
+    const s = { access_token: "a", refresh_token: "r", user: { id: "u1" } };
+    expect(storedSession(JSON.stringify(s))).toEqual(s);
+    expect(storedSession(JSON.stringify({ access_token: "a" }))).toBeNull();
+    expect(storedSession(JSON.stringify({ user: { id: "u1" } }))).toBeNull();
+    expect(storedSession("{зламано")).toBeNull();
+    expect(storedSession(null)).toBeNull();
   });
 });

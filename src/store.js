@@ -5,7 +5,7 @@ import CL from "./data/checklist.js";
 import { apiOf, modelApi, modelDef, registerModel, unregisterModel, MODELS, DEFAULT_MODEL } from "./data/index.js";
 import { aiItemsOf } from "./logic/generated";
 import { computeReport as computeReportPure, visibleStages as visibleStagesPure, stageProgress } from "./logic/report";
-import { KEY, MODELS_KEY, parseState, parseModels, validConfig, normalizeList } from "./logic/storage";
+import { KEY, MODELS_KEY, parseStateData, parseModels, validConfig, normalizeList, normalizeSnapshot } from "./logic/storage";
 import { readAccount, writeAccount, accountKey } from "./logic/persistence";
 
 export { stageProgress, MIN_DATA, FULL_COVERAGE } from "./logic/report";
@@ -108,7 +108,7 @@ function load(scope) {
   aiModels().forEach(m => unregisterModel(m.id));
   parseModels(saved.models);
   restoreDraft(saved.draft);
-  const res = parseState(JSON.stringify(saved));
+  const res = parseStateData(saved);
   storage.rejected = res.rejected; storage.loadError ||= res.error || "";
   if (res.rejected) {
     try { localStorage.setItem(accountKey(scope) + ".rejected", JSON.stringify(saved)); } catch { /* source remains */ }
@@ -218,6 +218,8 @@ export function setDraft(k, v) {
   } else if (k === "gear") draft.gear = v;
   return !draft.fuel ? "s-fuel" : !draft.engine ? "s-engine" : !draft.body ? "s-body" : !draft.year ? "s-year" : !draft.gear ? "s-gear" : "s-final";
 }
+/* Компактний знімок чек-листа для огляду (див. src/logic/snapshot.js). */
+const snapshotOf = i => normalizeSnapshot(visibleStages(i)) || JSON.parse(JSON.stringify(visibleStages(i)));
 export function createInspection() {
   if (!validConfig({ engine: draft.engine, body: draft.body, year: draft.year, gear: draft.gear }, draft.model)) return null;
   const i = {
@@ -227,7 +229,7 @@ export function createInspection() {
     cfg: { engine: draft.engine, body: draft.body, year: draft.year, gear: draft.gear },
     answers: {}, stage: 0, done: false
   };
-  i.checklistSnapshot = JSON.parse(JSON.stringify(visibleStages(i)));
+  i.checklistSnapshot = snapshotOf(i);
   i.priceSnapshot = apiOf(i).priceFor(i.cfg);
   i.reportVersion = 1;
   db.inspections.push(i);
@@ -250,7 +252,7 @@ export const toggleTag = (i, itemId, t) => {
 };
 export const setComment = (i, itemId, c) => { ans(i, itemId).c = String(c || "").slice(0, 500); touch(i); };
 export const finish = i => {
-  if (!i.checklistSnapshot) i.checklistSnapshot = JSON.parse(JSON.stringify(visibleStages(i)));
+  if (!i.checklistSnapshot) i.checklistSnapshot = snapshotOf(i);
   if (!i.priceSnapshot) i.priceSnapshot = apiOf(i).priceFor(i.cfg);
   i.reportVersion = 1; i.done = true; touch(i);
 };

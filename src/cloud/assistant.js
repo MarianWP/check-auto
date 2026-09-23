@@ -1,6 +1,6 @@
 /* Account-scoped chat. A request may mutate only the conversation it started in. */
 import { reactive, watch } from "vue";
-import { CLOUD, CLOUD_URL, CLOUD_KEY, supabase, errText } from "./client";
+import { CLOUD, CLOUD_URL, CLOUD_KEY, sb, errText } from "./client";
 import { user } from "./auth";
 import { messageFromRow, readChatCache, putChatCache, CHAT_CACHE_KEY } from "../logic/assistant";
 
@@ -25,7 +25,7 @@ watch(() => user.value?.id, () => {
   cancelAsk(); historyCtrl?.abort(); historyCtrl = null;
   Object.assign(chat, empty());
 }, { flush: "sync" });
-function baseQuery(inspId, owner) {
+function baseQuery(supabase, inspId, owner) {
   let q = supabase.from("assistant_messages").select("id,role,content,created_at").eq("user_id", owner);
   return inspId ? q.eq("inspection_id", inspId) : q.is("inspection_id", null);
 }
@@ -45,7 +45,9 @@ export async function loadHistory(inspId, older = false) {
     chat.loading = !cached.length; chat.refreshing = !!cached.length;
   } else chat.loading = true;
   try {
-    let q = baseQuery(inspId, owner).order("created_at", { ascending: false }).order("id", { ascending: false }).limit(60);
+    const supabase = await sb();
+    if (!valid()) return;
+    let q = baseQuery(supabase, inspId, owner).order("created_at", { ascending: false }).order("id", { ascending: false }).limit(60);
     if (older && chat.cursor) {
       const c = chat.cursor;
       if (!/^[0-9a-f-]{36}$/i.test(c.id) || !/^[0-9T:.+Z-]+$/.test(c.created_at)) throw new Error("Некоректний курсор історії");
@@ -78,10 +80,12 @@ export async function ask(text, { inspId, context, lang } = {}) {
   const valid = () => run === seq && owner === user.value?.id && key(inspId) === chat.loadedFor;
   chat.streaming = true; chat.error = ""; chat.retryText = "";
   let timer, mine, reply;
-  const arm = () => { clearTimeout(timer); timer = setTimeout(() => controller.abort(), 60000); };
-  arm();
+  /* Сервер віддає відповідь після першого слова моделі (і може раз повторити порожню спробу),
+     тож на початок чекаємо довше; між шматками тексту — не більше хвилини тиші. */
+  const arm = ms => { clearTimeout(timer); timer = setTimeout(() => controller.abort(), ms); };
+  arm(100000);
   try {
-    const { data: s, error } = await supabase.auth.getSession();
+    const { data: s, error } = await (await sb()).auth.getSession();
     if (!valid()) return false;
     if (error || !s?.session?.access_token) throw new Error("Потрібен вхід через Telegram");
     const id = crypto.randomUUID();
@@ -108,7 +112,7 @@ export async function ask(text, { inspId, context, lang } = {}) {
         const { value, done } = await reader.read();
         if (!valid()) { await reader.cancel(); return false; }
         if (done) break;
-        arm(); reply.content += decoder.decode(value, { stream: true });
+        arm(60000); reply.content += decoder.decode(value, { stream: true });
       }
       reply.content = (reply.content + decoder.decode()).trim();
     } finally { reader.releaseLock(); }
@@ -137,7 +141,7 @@ export async function clearHistory(inspId) {
   historyCtrl?.abort(); const run = ++seq;
   chat.loading = true;
   try {
-    let q = supabase.from("assistant_messages").delete().eq("user_id", owner);
+    let q = (await sb()).from("assistant_messages").delete().eq("user_id", owner);
     q = inspId ? q.eq("inspection_id", inspId) : q.is("inspection_id", null);
     const { error } = await q;
     if (run !== seq || owner !== user.value?.id) return;

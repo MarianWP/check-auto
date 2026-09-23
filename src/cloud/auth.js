@@ -3,7 +3,8 @@
    token_hash → supabase.auth.verifyOtp дає звичайну сесію Supabase. Поза Telegram те саме робить Telegram Login Widget.
    Профіль (profiles) містить роль: user або admin. */
 import { reactive, computed } from "vue";
-import { CLOUD, supabase, errText } from "./client";
+import { CLOUD, AUTH_KEY, sb, errText } from "./client";
+import { storedSession } from "../logic/cloud";
 import TG from "../tg";
 import { toast, switchAccount, flush } from "../store";
 
@@ -18,6 +19,7 @@ export const displayName = computed(() => {
 export async function loadProfile() {
   if (!CLOUD || !user.value) { auth.profile = null; return; }
   const id = user.value.id;
+  const supabase = await sb();
   const { data, error } = await supabase.from("profiles").select("id, tg_id, username, first_name, last_name, photo_url, role").eq("id", id).maybeSingle();
   if (!error && user.value?.id === id) auth.profile = data;
 }
@@ -26,10 +28,19 @@ function applySession(session) {
   switchAccount(session?.user?.id);
   auth.session = session;
 }
+/* Сесія з минулого запуску відома одразу, ще до завантаження бібліотеки Supabase: огляди акаунта на місці
+   з першого кадру, а посилання на огляд (#/check/…) після перезавантаження не відкидає на головну.
+   Бібліотека потім підтвердить сесію або скасує її (initAuth → applySession). */
+if (CLOUD) {
+  let saved = null;
+  try { saved = storedSession(localStorage.getItem(AUTH_KEY)); } catch (e) { /* немає доступу до сховища */ }
+  if (saved) applySession(saved);
+}
 
 async function exchange(body) {
   auth.busy = true; auth.error = "";
   try {
+    const supabase = await sb();
     const { data, error } = await supabase.functions.invoke("telegram-auth", { body });
     if (error) throw error;
     if (!data || !data.token_hash) throw new Error((data && data.error) || "Сервер не повернув токен");
@@ -58,7 +69,8 @@ export const loginWidget = widget => exchange({ widget });
 export async function logout() {
   if (!CLOUD) return;
   if (!flush()) { toast("Спочатку зроби резервну копію: зміни ще не збережено.", 4000); return; }
-  const { error } = await supabase.auth.signOut();
+  let error;
+  try { ({ error } = await (await sb()).auth.signOut()); } catch (e) { error = e; }
   if (error) { toast(errText(error), 4000); return; }
   applySession(null);
   auth.profile = null;
@@ -68,6 +80,7 @@ export async function logout() {
 export async function initAuth() {
   if (!CLOUD) { auth.ready = true; return; }
   try {
+    const supabase = await sb();
     const { data, error } = await supabase.auth.getSession();
     if (error) throw error;
     applySession(data.session);

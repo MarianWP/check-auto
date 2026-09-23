@@ -1,7 +1,7 @@
 import { beforeEach, afterEach, it, expect, vi } from "vitest";
 const env = vi.hoisted(() => ({ user: null, client: null }));
 vi.mock("../src/cloud/auth", () => ({ get user() { return env.user; } }));
-vi.mock("../src/cloud/client", () => ({ CLOUD: true, CLOUD_URL: "https://test.invalid", CLOUD_KEY: "test", get supabase() { return env.client; }, errText: e => e.message }));
+vi.mock("../src/cloud/client", () => ({ CLOUD: true, CLOUD_URL: "https://test.invalid", CLOUD_KEY: "test", sb: async () => env.client, errText: e => e.message }));
 let api, rows, orders, values;
 const msg = (n, role = "user") => ({ id: "00000000-0000-0000-0000-" + String(n).padStart(12, "0"), role, content: "message " + n, created_at: new Date(n * 1000).toISOString() });
 beforeEach(async () => {
@@ -77,6 +77,9 @@ it("times out a stalled response and unblocks the composer", async () => {
   })));
   const request = api.ask("question");
   await vi.waitFor(() => expect(fetch).toHaveBeenCalled());
-  await vi.advanceTimersByTimeAsync(60000); await request;
+  /* Сервер віддає відповідь після першого слова моделі, тож хвилина тиші на старті ще не обрив. */
+  await vi.advanceTimersByTimeAsync(60000);
+  expect(api.chat.streaming).toBe(true);
+  await vi.advanceTimersByTimeAsync(40000); await request;
   expect(api.chat.streaming).toBe(false); expect(api.chat.retryText).toBe("question");
 });

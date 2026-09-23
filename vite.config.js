@@ -29,7 +29,18 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,png,svg,webmanifest,woff2}"],
-        navigateFallback: base + "index.html"
+        navigateFallback: base + "index.html",
+        /* Фото з адмінки (сховище Supabase): імена унікальні й не змінюються, тож беремо з кешу —
+           так вони відкриваються миттєво і без зв'язку на майданчику. */
+        runtimeCaching: [{
+          urlPattern: /\/storage\/v1\/object\/public\/photos\//,
+          handler: "CacheFirst",
+          options: {
+            cacheName: "photos",
+            expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 90 },
+            cacheableResponse: { statuses: [200] }
+          }
+        }]
       }
     })
   ],

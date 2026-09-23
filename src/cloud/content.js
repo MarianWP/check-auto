@@ -1,7 +1,7 @@
 /* Контент з адмінки: власні пункти чек-листа й фото до проблем. Читається без входу (anon),
    кешується в localStorage, тож офлайн лишається останній завантажений стан. */
 import { reactive } from "vue";
-import { CLOUD, supabase, errText } from "./client";
+import { CLOUD, sb, errText } from "./client";
 import { extraItems } from "../store";
 import { itemFromRow, photoFromRow, photosFor as photosForPure } from "../logic/content";
 
@@ -16,6 +16,7 @@ function apply(items, photos, at) {
 export async function refreshContent() {
   if (!CLOUD || !navigator.onLine) return;
   try {
+    const supabase = await sb();
     const [a, b] = await Promise.all([
       supabase.from("checklist_items").select("*").eq("enabled", true).order("sort"),
       supabase.from("photos").select("*").order("created_at")

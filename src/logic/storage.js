@@ -2,6 +2,7 @@
    Без Vue, DOM і localStorage — покрито тестами у tests/storage.test.js. */
 import { modelApi, modelDef, registerModel, DEFAULT_MODEL } from "../data/index.js";
 import { normalizeGenerated } from "./generated";
+import { builtinItem, builtinStage } from "./snapshot";
 
 export const KEY = "golfcheck.v1";
 export const MODELS_KEY = "golfcheck.models.v1";
@@ -46,6 +47,8 @@ function normalizeAnswers(raw) {
   return out;
 }
 
+/* Перевіряє знімок чек-листа і зберігає його компактно (див. src/logic/snapshot.js): у вбудованих пунктів лише
+   id, назва, sev і cost, тексти беруться з довідника; власні пункти — повністю. Старі повні знімки стискаються тут же. */
 export function normalizeSnapshot(raw) {
   if (!Array.isArray(raw) || !raw.length || raw.length > 20) return null;
   const ids = new Set(), stages = [];
@@ -55,13 +58,20 @@ export function normalizeSnapshot(raw) {
     for (const it of s.items) {
       if (!isObj(it) || !str(it.id, 60) || ids.has(it.id) || UNSAFE_KEYS.has(it.id) || !["crit", "major", "minor"].includes(it.sev) || !str(it.t, 200)) return null;
       ids.add(it.id);
-      const item = { id: str(it.id, 60), t: str(it.t, 200), how: str(it.how, 2000), why: str(it.why, 2000), sev: it.sev };
+      const item = { id: str(it.id, 60), t: str(it.t, 200), sev: it.sev };
       if (Array.isArray(it.cost) && it.cost.length === 2 && it.cost.every(n => Number.isFinite(n) && n >= 0)) item.cost = [Math.min(...it.cost), Math.max(...it.cost)];
-      if (Array.isArray(it.tags)) item.tags = it.tags.filter(t => typeof t === "string").slice(0, 20).map(t => t.slice(0, 60));
-      if (isObj(it.notes)) item.notes = Object.fromEntries(Object.entries(it.notes).filter(([k, v]) => !UNSAFE_KEYS.has(k) && typeof v === "string").map(([k, v]) => [k.slice(0, 60), v.slice(0, 2000)]));
+      if (!builtinItem(item.id)) {
+        const how = str(it.how, 2000), why = str(it.why, 2000);
+        if (how) item.how = how;
+        if (why) item.why = why;
+        if (Array.isArray(it.tags)) item.tags = it.tags.filter(t => typeof t === "string").slice(0, 20).map(t => t.slice(0, 60));
+        if (isObj(it.notes)) item.notes = Object.fromEntries(Object.entries(it.notes).filter(([k, v]) => !UNSAFE_KEYS.has(k) && typeof v === "string").map(([k, v]) => [k.slice(0, 60), v.slice(0, 2000)]));
+      }
       items.push(item);
     }
-    stages.push({ id: str(s.id, 60), name: str(s.name, 200), short: str(s.short, 60), intro: str(s.intro, 2000), items });
+    const stage = { id: str(s.id, 60), name: str(s.name, 200), short: str(s.short, 60), items };
+    if (!builtinStage(stage.id) && str(s.intro, 2000)) stage.intro = str(s.intro, 2000);
+    stages.push(stage);
   }
   return stages;
 }
@@ -112,6 +122,11 @@ export function parseState(text, now = Date.now()) {
   if (text == null || text === "") return { state: empty, rejected: 0, error: null };
   let d;
   try { d = JSON.parse(text); } catch (e) { return { state: empty, rejected: 0, error: "parse" }; }
+  return parseStateData(d, now);
+}
+/* Те саме для вже розібраного об'єкта: на старті дані щойно прочитані з JSON, повторний круг рядком зайвий. */
+export function parseStateData(d, now = Date.now()) {
+  const empty = { inspections: [], hideInstall: false };
   if (!isObj(d) || !Array.isArray(d.inspections)) return { state: empty, rejected: 0, error: "shape" };
   const all = d.inspections.concat(Array.isArray(d.pendingInspections) ? d.pendingInspections : []);
   const pending = all.filter(r => isObj(r) && typeof r.id === "string" && !UNSAFE_KEYS.has(r.id) && typeof r.model === "string" && r.model && !modelDef(r.model) && isObj(r.cfg));

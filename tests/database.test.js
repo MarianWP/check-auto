@@ -20,6 +20,7 @@ beforeAll(async () => {
   await pg.exec(sql("20260923000000_assistant.sql"));
   await pg.exec(sql("20260924000000_custom_models.sql"));
   await pg.exec(sql("20260925000000_reliable_sync_and_usage.sql"));
+  await pg.exec(sql("20260926000000_lean_sync.sql"));
   // Supabase grants table privileges by default; RLS must still constrain them.
   await pg.exec("grant select, insert, update, delete on all tables in schema public to authenticated;");
 }, 20000);
@@ -41,6 +42,27 @@ it("accepts only the expected revision and retains a tombstone", async () => {
   expect(conflict.conflict).toBe(true); expect(conflict.row.name).toBe("new");
   const deleted = await sync("test", 2, null); expect(deleted.row.deleted_at).toBeTruthy();
   expect((await sync("test", 3, record("resurrect"))).conflict).toBe(true);
+});
+it("returns only service fields after a successful write and the full row on conflict", async () => {
+  await pg.exec("set role authenticated");
+  const snap = [{ id: "docs", name: "Документи", items: [] }];
+  const ok = await sync("lean", 0, { ...record(), checklist_snapshot: snap });
+  expect(Object.keys(ok.row).sort()).toEqual(["deleted_at", "id", "revision", "synced_at"]);
+  expect(ok.row.revision).toBe(1);
+  const stale = await sync("lean", 0, record("stale"));
+  expect(stale.conflict).toBe(true);
+  expect(stale.row.checklist_snapshot).toEqual(snap);
+});
+it("moves synced_at forward on every write, so the client can read only newer rows", async () => {
+  await pg.exec("set role authenticated");
+  await sync("old", 0, record());
+  await sync("moved", 0, record());
+  await pg.exec("reset role; update public.inspections set synced_at = now() - interval '1 hour'; set role authenticated");
+  await sync("moved", 1, record("edited"));
+  await sync("gone", 0, null);
+  const since = new Date(Date.now() - 60000).toISOString();
+  const rows = (await pg.query("select id from public.inspections where user_id = $1 and synced_at > $2 order by id", [alice, since])).rows;
+  expect(rows.map(r => r.id)).toEqual(["gone", "moved"]);
 });
 it("rejects writes to another account and prevents bypassing the RPC", async () => {
   await sync("private", 0, record());

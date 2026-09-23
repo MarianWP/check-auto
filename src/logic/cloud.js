@@ -17,6 +17,18 @@ export function normalizeKey(raw) {
   return String(raw || "").trim().replace(/^["']|["']$/g, "").trim();
 }
 
+/* Ключ, під яким supabase-js тримає сесію в localStorage (його типовий storageKey). */
+export function authStorageKey(url) {
+  try { return "sb-" + new URL(url).hostname.split(".")[0] + "-auth-token"; } catch (e) { return ""; }
+}
+/* Сесія з минулого запуску в тому вигляді, як її зберіг supabase-js, або null. */
+export function storedSession(raw) {
+  try {
+    const s = JSON.parse(raw || "null");
+    return s && typeof s.access_token === "string" && s.user && typeof s.user.id === "string" && s.user.id ? s : null;
+  } catch (e) { return null; }
+}
+
 /* Підсумок налаштувань: { url, key, enabled, error }. error — текст для людини, коли щось задано, але криво. */
 export function cloudConfig(env) {
   const rawUrl = env.VITE_SUPABASE_URL || "", rawKey = env.VITE_SUPABASE_ANON_KEY || "";

@@ -1,6 +1,6 @@
 /* «Інше авто»: запит до Edge Function generate, нормалізація відповіді, реєстрація моделі. */
 import { reactive, watch } from "vue";
-import { CLOUD, CLOUD_URL, CLOUD_KEY, supabase, errText } from "./client";
+import { CLOUD, CLOUD_URL, CLOUD_KEY, sb, errText } from "./client";
 import { normalizeGenerated } from "../logic/generated";
 import { user } from "./auth";
 import { account, addModel } from "../store";
@@ -19,7 +19,7 @@ export async function generateModel(input) {
   const timer = setTimeout(() => controller.abort(), 120000);
   gen.state = "working"; gen.error = ""; gen.startedAt = Date.now();
   try {
-    const { data: session } = await supabase.auth.getSession();
+    const { data: session } = await (await sb()).auth.getSession();
     if (!valid()) return null;
     const token = session?.session?.access_token;
     if (!token) throw new Error("Потрібен вхід через Telegram");
