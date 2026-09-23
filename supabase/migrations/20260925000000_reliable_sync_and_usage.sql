@@ -1,5 +1,6 @@
 -- Deploy before the matching client. Old clients must reload after deployment:
 -- writes now go through an RPC with an expected revision.
+-- Safe to run again: every step checks what already exists.
 alter table public.inspections add column if not exists revision bigint not null default 1;
 alter table public.inspections add column if not exists deleted_at timestamptz;
 alter table public.inspections add column if not exists checklist_snapshot jsonb;
@@ -7,6 +8,7 @@ alter table public.inspections add column if not exists price_snapshot jsonb;
 alter table public.inspections add column if not exists model_snapshot jsonb;
 alter table public.inspections add column if not exists report_version integer not null default 1;
 drop policy if exists "inspections: own" on public.inspections;
+drop policy if exists "inspections: own read" on public.inspections;
 create policy "inspections: own read" on public.inspections for select using (auth.uid() = user_id);
 
 create or replace function public.sync_inspection(p_id text, p_base_revision bigint, p_record jsonb)
@@ -57,18 +59,23 @@ grant execute on function public.sync_inspection(text, bigint, jsonb) to authent
 
 -- Quotas count reserved attempts, including provider failures and cancellation.
 -- Deleting chat history never refunds a reservation. Only Edge Functions may reserve.
-create table public.ai_usage (
+create table if not exists public.ai_usage (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
   kind text not null check (kind in ('assistant', 'generate')),
   created_at timestamptz not null default now()
 );
 alter table public.ai_usage enable row level security;
-create index ai_usage_window_idx on public.ai_usage(user_id, kind, created_at);
-insert into public.ai_usage(user_id, kind, created_at)
-  select user_id, 'assistant', created_at from public.assistant_messages where role = 'user' and created_at > now() - interval '24 hours';
-insert into public.ai_usage(user_id, kind, created_at)
-  select user_id, 'generate', created_at from public.custom_models where created_at > now() - interval '24 hours';
+create index if not exists ai_usage_window_idx on public.ai_usage(user_id, kind, created_at);
+-- Carry over the last day of usage only once: a repeated run must not double anyone's count.
+do $$ begin
+  if not exists (select 1 from public.ai_usage) then
+    insert into public.ai_usage(user_id, kind, created_at)
+      select user_id, 'assistant', created_at from public.assistant_messages where role = 'user' and created_at > now() - interval '24 hours';
+    insert into public.ai_usage(user_id, kind, created_at)
+      select user_id, 'generate', created_at from public.custom_models where created_at > now() - interval '24 hours';
+  end if;
+end $$;
 
 create or replace function public.reserve_ai_usage(p_user uuid, p_kind text, p_limit integer)
 returns jsonb language plpgsql security definer set search_path = '' as $$

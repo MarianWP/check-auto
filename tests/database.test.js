@@ -43,6 +43,17 @@ it("accepts only the expected revision and retains a tombstone", async () => {
   const deleted = await sync("test", 2, null); expect(deleted.row.deleted_at).toBeTruthy();
   expect((await sync("test", 3, record("resurrect"))).conflict).toBe(true);
 });
+it("migrations can be run again without errors and without doubling the usage count", async () => {
+  await pg.exec("set role service_role");
+  await pg.query("select public.reserve_ai_usage($1,'assistant',30)", [alice]);
+  await pg.exec("reset role");
+  const before = (await pg.query("select count(*)::int n from public.ai_usage")).rows[0].n;
+  await pg.exec(sql("20260925000000_reliable_sync_and_usage.sql"));
+  await pg.exec(sql("20260926000000_lean_sync.sql"));
+  expect((await pg.query("select count(*)::int n from public.ai_usage")).rows[0].n).toBe(before);
+  await pg.exec("set role authenticated");
+  expect((await sync("again", 0, record())).row.revision).toBe(1);
+});
 it("returns only service fields after a successful write and the full row on conflict", async () => {
   await pg.exec("set role authenticated");
   const snap = [{ id: "docs", name: "Документи", items: [] }];
