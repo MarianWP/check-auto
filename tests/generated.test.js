@@ -91,7 +91,7 @@ describe("згенерована модель у реєстрі, сховищі 
   it("резервна копія несе моделі ШІ: після відновлення огляд на такій моделі приймається", () => {
     const insp = normalizeInspection({ id: "i1", model: "ai_test1", cfg: { engine: "e1", body: "b1", year: 2010, gear: "g1" } }, 5);
     const b = makeBackup([insp], 5, [def]);
-    expect(b.version).toBe(3);
+    expect(b.version).toBe(4);
     expect(b.models).toHaveLength(1);
     unregisterModel("ai_test1");
     expect(modelDef("ai_test1")).toBeNull();

@@ -1,7 +1,7 @@
 <script setup>
 /* Помічник ШІ: чат про огляд. Контекст — обраний огляд (типово останній незавершений) або без огляду.
    Працює лише з хмарою і після входу; без них екран чесно пояснює, чого бракує. */
-import { ref, computed, watch, nextTick, onMounted } from "vue";
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
@@ -9,16 +9,16 @@ import ProfileButton from "../components/ProfileButton.vue";
 import TelegramLogin from "../components/TelegramLogin.vue";
 import AiThinking from "../components/AiThinking.vue";
 import AiText from "../components/AiText.vue";
-import { db, apiOf, computeReport, visibleStages, VERDICTS, sheet, reduced } from "../store";
+import { db, apiOf, computeReport, visibleStages, VERDICTS, sheet, reduced, account } from "../store";
 import { auth, user, loginMiniApp } from "../cloud/auth";
 import { CLOUD_ERROR } from "../cloud/client";
-import { chat, loadHistory, ask, clearHistory } from "../cloud/assistant";
+import { chat, loadHistory, ask, clearHistory, cancelAsk, loadOlder } from "../cloud/assistant";
 import { buildContext, suggestions } from "../logic/assistant";
 import { prefs } from "../prefs";
 import { scroller } from "../nav";
 import TG from "../tg";
 
-const KEY = "golfcheck.assistantInsp";
+const KEY = "golfcheck.assistantInsp:" + account.scope;
 const inTelegram = TG.active;
 const list = computed(() => db.inspections.slice().sort((a, b) => b.updatedAt - a.updatedAt));
 const nameOf = i => i.name || apiOf(i).label(i.cfg);
@@ -42,21 +42,42 @@ function context() {
   const rep = computeReport(i);
   return buildContext({ i, G: G.value, rep, stages: visibleStages(i), verdict: VERDICTS[rep.verdict].t });
 }
+const atBottom = ref(true);
+const hasNew = ref(false);
+let frame = 0, scrollElement = null;
+const focusTimers = [];
+function onScroll() {
+  const s = scroller();
+  if (s) atBottom.value = s.scrollHeight - s.scrollTop - s.clientHeight < 100;
+  if (atBottom.value) hasNew.value = false;
+}
+function followReply() {
+  if (!atBottom.value) { hasNew.value = true; return; }
+  if (frame) return;
+  frame = requestAnimationFrame(() => { frame = 0; const s = scroller(); if (s) s.scrollTop = s.scrollHeight; });
+}
+async function older() {
+  const s = scroller(), height = s?.scrollHeight || 0, top = s?.scrollTop || 0;
+  await loadOlder(); await nextTick();
+  if (s) s.scrollTop = top + s.scrollHeight - height;
+}
 async function toBottom() {
+  atBottom.value = true; hasNew.value = false;
   await nextTick();
   const s = scroller(); if (s) s.scrollTo({ top: s.scrollHeight, behavior: reduced() ? "auto" : "smooth" });
 }
 async function send(q) {
   const t = String(q || text.value).trim();
-  if (!t || chat.streaming) return;
+  if (!t || chat.streaming || chat.loading || chat.refreshing) return;
   text.value = "";
   TG.haptic("select");
   toBottom();
-  await ask(t, { inspId: insp.value ? insp.value.id : null, context: context(), lang: prefs.lang });
-  toBottom();
+  const selected = sel.value;
+  const ok = await ask(t, { inspId: insp.value ? insp.value.id : null, context: context(), lang: prefs.lang });
+  if (!ok && sel.value === selected && !text.value) text.value = t;
 }
 /* Клавіатура відкривається з затримкою: прокручуємо чат до останніх повідомлень, щойно вона стане на місце. */
-function onFocus() { setTimeout(toBottom, 350); setTimeout(toBottom, 700); }
+function onFocus() { focusTimers.push(setTimeout(toBottom, 350)); }
 function onKey(e) {
   /* Enter надсилає лише з фізичної клавіатури; на телефоні Enter — новий рядок, надсилає кнопка. */
   if (e.key === "Enter" && !e.shiftKey && window.matchMedia("(hover: hover) and (pointer: fine)").matches) { e.preventDefault(); send(); }
@@ -67,8 +88,9 @@ function askClear() {
 async function load() { if (ready.value) { await loadHistory(insp.value ? insp.value.id : null); toBottom(); } }
 watch(sel, load);
 watch(ready, load);
-watch(() => chat.messages.length && chat.messages[chat.messages.length - 1].content.length, () => { if (chat.streaming) toBottom(); });
-onMounted(load);
+watch(() => chat.messages.length && chat.messages[chat.messages.length - 1].content.length, () => { if (chat.streaming) followReply(); });
+onMounted(() => { scrollElement = scroller(); scrollElement?.addEventListener("scroll", onScroll, { passive: true }); load(); });
+onBeforeUnmount(() => { cancelAsk(); cancelAnimationFrame(frame); focusTimers.forEach(clearTimeout); scrollElement?.removeEventListener("scroll", onScroll); });
 </script>
 
 <template>
@@ -104,18 +126,22 @@ onMounted(load);
             <button v-for="h in hints" :key="h" class="chip" data-action="hint" @click="send(h)">{{ h }}</button>
           </div>
         </section>
-        <ol v-else class="msgs" aria-live="polite" aria-label="Розмова">
+        <button v-if="chat.hasMore" class="link" :disabled="chat.loading || chat.streaming" @click="older">{{ chat.loading ? 'Завантаження…' : 'Попередні повідомлення' }}</button>
+        <ol v-if="chat.messages.length" class="msgs" aria-live="polite" aria-label="Розмова">
           <li v-for="m in chat.messages" :key="m.id" class="msg" :class="[m.role === 'user' ? 'me' : 'ai', { pending: m.pending }]">
             <!-- Поки відповідь ще не почалася: анімований контур замість іконки і текст із мерехтінням; далі текст без бульбашки. -->
             <span v-if="m.role === 'assistant' && !(m.pending && !m.content)" class="msg-ic" aria-hidden="true"><AppIcon name="sparkles" /></span>
             <AiThinking v-if="m.pending && !m.content" />
             <div v-else class="msg-b"><AiText v-if="m.role === 'assistant'" :text="m.content" :live="!!m.pending" /><template v-else>{{ m.content }}</template></div>
+            <p v-if="m.failed || m.interrupted" class="foot">{{ m.failed ? 'Не вдалося надіслати' : 'Відповідь перервана' }}</p>
           </li>
         </ol>
         <p v-if="chat.error" class="notice bad" role="alert"><AppIcon name="alert" /><span>{{ chat.error }}</span></p>
+        <button v-if="chat.retryText && !chat.streaming" class="link" @click="send(chat.retryText)">Повторити запитання</button>
+        <button v-if="hasNew" class="btn tonal" @click="toBottom">Нові повідомлення ↓</button>
         <div v-if="chat.messages.length" class="chat-foot">
           <span class="foot">{{ chat.stale ? 'Показано збережену розмову: хмара не відповіла' : chat.remaining !== null ? 'Лишилося запитань сьогодні: ' + chat.remaining : 'Відповіді орієнтовні, перевіряй важливе на СТО.' }}</span>
-          <button class="link" data-action="clear-chat" @click="askClear"><AppIcon name="trash" /><span>Очистити</span></button>
+          <button class="link" data-action="clear-chat" :disabled="chat.streaming || chat.loading || chat.refreshing" @click="askClear"><AppIcon name="trash" /><span>Очистити</span></button>
         </div>
       </template>
     </div>
@@ -125,7 +151,8 @@ onMounted(load);
     <div class="chat-bar-in">
       <label class="visually-hidden" for="chat-input">Запитання помічнику</label>
       <textarea id="chat-input" v-model="text" v-autosize class="textarea chat-input" rows="1" maxlength="1500" placeholder="Запитай про авто…" enterkeyhint="send" :disabled="chat.streaming" @keydown="onKey" @focus="onFocus"></textarea>
-      <button class="btn square" data-action="send" :disabled="chat.streaming || !text.trim()" aria-label="Надіслати" @click="send()"><AppIcon name="send" /></button>
+      <button v-if="chat.streaming" class="btn square tonal" aria-label="Зупинити відповідь" @click="cancelAsk"><AppIcon name="x" /></button>
+      <button v-else class="btn square" data-action="send" :disabled="chat.loading || chat.refreshing || !text.trim()" aria-label="Надіслати" @click="send()"><AppIcon name="send" /></button>
     </div>
   </div>
 </template>

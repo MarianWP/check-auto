@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted } from "vue";
+import { ref, computed, nextTick, onMounted } from "vue";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
@@ -8,10 +8,12 @@ import ChipGroup from "../components/ChipGroup.vue";
 import DraftNotice from "../components/DraftNotice.vue";
 import { MODELS, modelApi } from "../data/index.js";
 import { FUELS as FUEL_LIST } from "../logic/generated";
-import { draft as d, setDraft, createInspection, costStr, reduced, ui } from "../store";
+import { draft as d, resetDraft, setDraft, createInspection, costStr, reduced, ui, sheet } from "../store";
 import { go } from "../nav";
 
 const MODEL_OPTS = computed(() => MODELS.map(m => ({ id: m.id, name: m.brand + " " + m.name + (m.draft ? " (чернетка)" : m.ai ? " (ШІ)" : "") })));
+const restored = ref(!!(d.fuel || d.name || d.price));
+function restart() { sheet({ title: "Почати заново?", text: "Вибрану конфігурацію чернетки буде очищено.", actions: [{ label: "Почати заново", fn: () => { resetDraft(); restored.value = false; } }] }); }
 const G = computed(() => modelApi(d.model));
 /* Види палива лише ті, що є серед двигунів моделі (у картках від ШІ може бути гібрид чи електро). */
 const FUELS = computed(() => { const set = new Set(G.value.ENGINES.map(e => e.fuel)); return FUEL_LIST.filter(f => set.has(f.id)); });
@@ -56,6 +58,7 @@ onMounted(() => {
         <p class="lead">Обери модель і конфігурацію авто. Чек-лист підлаштується під двигун і коробку.</p>
       </header>
 
+      <div v-if="restored" class="notice info"><div><b>Чернетку відновлено</b>Можна продовжити збережений вибір.<button class="link" @click="restart">Почати заново</button></div></div>
       <section id="s-model" class="step done" aria-labelledby="st-model">
         <header class="step-head">
           <span class="step-no" aria-hidden="true"><AppIcon name="check" /></span>
@@ -83,6 +86,7 @@ onMounted(() => {
           <span class="step-no" aria-hidden="true"><AppIcon v-if="d.engine" name="check" /><template v-else>3</template></span>
           <h2 id="st-engine" class="step-t">Двигун</h2><span v-if="d.engine" class="step-val">{{ picked.engine }}</span>
         </header>
+        <details class="why"><summary>Не знаю код двигуна</summary><p>Знайди код у сервісній книжці або на заводській наклейці авто. Попроси продавця фото; звір об’єм і потужність. Не обирай навмання — від цього залежить чек-лист.</p></details>
         <div class="opts" role="group" aria-label="Двигун">
           <button v-for="e in engines" :key="e.id" class="opt" :class="{ on: d.engine === e.id }" data-action="draft" data-k="engine" :data-v="e.id" :aria-pressed="d.engine === e.id" @click="pick('engine', e.id)">
             <span class="opt-main">

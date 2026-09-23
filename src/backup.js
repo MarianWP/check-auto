@@ -1,6 +1,6 @@
 /* Резервна копія: експорт у файл JSON (або буфер обміну в Telegram) та імпорт зі злиттям без втрат. */
 import TG from "./tg";
-import { db, toast, replaceInspections, flush, aiModels, saveModels } from "./store";
+import { account, db, toast, replaceInspections, flush, aiModels, saveModels, addPending, restorePending } from "./store";
 import { makeBackup, parseBackup, mergeInspections } from "./logic/storage";
 
 const fileName = () => "golf-check-" + new Date().toISOString().slice(0, 10) + ".json";
@@ -19,8 +19,8 @@ async function copyText(text) {
 
 /* Викликати прямо з обробника кліку: share і download потребують жесту користувача. */
 export async function exportBackup() {
-  if (!db.inspections.length) { toast("Поки немає що зберігати"); return; }
-  const text = JSON.stringify(makeBackup(db.inspections, Date.now(), aiModels()), null, 2);
+  if (!db.inspections.length && !db.pendingInspections.length) { toast("Поки немає що зберігати"); return; }
+  const text = JSON.stringify(makeBackup(db.inspections, Date.now(), aiModels(), db.pendingInspections), null, 2);
   /* Вебв'ю Telegram не вміє завантажувати файли — віддаємо текст у буфер обміну. */
   if (TG.active) {
     toast(await copyText(text) ? "Копію скопійовано. Встав її у «Збережене»." : "Не вдалося скопіювати копію", 3500);
@@ -44,6 +44,8 @@ export function importBackupText(text) {
   try { parsed = parseBackup(text); }
   catch (e) { toast(e.message, 4000); return null; }
   if (parsed.models && parsed.models.length) saveModels();
+  addPending(parsed.pendingInspections || []);
+  restorePending();
   const res = mergeInspections(db.inspections, parsed.inspections);
   if (res.added || res.updated) { replaceInspections(res.list); flush(); }
   const parts = [];
@@ -59,15 +61,17 @@ export function importBackupFile(file) {
   if (!file) return;
   if (file.size > 5 * 1024 * 1024) { toast("Файл завеликий для копії Golf Check", 3500); return; }
   const reader = new FileReader();
-  reader.onload = () => importBackupText(String(reader.result || ""));
+  const scope = account.scope;
+  reader.onload = () => { if (scope === account.scope) importBackupText(String(reader.result || "")); };
   reader.onerror = () => toast("Не вдалося прочитати файл", 3500);
   reader.readAsText(file);
 }
 
 export async function importBackupFromClipboard() {
+  const scope = account.scope;
   let text = "";
   try { text = await navigator.clipboard.readText(); }
   catch (e) { toast("Немає доступу до буфера обміну", 3500); return; }
   if (!text.trim()) { toast("Буфер обміну порожній"); return; }
-  importBackupText(text);
+  if (scope === account.scope) importBackupText(text);
 }

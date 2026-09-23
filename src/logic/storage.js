@@ -6,7 +6,7 @@ import { normalizeGenerated } from "./generated";
 export const KEY = "golfcheck.v1";
 export const MODELS_KEY = "golfcheck.models.v1";
 export const BACKUP_APP = "golf-check";
-export const BACKUP_VERSION = 3;
+export const BACKUP_VERSION = 4;
 
 const STATUSES = new Set(["ok", "bad", "skip", ""]);
 const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
@@ -15,7 +15,7 @@ const str = (v, max) => (typeof v === "string" ? v : "").slice(0, max);
 const posInt = v => (Number.isFinite(v) && v > 0 ? Math.floor(v) : 0);
 
 /* Модель запису: невідома або відсутня (старі записи) — Golf V. */
-export const modelOf = raw => (raw && typeof raw.model === "string" && modelDef(raw.model)) ? raw.model : DEFAULT_MODEL;
+export const modelOf = raw => (raw && typeof raw.model === "string" && raw.model) ? raw.model : DEFAULT_MODEL;
 
 /* Чи існує така конфігурація у довіднику моделі: мотор, кузов для нього, рік для пари, коробка для року. */
 export function validConfig(cfg, modelId = DEFAULT_MODEL) {
@@ -46,24 +46,50 @@ function normalizeAnswers(raw) {
   return out;
 }
 
+export function normalizeSnapshot(raw) {
+  if (!Array.isArray(raw) || !raw.length || raw.length > 20) return null;
+  const ids = new Set(), stages = [];
+  for (const s of raw) {
+    if (!isObj(s) || !Array.isArray(s.items) || s.items.length > 300 || !str(s.id, 60)) return null;
+    const items = [];
+    for (const it of s.items) {
+      if (!isObj(it) || !str(it.id, 60) || ids.has(it.id) || UNSAFE_KEYS.has(it.id) || !["crit", "major", "minor"].includes(it.sev) || !str(it.t, 200)) return null;
+      ids.add(it.id);
+      const item = { id: str(it.id, 60), t: str(it.t, 200), how: str(it.how, 2000), why: str(it.why, 2000), sev: it.sev };
+      if (Array.isArray(it.cost) && it.cost.length === 2 && it.cost.every(n => Number.isFinite(n) && n >= 0)) item.cost = [Math.min(...it.cost), Math.max(...it.cost)];
+      if (Array.isArray(it.tags)) item.tags = it.tags.filter(t => typeof t === "string").slice(0, 20).map(t => t.slice(0, 60));
+      if (isObj(it.notes)) item.notes = Object.fromEntries(Object.entries(it.notes).filter(([k, v]) => !UNSAFE_KEYS.has(k) && typeof v === "string").map(([k, v]) => [k.slice(0, 60), v.slice(0, 2000)]));
+      items.push(item);
+    }
+    stages.push({ id: str(s.id, 60), name: str(s.name, 200), short: str(s.short, 60), intro: str(s.intro, 2000), items });
+  }
+  return stages;
+}
+
 /* Повертає чистий запис огляду або null, якщо запис непридатний (немає id, невідома конфігурація). */
 export function normalizeInspection(raw, now = Date.now()) {
   if (!isObj(raw)) return null;
   const id = str(raw.id, 40);
   const model = modelOf(raw);
-  if (!id || !validConfig(raw.cfg, model)) return null;
+  if (!id || UNSAFE_KEYS.has(id) || !validConfig(raw.cfg, model)) return null;
   const createdAt = posInt(raw.createdAt) || now;
+  const snapshot = normalizeSnapshot(raw.checklistSnapshot);
+  if (raw.checklistSnapshot && !snapshot) return null;
+  const price = raw.priceSnapshot;
   return {
     id,
     model,
     createdAt,
     updatedAt: posInt(raw.updatedAt) || createdAt,
+    ...(posInt(raw._persist) ? { _persist: posInt(raw._persist) } : {}),
     name: str(raw.name, 60).trim(),
     price: posInt(raw.price),
     cfg: { engine: raw.cfg.engine, body: raw.cfg.body, year: raw.cfg.year, gear: raw.cfg.gear },
     answers: normalizeAnswers(raw.answers),
     stage: posInt(raw.stage),
-    done: raw.done === true
+    done: raw.done === true,
+    ...(snapshot ? { checklistSnapshot: snapshot, reportVersion: 1 } : {}),
+    ...(isObj(price) && Number.isFinite(price.lo) && Number.isFinite(price.hi) && price.lo >= 0 && price.hi >= price.lo ? { priceSnapshot: { lo: price.lo, hi: price.hi } } : {})
   };
 }
 
@@ -87,8 +113,10 @@ export function parseState(text, now = Date.now()) {
   let d;
   try { d = JSON.parse(text); } catch (e) { return { state: empty, rejected: 0, error: "parse" }; }
   if (!isObj(d) || !Array.isArray(d.inspections)) return { state: empty, rejected: 0, error: "shape" };
-  const { inspections, rejected } = normalizeList(d.inspections, now);
-  return { state: { inspections, hideInstall: d.hideInstall === true }, rejected, error: null };
+  const all = d.inspections.concat(Array.isArray(d.pendingInspections) ? d.pendingInspections : []);
+  const pending = all.filter(r => isObj(r) && typeof r.id === "string" && !UNSAFE_KEYS.has(r.id) && typeof r.model === "string" && r.model && !modelDef(r.model) && isObj(r.cfg));
+  const { inspections, rejected } = normalizeList(all.filter(r => !pending.includes(r)), now);
+  return { state: { inspections, hideInstall: d.hideInstall === true, ...(pending.length ? { pendingInspections: pending } : {}) }, rejected, error: null };
 }
 
 /* Модель, яку склав ШІ: перевіряємо через ту саму нормалізацію, що й відповідь сервера, і реєструємо. */
@@ -118,8 +146,8 @@ export function parseModels(text) {
 }
 
 /* Резервна копія: самодостатній JSON з позначкою застосунку і версією формату. Моделі ШІ їдуть разом. */
-export function makeBackup(inspections, now = Date.now(), models = []) {
-  return { app: BACKUP_APP, version: BACKUP_VERSION, exportedAt: new Date(now).toISOString(), models: (models || []).filter(m => m && m.ai), inspections: normalizeList(inspections, now).inspections };
+export function makeBackup(inspections, now = Date.now(), models = [], pending = []) {
+  return { app: BACKUP_APP, version: BACKUP_VERSION, exportedAt: new Date(now).toISOString(), models: (models || []).filter(m => m && m.ai), inspections: normalizeList(inspections, now).inspections, ...(pending.length ? { pendingInspections: pending } : {}) };
 }
 
 /* Розбір копії. Кидає Error з текстом для користувача, якщо це не копія Golf Check. */
@@ -131,7 +159,8 @@ export function parseBackup(text, now = Date.now()) {
   if (Number.isFinite(d.version) && d.version > BACKUP_VERSION) throw new Error("Копію створено новішою версією Golf Check. Онови застосунок.");
   /* Спершу моделі ШІ, інакше огляди на них не пройдуть перевірку конфігурації. */
   const models = parseModels(d.models).models;
-  return Object.assign(normalizeList(d.inspections, now), { models });
+  const parsed = parseState(JSON.stringify(d), now);
+  return { inspections: parsed.state.inspections, rejected: parsed.rejected, models, pendingInspections: parsed.state.pendingInspections || [] };
 }
 
 /* Злиття без втрат: нові додаються, з однаковим id перемагає новіший updatedAt, наявні не видаляються. */

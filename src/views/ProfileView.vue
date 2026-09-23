@@ -12,7 +12,7 @@ import { THEMES } from "../logic/prefs";
 import { auth, user, isAdmin, displayName, loginMiniApp, logout } from "../cloud/auth";
 import { sync, fullSync } from "../cloud/sync";
 import { CLOUD_ERROR } from "../cloud/client";
-import { db, sheet, toast, dateStr } from "../store";
+import { db, sheet, toast, dateStr, account, importGuest } from "../store";
 import { go } from "../nav";
 
 const inTelegram = TG.active;
@@ -33,7 +33,7 @@ function pickTheme() {
   sheet({ title: "Тема інтерфейсу", actions: THEMES.map(t => ({ label: t.name, sub: t.desc, on: prefs.theme === t.id, fn: () => setPref("theme", t.id) })) });
 }
 function askLogout() {
-  sheet({ title: "Вийти з акаунта?", text: "Огляди лишаться на цьому телефоні. Хмара і помічник стануть недоступні до наступного входу.", actions: [{ icon: "x", label: "Вийти", danger: true, fn: logout }] });
+  sheet({ title: "Вийти з акаунта?", text: "Огляди цього акаунта будуть доступні після наступного входу. Зараз відкриється окремий гостьовий простір.", actions: [{ icon: "x", label: "Вийти", danger: true, fn: logout }] });
 }
 async function doSync() { if (sync.state === "syncing") return; await fullSync(); toast(sync.error ? "Не вдалося синхронізувати" : "Синхронізовано"); }
 </script>
@@ -58,6 +58,9 @@ async function doSync() { if (sync.state === "syncing") return; await fullSync()
         <p v-if="auth.error" class="foot text-bad">{{ auth.error }}</p>
       </div>
 
+      <div v-if="user && account.guestCount" class="notice info">
+        <div><b>Гостьові огляди: {{ account.guestCount }}</b><p>Можна скопіювати їх до цього акаунта. Оригінали залишаться у гостя.</p><button class="link" @click="sheet({ title: 'Скопіювати гостьові огляди?', text: 'Копії будуть збережені в цьому акаунті та його хмарі.', actions: [{ label: 'Скопіювати', fn: importGuest }] })">Скопіювати огляди</button></div>
+      </div>
       <div class="group" style="margin-top: var(--s4)">
         <button class="row" data-action="theme" @click="pickTheme">
           <AppIcon name="palette" />

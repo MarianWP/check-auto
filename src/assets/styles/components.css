@@ -59,7 +59,7 @@
 }
 .icon-btn.tonal { background: var(--raised); }
 .icon-btn:active { background: var(--raised-2); }
-.link { display: inline-flex; align-items: center; gap: var(--s2); min-height: var(--h-ctl); font-size: var(--fs-body-s); font-weight: 700; color: var(--accent); }
+.link { display: inline-flex; align-items: center; gap: var(--s2); min-height: var(--h-ctl); font-size: var(--fs-body-s); font-weight: 700; color: var(--accent-text); }
 
 /* ---------- Чипи: вибір = оранжева заливка + галочка ---------- */
 .chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
@@ -85,7 +85,7 @@
 .chip:active { transform: scale(0.97); }
 .chip.on { background: var(--accent); color: var(--on-accent); font-weight: 700; }
 .chip.tag.on { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--raised); border-color: var(--accent); color: var(--text); }
-.chip.tag.on svg.i { color: var(--accent); }
+.chip.tag.on svg.i { color: var(--accent-text); }
 
 /* ---------- Картки, групи, рядки ---------- */
 .card { padding: var(--s4); border-radius: var(--r-card); background: var(--card); }
@@ -155,7 +155,7 @@ button.row:active, label.row:active { background: var(--raised); }
 .sev-minor { background: var(--raised); color: var(--text-2); }
 .badge { display: inline-flex; align-items: center; gap: var(--s1); min-height: 32px; padding: var(--s1) var(--s3); border-radius: var(--r-pill); background: var(--raised); color: var(--text); font-size: var(--fs-cap); font-weight: 700; line-height: 1.2; }
 .badge svg.i { width: 18px; height: 18px; }
-.badge.v-good { background: var(--ok-soft); color: var(--ok); }
+.badge.v-good { background: var(--ok-soft); color: var(--ok-text); }
 .badge.v-bargain { background: var(--warn-soft); color: var(--warn); }
 .badge.v-no { background: var(--bad-soft); color: var(--bad); }
 .dots { display: inline-flex; align-items: center; gap: var(--s1); }
@@ -284,7 +284,7 @@ details.acc > summary .engine-meta { font-weight: 450; }
 .msg { display: flex; align-items: flex-end; gap: var(--s2); }
 .msg.me { justify-content: flex-end; }
 /* Іконка ШІ без фону; відповідь помічника — звичайний текст без бульбашки, моя репліка — у бульбашці. */
-.msg-ic { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; color: var(--accent); }
+.msg-ic { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; color: var(--accent-text); }
 .msg-ic svg.i { width: 20px; height: 20px; }
 .msg-b { max-width: 88%; padding: var(--s3) var(--s4); border-radius: var(--r-card); font-size: var(--fs-body); line-height: var(--lh-body); white-space: pre-wrap; overflow-wrap: anywhere; }
 .msg.ai { align-items: flex-start; }
@@ -292,9 +292,9 @@ details.acc > summary .engine-meta { font-weight: 450; }
 /* «ШІ думає»: іконка помічника пульсує кольором, по сірому тексту лінійно біжить вузька світла смуга
    (два шари фону: смуга з прозорими краями поверх суцільного базового кольору; --spread задає ширину смуги). */
 .ai-think { display: inline-flex; align-items: center; gap: var(--s2); min-height: 28px; font-size: var(--fs-body-s); font-weight: 600; color: var(--text-2); }
-.ai-pulse { flex: none; display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; color: var(--accent); animation: ai-pulse 1.6s ease-in-out infinite; }
+.ai-pulse { flex: none; display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; color: var(--accent-text); animation: ai-pulse 1.6s ease-in-out infinite; }
 .ai-pulse svg.i { width: 20px; height: 20px; }
-@keyframes ai-pulse { 0%, 100% { color: var(--text-2); transform: scale(0.94); } 50% { color: var(--accent); transform: scale(1.08); } }
+@keyframes ai-pulse { 0%, 100% { color: var(--text-2); transform: scale(0.94); } 50% { color: var(--accent-text); transform: scale(1.08); } }
 .ai-shimmer {
   --spread: 20px;
   position: relative; display: inline-block; color: transparent;
@@ -340,7 +340,7 @@ html.kb-open .chat .msgs, html.kb-open .chat .chat-empty { padding-bottom: 96px;
 /* ---------- «Інше авто»: ШІ готує картку ---------- */
 .ai-row { margin-top: var(--s3); border-radius: var(--r-card); background: var(--card); border: 1px solid var(--line); }
 .ai-row .row-t, .ai-row .row-s { display: block; }
-.ai-ic, .gen-orb { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent); }
+.ai-ic, .gen-orb { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); }
 .ai-ic { flex: none; width: 44px; height: 44px; }
 .gen { display: grid; justify-items: center; gap: var(--s4); padding: var(--s6) 0 var(--s4); text-align: center; }
 .gen-orb { position: relative; width: 96px; height: 96px; }
@@ -348,7 +348,7 @@ html.kb-open .chat .msgs, html.kb-open .chat .chat-empty { padding-bottom: 96px;
 .gen-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; animation: gen-ring 2.4s ease-out infinite; }
 .gen-ring.r2 { animation-delay: 1.2s; }
 .gen-orb.done .gen-ring { animation: none; }
-.gen-orb.done { background: var(--ok-soft); color: var(--ok); }
+.gen-orb.done { background: var(--ok-soft); color: var(--ok-text); }
 @keyframes gen-ring { 0% { transform: scale(0.8); opacity: 0.7; } 100% { transform: scale(1.6); opacity: 0; } }
 .gen-t { font-size: var(--fs-h2); font-weight: 700; }
 .gen-sub { margin-top: calc(-1 * var(--s3)); color: var(--text-2); font-size: var(--fs-body-s); }

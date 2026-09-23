@@ -18,7 +18,7 @@ import { go } from "../nav";
 const route = useRoute();
 const i = insp(String(route.params.id));
 const G = apiOf(i);
-const e = G.engine(i.cfg.engine), b = G.body(i.cfg.body), g = G.gearbox(i.cfg.gear), price = G.priceFor(i.cfg);
+const e = G.engine(i.cfg.engine), b = G.body(i.cfg.body), g = G.gearbox(i.cfg.gear), price = i.priceSnapshot || G.priceFor(i.cfg);
 const rep = computed(() => computeReport(i));
 const checkTo = computed(() => "/check/" + i.id + "/" + (i.stage || 0));
 </script>
@@ -44,8 +44,8 @@ const checkTo = computed(() => "/check/" + i.id + "/" + (i.stage || 0));
   <div id="bar" class="bar">
     <div class="bar-in">
       <p class="bar-status">
-        <span>{{ rep.answeredAll ? 'Пройдено пунктів' : 'Чек-лист для цієї конфігурації' }}</span>
-        <b>{{ rep.answeredAll ? rep.answeredAll + ' з ' + rep.total : rep.total + ' пунктів' }}</b>
+        <span>{{ rep.answeredAll ? 'Перевірено пунктів' : 'Чек-лист для цієї конфігурації' }}</span>
+        <b>{{ rep.answeredAll ? rep.answered + ' з ' + rep.total : rep.total + ' пунктів' }}</b>
       </p>
       <button class="btn" data-action="go" :data-to="checkTo" @click="go(checkTo)"><span>{{ rep.answeredAll ? 'Продовжити огляд' : 'Почати огляд' }}</span><AppIcon name="arrowRight" /></button>
     </div>

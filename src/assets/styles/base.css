@@ -21,7 +21,7 @@ body {
 
 button, input, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
 button { background: none; border: 0; padding: 0; margin: 0; border-radius: 0; cursor: pointer; text-align: inherit; }
-a { color: var(--accent); text-decoration: none; }
+a { color: var(--accent-text); text-decoration: none; }
 p, h1, h2, h3, h4, dl, dd, ul, ol { margin: 0; }
 ul, ol { padding: 0; list-style: none; }
 h1, h2, h3, h4 { font-weight: 600; text-wrap: balance; }
@@ -41,7 +41,7 @@ svg.i.lg { width: 28px; height: 28px; }
 .muted { color: var(--text-2); }
 .strong { font-weight: 700; color: var(--text); }
 .center { text-align: center; }
-.text-ok { color: var(--ok); }
+.text-ok { color: var(--ok-text); }
 .text-bad { color: var(--bad); }
 .text-warn { color: var(--warn); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

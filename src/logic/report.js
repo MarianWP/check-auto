@@ -24,16 +24,17 @@ export function checklistFor(i, checklist = CL, extra = []) {
 
 /* Етапи з пунктами, які стосуються конфігурації авто (поле only = усі теги мають збігтися). */
 export function visibleStages(i, checklist = CL, extra = []) {
+  if (i.checklistSnapshot) return i.checklistSnapshot;
   const tags = apiOf(i).tagsFor(i.cfg);
   return checklistFor(i, checklist, extra).map(s => Object.assign({}, s, { items: s.items.filter(it => !it.only || it.only.every(t => tags.has(t))) }));
 }
 
-/* Прогрес по етапах для панелі чек-листа: «не перевірено» теж вважається відповіддю. */
+/* Прогрес враховує лише перевірене; пропущені пункти показуємо окремо. */
 export function stageProgress(i, stages) {
   return stages.map(s => {
-    let answered = 0;
-    s.items.forEach(it => { const a = i.answers[it.id]; if (a && a.s) answered++; });
-    return { answered, total: s.items.length };
+    let answered = 0, skipped = 0;
+    s.items.forEach(it => { const a = i.answers[it.id]; if (a?.s === "ok" || a?.s === "bad") answered++; else if (a?.s === "skip") skipped++; });
+    return { answered, skipped, total: s.items.length };
   });
 }
 

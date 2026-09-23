@@ -38,6 +38,8 @@
   --line-field: #70757C;
   --accent: #FF7A1A;
   --accent-press: #E96A0C;
+  --accent-text: #FF7A1A;
+  --ok-text: #65D68A;
   --accent-soft: rgba(255, 122, 26, 0.16);
   --on-accent: #efefef;
   --ok: #65D68A;
@@ -121,6 +123,8 @@
   --line-field: #8A9098;
   --accent: #E85F00;
   --accent-press: #CC5300;
+  --accent-text: #A84000;
+  --ok-text: #146B39;
   --accent-soft: rgba(232, 95, 0, 0.14);
   --on-accent: #141517;
   --ok: #1E8E4E;

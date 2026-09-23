@@ -2,7 +2,7 @@
 /* Попередження про сховище: зміни не зберігаються або частину збережених даних не вдалося прочитати. */
 import { computed } from "vue";
 import AppIcon from "./AppIcon.vue";
-import { storage, dismissLoadNotice } from "../store";
+import { storage, db, dismissLoadNotice } from "../store";
 
 const loadText = computed(() => {
   if (storage.loadError) return "Збережені дані пошкоджені й не відкрилися.";
@@ -11,6 +11,7 @@ const loadText = computed(() => {
 </script>
 
 <template>
+  <div v-if="db.pendingInspections.length" class="notice warn" role="status"><AppIcon name="alert" /><div><b>Очікують дані моделі: {{ db.pendingInspections.length }}</b>Відповіді збережено. Увійди у свій акаунт і синхронізуй дані або імпортуй резервну копію з моделями.</div></div>
   <div v-if="!storage.ok" class="notice bad" data-notice="save" role="alert">
     <AppIcon name="alert" />
     <div><b>Зміни не зберігаються</b>Браузер не дає записати дані: приватний режим або немає місця. Зроби резервну копію нижче, інакше огляд зникне після закриття застосунку.</div>

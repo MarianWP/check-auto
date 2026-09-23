@@ -15,7 +15,7 @@ const route = useRoute();
 const i = insp(String(route.params.id));
 const G = apiOf(i);
 const rep = computed(() => computeReport(i));
-const price = G.priceFor(i.cfg);
+const price = i.priceSnapshot || G.priceFor(i.cfg);
 const V = computed(() => VERDICTS[rep.value.verdict]);
 const rest = computed(() => rep.value.skipped.concat(rep.value.unanswered));
 const groups = [["crit", "Критичні проблеми"], ["major", "Важливі зауваження"], ["minor", "Дрібниці"]];
@@ -57,7 +57,7 @@ const fair = computed(() => {
       <section v-if="rep.critUnchecked.length" aria-labelledby="h-critun">
         <SecTitle id="h-critun" icon="alert">Критичні пункти без перевірки · {{ rep.critUnchecked.length }}</SecTitle>
         <div class="group">
-          <button v-for="x in rep.critUnchecked" :key="x.it.id" class="row" data-action="go" :data-to="'/check/' + i.id + '/' + x.si" @click="go('/check/' + i.id + '/' + x.si)">
+          <button v-for="x in rep.critUnchecked" :key="x.it.id" class="row" data-action="go" :data-to="'/check/' + i.id + '/' + x.si + '?item=' + encodeURIComponent(x.it.id)" @click="go('/check/' + i.id + '/' + x.si + '?item=' + encodeURIComponent(x.it.id))">
             <div class="row-main"><div class="row-t">{{ x.it.t }}</div><div class="row-s">Етап {{ x.si + 1 }}: {{ x.stage.short }}</div></div>
             <AppIcon name="chev" cls="chev" />
           </button>

@@ -5,7 +5,7 @@
 import { reactive, computed } from "vue";
 import { CLOUD, supabase, errText } from "./client";
 import TG from "../tg";
-import { toast } from "../store";
+import { toast, switchAccount, flush } from "../store";
 
 export const auth = reactive({ enabled: CLOUD, ready: false, session: null, profile: null, busy: false, error: "" });
 export const user = computed(() => (auth.session && auth.session.user) || null);
@@ -17,8 +17,14 @@ export const displayName = computed(() => {
 
 export async function loadProfile() {
   if (!CLOUD || !user.value) { auth.profile = null; return; }
-  const { data, error } = await supabase.from("profiles").select("id, tg_id, username, first_name, last_name, photo_url, role").eq("id", user.value.id).maybeSingle();
-  if (!error) auth.profile = data;
+  const id = user.value.id;
+  const { data, error } = await supabase.from("profiles").select("id, tg_id, username, first_name, last_name, photo_url, role").eq("id", id).maybeSingle();
+  if (!error && user.value?.id === id) auth.profile = data;
+}
+function applySession(session) {
+  if (auth.session?.user?.id !== session?.user?.id) auth.profile = null;
+  switchAccount(session?.user?.id);
+  auth.session = session;
 }
 
 async function exchange(body) {
@@ -27,8 +33,9 @@ async function exchange(body) {
     const { data, error } = await supabase.functions.invoke("telegram-auth", { body });
     if (error) throw error;
     if (!data || !data.token_hash) throw new Error((data && data.error) || "Сервер не повернув токен");
-    const { error: e2 } = await supabase.auth.verifyOtp({ type: "magiclink", token_hash: data.token_hash });
+    const { data: verified, error: e2 } = await supabase.auth.verifyOtp({ type: "magiclink", token_hash: data.token_hash });
     if (e2) throw e2;
+    applySession(verified.session);
     await loadProfile();
     toast("Ти увійшов як " + displayName.value);
     return true;
@@ -50,18 +57,27 @@ export const loginWidget = widget => exchange({ widget });
 
 export async function logout() {
   if (!CLOUD) return;
-  await supabase.auth.signOut();
+  if (!flush()) { toast("Спочатку зроби резервну копію: зміни ще не збережено.", 4000); return; }
+  const { error } = await supabase.auth.signOut();
+  if (error) { toast(errText(error), 4000); return; }
+  applySession(null);
   auth.profile = null;
   toast("Ти вийшов з акаунта");
 }
 
 export async function initAuth() {
   if (!CLOUD) { auth.ready = true; return; }
-  const { data } = await supabase.auth.getSession();
-  auth.session = data.session;
-  supabase.auth.onAuthStateChange((_event, session) => { auth.session = session; loadProfile(); });
-  await loadProfile();
-  auth.ready = true;
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    applySession(data.session);
+    supabase.auth.onAuthStateChange((_event, session) => {
+      applySession(session);
+      setTimeout(() => loadProfile().catch(e => { auth.error = errText(e); }), 0);
+    });
+    await loadProfile();
+  } catch (e) { auth.error = errText(e); }
+  finally { auth.ready = true; }
   /* У Telegram входимо самі: користувач уже підтверджений клієнтом Telegram. */
   if (!auth.session && TG.active) TG.onReady(() => { if (!auth.session) loginMiniApp(); });
 }

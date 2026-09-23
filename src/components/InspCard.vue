@@ -14,10 +14,10 @@ const props = defineProps({
 });
 const G = apiOf(props.i);
 const rep = computed(() => computeReport(props.i));
-const stages = computed(() => visibleStages(props.i));
+const stages = computed(() => rep.value.stages);
 const prog = computed(() => stageProgress(props.i, stages.value));
 const stageIdx = computed(() => clamp(props.i.stage || 0, 0, stages.value.length - 1));
-const pct = computed(() => (rep.value.total ? Math.round(rep.value.answeredAll / rep.value.total * 100) : 0));
+const pct = computed(() => rep.value.pct);
 const engine = computed(() => G.engine(props.i.cfg.engine));
 const title = computed(() => props.i.name || engine.value.name + " · " + props.i.cfg.year);
 const to = computed(() => props.i.done ? "/report/" + props.i.id : "/check/" + props.i.id + "/" + stageIdx.value);
@@ -37,11 +37,11 @@ const V = computed(() => VERDICTS[rep.value.verdict]);
 
     <template v-if="!i.done">
       <div class="metrics">
-        <div class="metric"><b class="metric-v num">{{ pct }}<span class="unit"> %</span></b><span class="metric-l">пройдено</span></div>
+        <div class="metric"><b class="metric-v num">{{ pct }}<span class="unit"> %</span></b><span class="metric-l">перевірено</span></div>
         <div class="metric"><b class="metric-v num">{{ stageIdx + 1 }}<span class="unit"> з {{ stages.length }}</span></b><span class="metric-l">етап: {{ stages[stageIdx].short }}</span></div>
       </div>
       <StageStrip :prog="prog" :current="stageIdx" />
-      <p class="insp-count">Пройдено {{ rep.answeredAll }} з {{ rep.total }} пунктів<template v-if="rep.failCount"> · проблем: {{ rep.failCount }}</template></p>
+      <p class="insp-count">Перевірено {{ rep.answered }} з {{ rep.total }} пунктів · пропущено {{ rep.skipped.length }}<template v-if="rep.failCount"> · проблем: {{ rep.failCount }}</template></p>
       <button class="btn" :class="{ tonal: !featured }" data-action="continue" :data-to="to" @click="go(to)"><span>Продовжити</span><AppIcon name="arrowRight" /></button>
     </template>
 

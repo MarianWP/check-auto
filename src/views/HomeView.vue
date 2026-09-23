@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from "vue";
+import { ref, computed } from "vue";
+import SaveStatus from "../components/SaveStatus.vue";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
@@ -13,8 +14,10 @@ import { db } from "../store";
 import { switchTab } from "../nav";
 
 const list = computed(() => db.inspections.slice().sort((a, b) => b.updatedAt - a.updatedAt));
-const active = computed(() => list.value.filter(i => !i.done));
-const done = computed(() => list.value.filter(i => i.done));
+const query = ref("");
+const filtered = computed(() => list.value.filter(i => !query.value.trim() || [i.name, i.model, i.cfg.year].join(" ").toLocaleLowerCase().includes(query.value.trim().toLocaleLowerCase())));
+const active = computed(() => filtered.value.filter(i => !i.done));
+const done = computed(() => filtered.value.filter(i => i.done));
 const hasAny = computed(() => list.value.length > 0);
 </script>
 
@@ -27,6 +30,9 @@ const hasAny = computed(() => list.value.length > 0);
         <ProfileButton />
       </header>
       <StorageNotice />
+      <SaveStatus />
+      <label v-if="hasAny" class="field"><span class="field-label">Знайти огляд</span><input v-model="query" class="input" type="search" placeholder="Назва, модель або рік"></label>
+      <p v-if="hasAny && !filtered.length" class="notice info">Нічого не знайдено. Спробуй іншу назву або рік.</p>
 
       <section v-if="!hasAny" class="empty" data-empty="home">
         <div class="empty-ic"><AppIcon name="car" cls="lg" /></div>

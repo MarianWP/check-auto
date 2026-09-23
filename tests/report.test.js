@@ -124,14 +124,14 @@ describe("службові дані звіту", () => {
     });
   });
 
-  it("stageProgress: «пропустити» рахується як відповідь для панелі етапу", () => {
+  it("stageProgress: пропущене не збільшує перевірений прогрес", () => {
     const i = mkInsp(CFG, {});
     const stages = visibleStages(i);
     const [a, b] = stages[0].items;
     i.answers[a.id] = { s: "skip" };
     i.answers[b.id] = { s: "ok" };
     const p = stageProgress(i, stages);
-    expect(p[0]).toEqual({ answered: 2, total: stages[0].items.length });
+    expect(p[0]).toEqual({ answered: 1, skipped: 1, total: stages[0].items.length });
     expect(p[1].answered).toBe(0);
   });
 });

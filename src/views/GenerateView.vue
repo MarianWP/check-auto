@@ -25,7 +25,7 @@ const FUEL_OPTS = FUELS;
 const GEAR_OPTS = GEARS.map(g => ({ id: g.id, name: g.name }));
 const err = ref("");
 const step = ref(0), progress = ref(0);
-let timer = null;
+let timer = null, navigateTimer = null, mounted = true;
 
 function tick() {
   const t = Date.now() - gen.startedAt;
@@ -34,22 +34,24 @@ function tick() {
 }
 async function submit() {
   err.value = inputError(f);
-  if (err.value) return;
+  if (err.value || gen.state === "working") return;
   TG.haptic("select");
   step.value = 0; progress.value = 0;
   timer = setInterval(tick, 250);
   const def = await generateModel({ brand: f.brand.trim(), model: f.model.trim(), year: Number(f.year), fuel: f.fuel, engine: f.engine.trim(), gear: f.gear, body: f.body });
   clearInterval(timer); timer = null;
+  if (!mounted) return;
   if (!def) { err.value = gen.error; return; }
   progress.value = 100; step.value = GEN_STEPS.length - 1;
   resetDraft({ model: def.id, fuel: def.engineLib.e1.fuel, engine: "e1", body: "b1", year: Number(f.year), gear: "g1", name: f.name, price: f.price });
   const i = createInspection();
+  if (!i) { err.value = "Перевір конфігурацію авто"; gen.state = "idle"; return; }
   TG.haptic("success");
   toast("Картку і чек-лист для " + def.brand + " " + def.name + " підготовлено", 3500);
-  setTimeout(() => go("/car/" + i.id), reduced() ? 0 : 500);
+  navigateTimer = setTimeout(() => go("/car/" + i.id), reduced() ? 0 : 500);
 }
 function cancel() { clearInterval(timer); timer = null; cancelGenerate(); }
-onUnmounted(() => { clearInterval(timer); });
+onUnmounted(() => { mounted = false; clearTimeout(navigateTimer); cancel(); });
 </script>
 
 <template>

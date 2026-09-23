@@ -46,14 +46,14 @@ function providerError(provider: string, status: number, body: string): string {
 // OpenAI Chat Completions зі стрімінгом. Для моделей GPT-5 ліміт задається як max_completion_tokens.
 function openaiStream(messages: Msg[], system: string): Promise<Response> {
   return fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
+    method: "POST", signal: AbortSignal.timeout(120000),
     headers: { "content-type": "application/json", authorization: "Bearer " + OPENAI_KEY },
     body: JSON.stringify({ model: MODEL, stream: true, max_completion_tokens: MAX_TOKENS, messages: [{ role: "system", content: system }, ...messages] })
   });
 }
 function anthropicStream(messages: Msg[], system: string): Promise<Response> {
   return fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
+    method: "POST", signal: AbortSignal.timeout(120000),
     headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, stream: true, system, messages })
   });
@@ -106,13 +106,11 @@ Deno.serve(async (req) => {
   const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 
   // Ліміт на добу: рахуємо репліки користувача за останні 24 години.
-  const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const { count } = await admin.from("assistant_messages").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("role", "user").gte("created_at", since);
-  const used = count ?? 0;
-  if (used >= DAILY_LIMIT) return json({ error: `Ліміт ${DAILY_LIMIT} запитань на добу вичерпано. Спробуй завтра.`, remaining: 0 }, 429, { "x-remaining": "0" });
-  const remaining = DAILY_LIMIT - used - 1;
+  const { data: quota, error: quotaError } = await admin.rpc("reserve_ai_usage", { p_user: userId, p_kind: "assistant", p_limit: DAILY_LIMIT });
+  if (quotaError || !quota) return json({ error: "Не вдалося перевірити ліміт. Спробуй пізніше." }, 503);
+  if (!quota.allowed) return json({ error: "Денний ліміт вичерпано. Спробуй пізніше.", remaining: 0 }, 429);
+  const remaining = quota.remaining;
 
-  // Історія цієї розмови (той самий огляд або без огляду).
   let q = admin.from("assistant_messages").select("role, content").eq("user_id", userId).order("created_at", { ascending: false }).limit(HISTORY);
   q = inspectionId ? q.eq("inspection_id", inspectionId) : q.is("inspection_id", null);
   const { data: hist } = await q;
@@ -129,7 +127,9 @@ Deno.serve(async (req) => {
 
   let system = SYSTEM + "\nМова відповіді: " + LANGS[lang] + ".";
   if (context) system += "\n\nКонтекст поточного огляду:\n" + context;
-  const up = await (PROVIDER === "openai" ? openaiStream(messages, system) : anthropicStream(messages, system));
+  let up: Response;
+  try { up = await (PROVIDER === "openai" ? openaiStream(messages, system) : anthropicStream(messages, system)); }
+  catch { return json({ error: "Помічник не відповів вчасно. Спробуй ще раз." }, 504);
   if (!up.ok || !up.body) {
     const t = await up.text().catch(() => "");
     console.error(PROVIDER, up.status, t.slice(0, 300));
@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
       const rows = [{ user_id: userId, inspection_id: inspectionId, role: "user", content: message }];
       if (full.trim()) rows.push({ user_id: userId, inspection_id: inspectionId, role: "assistant", content: full.trim() });
       const { error } = await admin.from("assistant_messages").insert(rows);
-      if (error) console.error("save", error.message);
+      if (error) { console.error("save", error.message); throw new Error("Не вдалося зберегти розмову"); }
     }
   }));
   return new Response(out, { headers: { ...CORS, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "x-remaining": String(remaining) } });

@@ -11,7 +11,7 @@ import OCTAVIA5 from "./models/octavia5.js";
 
 export const DEFAULT_MODEL = "golf5";
 export const MODELS = reactive([GOLF5, OCTAVIA5]);
-const byId = { golf5: GOLF5, octavia5: OCTAVIA5 };
+const byId = Object.assign(Object.create(null), { golf5: GOLF5, octavia5: OCTAVIA5 });
 const cache = new Map();
 
 export const modelDef = id => byId[id] || null;

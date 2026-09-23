@@ -64,13 +64,13 @@ function userPrompt(b: Record<string, string>) {
 async function callOpenAI(system: string, user: string): Promise<string> {
   const body: Record<string, unknown> = { model: MODEL, response_format: { type: "json_object" }, max_completion_tokens: MAX_TOKENS, messages: [{ role: "system", content: system }, { role: "user", content: user }] };
   if (/^gpt-5/.test(MODEL)) body.reasoning_effort = "low";
-  const r = await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + OPENAI_KEY }, body: JSON.stringify(body) });
+  const r = await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", signal: AbortSignal.timeout(120000), headers: { "content-type": "application/json", authorization: "Bearer " + OPENAI_KEY }, body: JSON.stringify(body) });
   if (!r.ok) { const t = await r.text(); console.error("openai", r.status, t.slice(0, 300)); throw new Error(providerError("openai", r.status, t)); }
   const j = await r.json();
   return j.choices?.[0]?.message?.content ?? "";
 }
 async function callAnthropic(system: string, user: string): Promise<string> {
-  const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" }, body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, system, messages: [{ role: "user", content: user + " Відповідь: лише JSON." }] }) });
+  const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", signal: AbortSignal.timeout(120000), headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" }, body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, system, messages: [{ role: "user", content: user + " Відповідь: лише JSON." }] }) });
   if (!r.ok) { const t = await r.text(); console.error("anthropic", r.status, t.slice(0, 300)); throw new Error(providerError("anthropic", r.status, t)); }
   const j = await r.json();
   return (j.content ?? []).map((c: { text?: string }) => c.text ?? "").join("");
@@ -101,10 +101,10 @@ Deno.serve(async (req) => {
   if (!input.brand || !input.model || !(year >= 1990 && year <= new Date().getFullYear() + 1)) return json({ error: "Вкажи марку, модель і рік випуску" }, 400);
 
   const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
-  const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const { count } = await admin.from("custom_models").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("created_at", since);
-  const used = count ?? 0;
-  if (used >= DAILY_LIMIT) return json({ error: `Ліміт ${DAILY_LIMIT} карток на добу вичерпано. Спробуй завтра.`, remaining: 0 }, 429);
+  const { data: quota, error: quotaError } = await admin.rpc("reserve_ai_usage", { p_user: userId, p_kind: "generate", p_limit: DAILY_LIMIT });
+  if (quotaError || !quota) return json({ error: "Не вдалося перевірити ліміт. Спробуй пізніше." }, 503);
+  if (!quota.allowed) return json({ error: "Денний ліміт вичерпано. Спробуй пізніше.", remaining: 0 }, 429);
+  const remaining = quota.remaining;
 
   let def: unknown;
   let text = "";
@@ -117,6 +117,6 @@ Deno.serve(async (req) => {
 
   const id = "ai_" + crypto.randomUUID().replace(/-/g, "").slice(0, 10);
   const { error } = await admin.from("custom_models").insert({ id, user_id: userId, input, def });
-  if (error) console.error("save", error.message);
-  return json({ id, def, input, createdAt: Date.now(), remaining: DAILY_LIMIT - used - 1 });
+  if (error) { console.error("save", error.message); return json({ error: "Не вдалося зберегти картку. Спробуй ще раз." }, 503); }
+  return json({ id, def, input, createdAt: Date.now(), remaining });
 });

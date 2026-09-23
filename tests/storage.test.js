@@ -61,7 +61,7 @@ describe("нормалізація запису перевірки", () => {
   it("модель: старий запис без поля → golf5; Octavia приймається; конфігурація Golf під моделлю Octavia → відкидається", () => {
     expect(normalizeInspection({ id: "o1", cfg: OCTAVIA_CFG, model: "octavia5" }, NOW).model).toBe("octavia5");
     expect(normalizeInspection({ id: "o2", cfg: CFG, model: "octavia5" }, NOW)).toBeNull();
-    expect(normalizeInspection({ id: "o3", cfg: CFG, model: "lada" }, NOW).model).toBe("golf5");
+    expect(normalizeInspection({ id: "o3", cfg: CFG, model: "lada" }, NOW)).toBeNull();
     expect(validConfig(OCTAVIA_CFG, "octavia5")).toBe(true);
     expect(validConfig(OCTAVIA_CFG)).toBe(false);
   });
