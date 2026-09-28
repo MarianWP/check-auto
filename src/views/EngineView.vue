@@ -25,7 +25,7 @@ function newFrom() { resetDraft({ model, fuel: e.fuel, engine: e.id }); ui.scrol
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar back="/guide" back-label="довідник" :title="e.name" :kicker="G.model.name + ' · ' + fuelLabel + ' · ' + e.years[0] + '–' + e.years[1]" :lead="e.codes" />
+    <NavBar back="/guide" back-label="довідник" :title="e.name" :kicker="G.model.name + ' · ' + fuelLabel + ' · ' + e.years[0] + '–' + e.years[1]" />
     <div class="content" :class="enter">
       <DraftNotice :model="model" />
       <SpecTiles :e="e" style="margin-top: var(--s4)" />
@@ -33,7 +33,7 @@ function newFrom() { resetDraft({ model, fuel: e.fuel, engine: e.id }); ui.scrol
         <SecTitle id="h-eprice" icon="coins">Ринкова ціна</SecTitle>
         <div class="card price">
           <div class="price-v">{{ money(price.lo) }} – {{ fmtN(price.hi) }}</div>
-          <p class="foot">Для кузова «{{ G.body(refBody).name }}» {{ e.years[1] }} року. Кузов, рік і коробка змінюють ціну на 5–15 %.</p>
+          <p class="foot">{{ G.body(refBody).name }}, {{ e.years[1] }} р.</p>
         </div>
       </section>
       <EngineBlock :e="e" />

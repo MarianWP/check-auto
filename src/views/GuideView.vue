@@ -42,11 +42,8 @@ function jump(id) {
     <NavBar root />
     <div class="content" :class="enter">
       <header class="page-head head-row">
-        <div><p class="kicker">{{ G.model.brand }} · {{ G.model.years[0] }}–{{ G.model.years[1] }}</p><h1 class="title">Довідник</h1></div>
+        <h1 class="title">Довідник</h1>
         <ProfileButton />
-      </header>
-      <header class="page-head" style="padding-top: 0">
-        <p class="lead" style="margin-top: 0">Двигуни, коробки, кузови, ціни і хвороби. Обери модель, потім двигун, щоб побачити повну картку.</p>
       </header>
       <ChipGroup :list="MODEL_OPTS" :sel="sel" k="model" label="Модель" @pick="pickModel" />
       <DraftNotice :model="sel" />

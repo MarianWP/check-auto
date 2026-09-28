@@ -20,7 +20,7 @@ function onFile(ev) {
         <AppIcon name="download" />
         <div class="row-main">
           <div class="row-t">Зберегти копію</div>
-          <div class="row-s">{{ tgState.active ? 'Текст копії потрапить у буфер обміну' : 'Файл JSON з усіма оглядами' }}</div>
+          <div class="row-s">{{ tgState.active ? 'Текстом у буфер обміну' : 'Файл з усіма оглядами' }}</div>
         </div>
       </button>
       <!-- label + input: вибір файлу відкривається нативно, без програмного click() поза жестом. -->
@@ -28,7 +28,7 @@ function onFile(ev) {
         <AppIcon name="upload" />
         <div class="row-main">
           <div class="row-t">Відновити з файлу</div>
-          <div class="row-s">Додає огляди з копії, наявні не видаляє</div>
+          <div class="row-s">Наявні огляди лишаться</div>
         </div>
         <input class="visually-hidden" type="file" accept=".json,application/json,text/plain" aria-label="Файл резервної копії" @change="onFile">
       </label>
@@ -36,7 +36,7 @@ function onFile(ev) {
         <AppIcon name="clipboard" />
         <div class="row-main">
           <div class="row-t">Вставити копію з буфера</div>
-          <div class="row-s">Скопіюй текст копії зі «Збереженого» і натисни сюди</div>
+          <div class="row-s">Спершу скопіюй текст копії</div>
         </div>
       </button>
     </div>

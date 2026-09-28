@@ -8,7 +8,6 @@ import SecTitle from "../components/SecTitle.vue";
 import InspCard from "../components/InspCard.vue";
 import InstallCard from "../components/InstallCard.vue";
 import StorageNotice from "../components/StorageNotice.vue";
-import BackupCard from "../components/BackupCard.vue";
 import ProfileButton from "../components/ProfileButton.vue";
 import { db } from "../store";
 import { switchTab } from "../nav";
@@ -19,6 +18,8 @@ const filtered = computed(() => list.value.filter(i => !query.value.trim() || [i
 const active = computed(() => filtered.value.filter(i => !i.done));
 const done = computed(() => filtered.value.filter(i => i.done));
 const hasAny = computed(() => list.value.length > 0);
+/* Пошук потрібен, лише коли оглядів уже багато; на короткому списку він тільки займає місце. */
+const SEARCH_FROM = 6;
 </script>
 
 <template>
@@ -26,18 +27,18 @@ const hasAny = computed(() => list.value.length > 0);
     <NavBar root />
     <div class="content" :class="enter">
       <header class="page-head head-row">
-        <div><p class="kicker">Golf Check · огляд авто перед покупкою</p><h1 class="title">Мої огляди</h1></div>
+        <h1 class="title">Мої огляди</h1>
         <ProfileButton />
       </header>
       <StorageNotice />
       <SaveStatus />
-      <label v-if="hasAny" class="field"><span class="field-label">Знайти огляд</span><input v-model="query" class="input" type="search" placeholder="Назва, модель або рік"></label>
-      <p v-if="hasAny && !filtered.length" class="notice info">Нічого не знайдено. Спробуй іншу назву або рік.</p>
+      <input v-if="list.length >= SEARCH_FROM" v-model="query" class="input search" type="search" placeholder="Пошук: назва, модель, рік" aria-label="Пошук огляду">
+      <p v-if="hasAny && !filtered.length" class="foot">Нічого не знайдено</p>
 
       <section v-if="!hasAny" class="empty" data-empty="home">
         <div class="empty-ic"><AppIcon name="car" cls="lg" /></div>
         <h2 class="empty-t">Ще немає оглядів</h2>
-        <p class="empty-s">Обери модель, двигун, кузов і рік. Отримаєш покроковий чек-лист саме для цієї конфігурації, її типові хвороби та звіт із вердиктом і бюджетом для торгу.</p>
+        <p class="empty-s">Чек-лист, хвороби й вердикт під твоє авто</p>
         <button class="btn" data-action="new" @click="switchTab('/new')"><AppIcon name="plus" /><span>Створити огляд</span></button>
       </section>
 
@@ -53,8 +54,6 @@ const hasAny = computed(() => list.value.length > 0);
       </template>
 
       <InstallCard />
-      <BackupCard />
-      <p class="foot center" style="margin-top: var(--s5)">Огляди зберігаються на цьому телефоні, а після входу через Telegram у профілі — ще й у хмарі. Резервна копія вбереже їх, якщо браузер очистить сховище.</p>
     </div>
   </AppScreen>
 </template>

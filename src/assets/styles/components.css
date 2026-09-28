@@ -38,6 +38,10 @@
   transition: transform 160ms var(--ease-out), background-color 120ms ease;
 }
 .btn:active { transform: scale(0.98); background: var(--accent-press); }
+/* Коротка підказка в кнопці (прогрес, кількість): тонше за підпис, щоб не сперечалась із дією. */
+.btn-meta { font-weight: 500; opacity: 0.72; }
+/* Пошук у довгому списку: без підпису над полем, лише плейсхолдер і aria-label. */
+.input.search { margin-top: var(--s3); }
 .btn.tonal { background: var(--raised); color: var(--text); }
 .btn.tonal:active { background: var(--raised-2); }
 .btn.ghost { background: transparent; color: var(--text); }

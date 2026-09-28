@@ -55,10 +55,9 @@ onMounted(() => {
       <header class="page-head">
         <p class="kicker">Крок {{ stepNow }} з 7</p>
         <h1 class="title">Новий огляд</h1>
-        <p class="lead">Обери модель і конфігурацію авто. Чек-лист підлаштується під двигун і коробку.</p>
       </header>
 
-      <div v-if="restored" class="notice info"><div><b>Чернетку відновлено</b>Можна продовжити збережений вибір.<button class="link" @click="restart">Почати заново</button></div></div>
+      <p v-if="restored" class="save-status foot">Продовжуємо збережений вибір<button class="link" @click="restart">Почати заново</button></p>
       <section id="s-model" class="step done" aria-labelledby="st-model">
         <header class="step-head">
           <span class="step-no" aria-hidden="true"><AppIcon name="check" /></span>
@@ -67,7 +66,7 @@ onMounted(() => {
         <ChipGroup :list="MODEL_OPTS" :sel="d.model" k="model" label="Модель" @pick="pick" />
         <button class="row ai-row" data-action="generate" data-to="/generate" @click="go('/generate')">
           <span class="ai-ic" aria-hidden="true"><AppIcon name="sparkles" /></span>
-          <span class="row-main"><span class="row-t">Іншого авто немає в списку?</span><span class="row-s">Впиши марку, модель і рік: ШІ складе картку авто і чек-лист саме під нього.</span></span>
+          <span class="row-main"><span class="row-t">Іншого авто немає в списку?</span><span class="row-s">ШІ складе картку і чек-лист під нього</span></span>
           <AppIcon name="chev" cls="chev" />
         </button>
         <DraftNotice :model="d.model" />
@@ -113,7 +112,7 @@ onMounted(() => {
           <h2 id="st-year" class="step-t">Рік випуску</h2><span v-if="d.year" class="step-val">{{ picked.year }}</span>
         </header>
         <ChipGroup :list="years" :sel="yearSel" k="year" label="Рік випуску" @pick="pick" />
-        <p class="hint">Модельний рік за VIN (10-й символ) може бути на 1 більшим за рік у техпаспорті.</p>
+        <p class="hint">Рік за VIN буває на 1 більшим, ніж у техпаспорті</p>
       </section>
 
       <section v-if="d.year" id="s-gear" class="step" :class="{ done: !!d.gear }" aria-labelledby="st-gear">
@@ -130,7 +129,7 @@ onMounted(() => {
           <h2 id="st-final" class="step-t">Про це авто</h2>
         </header>
         <div class="card fields">
-          <label class="field"><span class="field-label">Назва, щоб упізнати серед інших (необов'язково)</span><input v-model="d.name" class="input" data-field="name" maxlength="60" placeholder="Синій, Київ, з auto.ria" autocomplete="off" enterkeyhint="next"></label>
+          <label class="field"><span class="field-label">Назва (необов'язково)</span><input v-model="d.name" class="input" data-field="name" maxlength="60" placeholder="Синій, Київ, з auto.ria" autocomplete="off" enterkeyhint="next"></label>
           <label class="field"><span class="field-label">Ціна продавця, $ (необов'язково)</span><input v-model="d.price" class="input" data-field="price" placeholder="6500" inputmode="numeric" autocomplete="off" enterkeyhint="done"></label>
         </div>
         <div class="btn-stack"><button class="btn" data-action="create" @click="create"><span>Далі: картка авто</span><AppIcon name="arrowRight" /></button></div>

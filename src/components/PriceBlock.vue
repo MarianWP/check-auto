@@ -22,7 +22,7 @@ const cmp = computed(() => {
     <div class="card price">
       <div class="price-v">{{ money(price.lo) }} – {{ fmtN(price.hi) }}</div>
       <div v-if="cmp" class="price-cmp"><span class="muted">Продавець просить</span><b>{{ money(i.price) }}:</b><span :class="cmp.cls" class="strong">{{ cmp.txt }}</span></div>
-      <p class="foot">Орієнтовно для цієї конфігурації. Середня по всіх {{ G.model.name }} на auto.ria — {{ money(M.avg) }} ({{ M.updated }}). Дизель дорожчий, бензин дешевший, ГБО — найдешевше.</p>
+      <p class="foot">Середня {{ G.model.name }} на auto.ria — {{ money(M.avg) }} ({{ M.updated }})</p>
       <a class="link" :href="M.search" target="_blank" rel="noopener">Актуальні оголошення на auto.ria<AppIcon name="external" cls="sm" /></a>
     </div>
   </section>

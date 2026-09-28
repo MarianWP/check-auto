@@ -23,7 +23,7 @@ const needPct = Math.round(FULL_COVERAGE * 100);
 const fair = computed(() => {
   const r = rep.value;
   if (!i.price) return "";
-  return " Від ціни " + money(i.price) + " справедливо просити " + money(Math.max(0, i.price - r.cost.hi)) + "–" + fmtN(Math.max(0, i.price - r.cost.lo)) + ".";
+  return "Аргумент у торгу: з " + money(i.price) + " до " + money(Math.max(0, i.price - r.cost.hi)) + "–" + fmtN(Math.max(0, i.price - r.cost.lo));
 });
 </script>
 
@@ -34,26 +34,17 @@ const fair = computed(() => {
 
       <!-- 1. Вердикт -->
       <section class="verdict" :class="'v-' + rep.verdict" :data-verdict="rep.verdict" aria-labelledby="h-verdict">
-        <div class="verdict-top"><span class="verdict-ic"><AppIcon :name="V.icon" cls="lg" /></span><span>Вердикт</span></div>
-        <h2 id="h-verdict" class="verdict-t">{{ V.t }}</h2>
+        <div class="verdict-head"><span class="verdict-ic"><AppIcon :name="V.icon" cls="lg" /></span><h2 id="h-verdict" class="verdict-t"><span class="visually-hidden">Вердикт: </span>{{ V.t }}</h2></div>
         <p class="verdict-s">{{ V.s(rep) }}</p>
       </section>
 
       <!-- 2. Повнота: оцінка і кількість неперевіреного — однакової ваги, щоб бал не затьмарював прогалини -->
       <div class="tiles report-tiles" role="group" aria-label="Підсумок огляду">
-        <div class="tile"><b class="tile-v big">{{ rep.score }}<span class="unit"> зі 100</span></b><span class="tile-l">Оцінка перевіреного</span></div>
+        <div class="tile"><b class="tile-v big">{{ rep.score }}<span class="unit"> зі 100</span></b><span class="tile-l">Оцінка</span></div>
         <div class="tile" :class="{ attention: rest.length > 0 }" data-tile="unchecked"><b class="tile-v big">{{ rest.length }}<span class="unit"> з {{ rep.total }}</span></b><span class="tile-l">Не перевірено</span></div>
-        <div class="tile"><b class="tile-v big text-ok">{{ rep.ok }}</b><span class="tile-l">Без зауважень</span></div>
-        <div class="tile"><b class="tile-v big" :class="{ 'text-bad': rep.failCount > 0 }">{{ rep.failCount }}</b><span class="tile-l">Проблем знайдено</span></div>
       </div>
-      <section aria-labelledby="h-cov">
-        <SecTitle id="h-cov" icon="gauge">Повнота огляду</SecTitle>
-        <div class="card cov">
-          <div class="cov-top"><span>Перевірено {{ rep.answered }} з {{ rep.total }} пунктів</span><b>{{ rep.pct }} %</b></div>
-          <div class="progress" :class="{ complete: rep.complete }" role="progressbar" aria-label="Повнота огляду" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="rep.pct"><i :style="{ transform: 'scaleX(' + rep.coverage.toFixed(3) + ')' }"></i></div>
-          <p class="foot">Критичних пунктів перевірено {{ rep.critChecked }} з {{ rep.critTotal }}. Вердикт «можна брати» можливий від {{ needPct }} % і коли перевірено всі критичні пункти.</p>
-        </div>
-      </section>
+      <div class="progress report-cov" :class="{ complete: rep.complete }" role="progressbar" :aria-label="'Перевірено ' + rep.pct + ' %'" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="rep.pct"><i :style="{ transform: 'scaleX(' + rep.coverage.toFixed(3) + ')' }"></i></div>
+      <p v-if="!rep.complete" class="foot">Для вердикту потрібно від {{ needPct }} % і всі критичні пункти</p>
       <section v-if="rep.critUnchecked.length" aria-labelledby="h-critun">
         <SecTitle id="h-critun" icon="alert">Критичні пункти без перевірки · {{ rep.critUnchecked.length }}</SecTitle>
         <div class="group">
@@ -84,7 +75,7 @@ const fair = computed(() => {
       </template>
       <section v-if="!rep.failCount" aria-labelledby="h-noprob">
         <SecTitle id="h-noprob" icon="circleCheck">Проблеми</SecTitle>
-        <div class="card"><p class="prose">Серед перевірених пунктів проблем не зафіксовано.<template v-if="!rep.complete"> Огляд ще неповний, тож це не гарантія.</template><template v-else> Огляд повний — це дуже добрий знак.</template></p></div>
+        <div class="card"><p class="prose">Проблем не знайдено<template v-if="!rep.complete"> серед перевіреного</template>.</p></div>
       </section>
 
       <!-- 4. Подробиці: бюджет, ринок, перелік неперевіреного -->
@@ -92,7 +83,7 @@ const fair = computed(() => {
         <SecTitle id="h-budget" icon="coins">Бюджет на усунення</SecTitle>
         <div class="card price">
           <div class="price-v">≈ {{ costStr([rep.cost.lo, rep.cost.hi]) }}</div>
-          <p class="foot">Сума орієнтовних вартостей по знайдених проблемах. Це твій аргумент у торгу.{{ fair }}</p>
+          <p v-if="fair" class="foot">{{ fair }}</p>
         </div>
       </section>
       <PriceBlock :i="i" :price="price" />
@@ -111,7 +102,6 @@ const fair = computed(() => {
         <button class="btn tonal" data-action="go" :data-to="'/check/' + i.id + '/0'" @click="go('/check/' + i.id + '/0')">Повернутись до чек-листа</button>
         <button class="btn ghost danger" data-action="delete" :data-id="i.id" @click="confirmDelete(i.id)"><AppIcon name="trash" /><span>Видалити огляд</span></button>
       </div>
-      <p class="foot center" style="margin-top: var(--s4)">Звіт — орієнтир, а не експертиза. Для остаточного рішення покажи авто на СТО.</p>
     </div>
   </AppScreen>
 </template>

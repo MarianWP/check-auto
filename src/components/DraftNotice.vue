@@ -11,10 +11,10 @@ const m = computed(() => modelDef(props.model));
 <template>
   <div v-if="m && m.ai" class="notice warn" data-notice="ai" role="status">
     <AppIcon name="sparkles" />
-    <div><b>{{ m.brand }} {{ m.name }}: картку склав ШІ</b>Хвороби, ціни й регламенти взято із загальних даних про цю модель, тож перевіряй критичне на СТО і торгуйся за фактом. Чек-лист працює повністю.</div>
+    <div><b>Картку склав ШІ</b>Дані орієнтовні: критичне перевіряй на СТО.</div>
   </div>
   <div v-else-if="m && m.draft" class="notice warn" data-notice="draft" role="status">
     <AppIcon name="alert" />
-    <div><b>{{ m.name }}: дані ще чернетка</b>Двигуни взято зі спільної бібліотеки VAG, а ціни, роки й хвороби кузова потребують перевірки. Чек-лист працює повністю.</div>
+    <div><b>Дані ще чернетка</b>Ціни, роки й хвороби кузова можуть бути неточні.</div>
   </div>
 </template>

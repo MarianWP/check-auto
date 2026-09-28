@@ -14,8 +14,8 @@ const show = computed(() => !standalone && !db.hideInstall && !tgState.active);
     <AppIcon name="share" />
     <div>
       <b>Додай на Початковий екран</b>
-      <template v-if="ios">У Safari натисни «Поділитися», потім «На Початковий екран». Застосунок працюватиме офлайн.</template>
-      <template v-else>Відкрий цю сторінку в Safari на iPhone і додай на Початковий екран через меню «Поділитися».</template>
+      <template v-if="ios">«Поділитися» → «На Початковий екран». Працює і без мережі.</template>
+      <template v-else>Відкрий у Safari на iPhone: «Поділитися» → «На Початковий екран».</template>
     </div>
     <button class="icon-btn" data-action="hide-install" aria-label="Сховати підказку" @click="hideInstall()"><AppIcon name="x" /></button>
   </div>

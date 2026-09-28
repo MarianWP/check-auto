@@ -23,7 +23,6 @@ const inTelegram = TG.active;
 const list = computed(() => db.inspections.slice().sort((a, b) => b.updatedAt - a.updatedAt));
 const nameOf = i => i.name || apiOf(i).label(i.cfg);
 const pickLabel = computed(() => (insp.value ? nameOf(insp.value) : "Без огляду"));
-const pickSub = computed(() => (insp.value ? apiOf(insp.value).model.name + " · " + apiOf(insp.value).label(insp.value.cfg) : "Загальні питання про огляд і покупку"));
 const sel = ref((() => { try { const v = localStorage.getItem(KEY); return v && (v === "none" || db.inspections.some(i => i.id === v)) ? v : (list.value.find(i => !i.done) || { id: "none" }).id; } catch (e) { return "none"; } })());
 const insp = computed(() => list.value.find(i => i.id === sel.value) || null);
 const G = computed(() => (insp.value ? apiOf(insp.value) : null));
@@ -98,14 +97,14 @@ onBeforeUnmount(() => { cancelAsk(); cancelAnimationFrame(frame); focusTimers.fo
     <NavBar root />
     <div class="content chat" :class="enter">
       <header class="page-head head-row">
-        <div><p class="kicker">ШІ про огляд і покупку</p><h1 class="title">Помічник</h1></div>
+        <h1 class="title">Помічник</h1>
         <ProfileButton />
       </header>
 
       <div v-if="CLOUD_ERROR" class="notice warn" data-notice="assistant-off"><AppIcon name="alert" /><div><b>Хмару налаштовано з помилкою</b>{{ CLOUD_ERROR }}. Помічник поки недоступний.</div></div>
-      <div v-else-if="!auth.enabled" class="notice info" data-notice="assistant-off"><AppIcon name="alert" /><div><b>Помічник працює через хмару</b>Він з'явиться, коли адміністратор підключить Supabase і ключ OpenAI. Чек-лист і довідник працюють без нього.</div></div>
+      <div v-else-if="!auth.enabled" class="notice info" data-notice="assistant-off"><AppIcon name="alert" /><div><b>Помічник недоступний</b>Хмару ще не підключено.</div></div>
       <div v-else-if="!user" class="card account" data-notice="assistant-login">
-        <p class="prose">Увійди через Telegram, щоб ставити запитання помічнику. Він бачить твій огляд і відповідає саме про це авто.</p>
+        <p class="prose">Увійди, щоб питати про своє авто</p>
         <button v-if="inTelegram" class="btn" data-action="login" :disabled="auth.busy" @click="loginMiniApp()"><AppIcon name="share" /><span>{{ auth.busy ? 'Входимо…' : 'Увійти через Telegram' }}</span></button>
         <TelegramLogin v-else />
       </div>
@@ -114,14 +113,13 @@ onBeforeUnmount(() => { cancelAsk(); cancelAnimationFrame(frame); focusTimers.fo
         <div v-if="list.length" class="group picker">
           <button class="row" data-action="pick-insp" :aria-label="'Про який огляд: ' + pickLabel" @click="openPicker">
             <AppIcon name="car" />
-            <div class="row-main"><div class="row-s">Про який огляд</div><div class="row-t" data-pick-label>{{ pickLabel }}</div><div v-if="insp" class="row-s">{{ pickSub }}</div></div>
+            <div class="row-main"><div class="row-s">Про який огляд</div><div class="row-t" data-pick-label>{{ pickLabel }}</div></div>
             <AppIcon name="chevDown" cls="chev" />
           </button>
         </div>
 
         <p v-if="chat.loading && !chat.messages.length" class="foot" style="margin-top: var(--s4)">Завантаження розмови…</p>
         <section v-else-if="!chat.messages.length" class="chat-empty" aria-label="Підказки">
-          <p class="empty-s">Як перевірити вузол, чим загрожує знайдене, скільки торгуватися. Відповіді орієнтовні: помічник не бачить авто і не заміняє СТО.</p>
           <div class="chips">
             <button v-for="h in hints" :key="h" class="chip" data-action="hint" @click="send(h)">{{ h }}</button>
           </div>

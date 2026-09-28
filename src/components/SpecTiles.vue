@@ -10,7 +10,7 @@ const lpg = computed(() => ({ ok: "Підходить", hard: "Ризикова�
 <template>
   <div class="tiles" aria-label="Головні показники двигуна" role="group">
     <div class="tile"><b class="tile-v">{{ e.hp }}</b><span class="tile-l">Потужність</span></div>
-    <div class="tile"><b class="tile-v big">{{ e.reliability }}<span class="unit"> з 5</span></b><span class="tile-l">Надійність двигуна</span></div>
+    <div class="tile"><b class="tile-v big">{{ e.reliability }}<span class="unit"> з 5</span></b><span class="tile-l">Надійність</span></div>
     <div class="tile"><b class="tile-v">{{ timing }}</b><span class="tile-l">Привід ГРМ</span></div>
     <div class="tile"><b class="tile-v">{{ lpg }}</b><span class="tile-l">ГБО</span></div>
   </div>

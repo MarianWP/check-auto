@@ -56,13 +56,13 @@ onUnmounted(() => { mounted = false; clearTimeout(navigateTimer); cancel(); });
 
 <template>
   <AppScreen v-slot="{ enter }">
-    <NavBar back="/new" back-label="новий огляд" title="Інше авто" kicker="Новий огляд · ШІ" lead="Впиши, що знаєш про авто. ШІ збере типові хвороби, ціни й складе чек-лист саме під цю модель." />
+    <NavBar back="/new" back-label="новий огляд" title="Інше авто" lead="ШІ складе картку і чек-лист під це авто" />
     <div class="content" :class="enter">
 
       <div v-if="CLOUD_ERROR" class="notice warn" data-notice="gen-off"><AppIcon name="alert" /><div><b>Хмару налаштовано з помилкою</b>{{ CLOUD_ERROR }}. Картки від ШІ поки недоступні.</div></div>
-      <div v-else-if="!auth.enabled" class="notice info" data-notice="gen-off"><AppIcon name="alert" /><div><b>Потрібна хмара</b>Картки від ШІ з'являться, коли адміністратор підключить Supabase і ключ OpenAI. Golf V і Octavia доступні без цього.</div></div>
+      <div v-else-if="!auth.enabled" class="notice info" data-notice="gen-off"><AppIcon name="alert" /><div><b>Недоступно</b>Хмару ще не підключено.</div></div>
       <div v-else-if="!user" class="card account" data-notice="gen-login">
-        <p class="prose">Увійди через Telegram, щоб ШІ склав картку. Картка збережеться у твоєму акаунті й буде на всіх пристроях.</p>
+        <p class="prose">Увійди, щоб ШІ склав картку</p>
         <button v-if="inTelegram" class="btn" data-action="login" :disabled="auth.busy" @click="loginMiniApp()"><AppIcon name="share" /><span>{{ auth.busy ? 'Входимо…' : 'Увійти через Telegram' }}</span></button>
         <TelegramLogin v-else />
       </div>
@@ -77,7 +77,7 @@ onUnmounted(() => { mounted = false; clearTimeout(navigateTimer); cancel(); });
             <span class="gen-dot" aria-hidden="true"><AppIcon v-if="k < step || gen.state === 'done'" name="check" /></span><span>{{ s }}</span>
           </li>
         </ol>
-        <p class="foot center">Зазвичай 20–40 секунд. Дані від ШІ орієнтовні: перевіряй критичне на СТО.</p>
+        <p class="foot center">Зазвичай 20–40 секунд</p>
         <button v-if="gen.state === 'working'" class="btn ghost" data-action="cancel" @click="cancel"><span>Скасувати</span></button>
       </section>
 
@@ -86,7 +86,7 @@ onUnmounted(() => { mounted = false; clearTimeout(navigateTimer); cancel(); });
         <label class="field"><span class="field-label">Модель і покоління</span><input v-model="f.model" class="input" name="model" maxlength="60" required placeholder="Corolla E150" autocomplete="off" enterkeyhint="next"></label>
         <label class="field"><span class="field-label">Рік випуску</span><select v-model="f.year" class="input select" name="year" required><option value="" disabled>Обери рік</option><option v-for="y in YEARS" :key="y" :value="y">{{ y }}</option></select></label>
         <div class="field"><span class="field-label">Паливо</span><ChipGroup :list="FUEL_OPTS" :sel="f.fuel" k="gfuel" label="Паливо" @pick="(_k, v) => { f.fuel = v; }" /></div>
-        <label class="field"><span class="field-label">Двигун, якщо знаєш (необов'язково)</span><input v-model="f.engine" class="input" name="engine" maxlength="60" placeholder="1.6, 124 к.с." autocomplete="off" enterkeyhint="next"><span class="hint">Об'єм, потужність або код двигуна з оголошення. Без цього ШІ візьме найпоширеніший.</span></label>
+        <label class="field"><span class="field-label">Двигун, якщо знаєш (необов'язково)</span><input v-model="f.engine" class="input" name="engine" maxlength="60" placeholder="1.6, 124 к.с." autocomplete="off" enterkeyhint="next"><span class="hint">Без нього ШІ візьме найпоширеніший</span></label>
         <div class="field"><span class="field-label">Коробка передач</span><ChipGroup :list="GEAR_OPTS" :sel="f.gear" k="ggear" label="Коробка передач" @pick="(_k, v) => { f.gear = v; }" /></div>
         <div class="field"><span class="field-label">Кузов (необов'язково)</span><ChipGroup :list="BODY_OPTS" :sel="f.body" k="gbody" label="Кузов" @pick="(_k, v) => { f.body = f.body === v ? '' : v; }" /></div>
         <label class="field"><span class="field-label">Назва огляду (необов'язково)</span><input v-model="f.name" class="input" name="name" maxlength="60" placeholder="Сірий, Львів, від власника" autocomplete="off"></label>

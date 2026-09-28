@@ -14,6 +14,7 @@ import KitBlock from "../components/KitBlock.vue";
 import DraftNotice from "../components/DraftNotice.vue";
 import { insp, computeReport, apiOf } from "../store";
 import { go } from "../nav";
+import { count } from "../logic/text";
 
 const route = useRoute();
 const i = insp(String(route.params.id));
@@ -43,11 +44,7 @@ const checkTo = computed(() => "/check/" + i.id + "/" + (i.stage || 0));
 
   <div id="bar" class="bar">
     <div class="bar-in">
-      <p class="bar-status">
-        <span>{{ rep.answeredAll ? 'Перевірено пунктів' : 'Чек-лист для цієї конфігурації' }}</span>
-        <b>{{ rep.answeredAll ? rep.answered + ' з ' + rep.total : rep.total + ' пунктів' }}</b>
-      </p>
-      <button class="btn" data-action="go" :data-to="checkTo" @click="go(checkTo)"><span>{{ rep.answeredAll ? 'Продовжити огляд' : 'Почати огляд' }}</span><AppIcon name="arrowRight" /></button>
+      <button class="btn" data-action="go" :data-to="checkTo" @click="go(checkTo)"><span>{{ rep.answeredAll ? 'Продовжити огляд' : 'Почати огляд' }}</span><span class="btn-meta num">{{ rep.answeredAll ? rep.pct + ' %' : count(rep.total, 'пункт', 'пункти', 'пунктів') }}</span><AppIcon name="arrowRight" /></button>
     </div>
   </div>
 </template>

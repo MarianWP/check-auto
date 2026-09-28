@@ -23,7 +23,6 @@ const st = computed(() => stages.value[n]);
 const tags = G.tagsFor(i.cfg), last = n === stages.value.length - 1;
 const prog = computed(() => stageProgress(i, stages.value));
 const overallPct = computed(() => { const p = prog.value; const total = p.reduce((s, x) => s + x.total, 0); return total ? Math.round(p.reduce((s, x) => s + x.answered, 0) / total * 100) : 0; });
-const cur = computed(() => prog.value[n]);
 /* Статус «skip» у сховищі лишається незмінним; у інтерфейсі це «Не перевірено». */
 const ANSWERS = [{ s: "ok", label: "Ок", icon: "check" }, { s: "bad", label: "Проблема", icon: "x" }, { s: "skip", label: "Не перевірено", icon: "minus" }];
 
@@ -90,7 +89,6 @@ onMounted(() => {
 
     <div class="content" :class="enter">
       <header class="page-head stage-head">
-        <p class="kicker">{{ G.model.name }} · {{ G.engine(i.cfg.engine).name }} · {{ i.cfg.year }}</p>
         <h1 class="title">{{ st.name }}</h1>
         <p class="lead">{{ st.intro }}</p>
       </header>
@@ -98,14 +96,13 @@ onMounted(() => {
       <SaveStatus />
       <div class="check-tools">
         <div class="chips" role="group" aria-label="Фільтр пунктів"><button v-for="f in filters" :key="f.id" class="chip" :class="{ on: filter === f.id }" :aria-pressed="filter === f.id" @click="filter = f.id">{{ f.label }}</button></div>
-        <button v-if="nextUnchecked" class="link" @click="jumpUnchecked">До неперевіреного пункту <AppIcon name="arrowRight" /></button>
+        <button v-if="nextUnchecked" class="link" @click="jumpUnchecked">До неперевіреного <AppIcon name="arrowRight" /></button>
       </div>
-      <p v-if="!shown.length" class="notice info">На цьому етапі немає пунктів за цим фільтром.</p>
+      <p v-if="!shown.length" class="foot">Немає пунктів за цим фільтром</p>
       <div class="items">
         <article v-for="it in shown" :id="'check-item-' + it.id" :key="it.id" tabindex="-1" class="item" :data-item="it.id" :data-s="ans(it).s || ''">
           <div class="item-top">
             <span class="sev" :class="'sev-' + it.sev"><AppIcon v-if="it.sev === 'crit'" name="alert" />{{ SEV[it.sev] }}</span>
-            <span class="item-idx num">{{ st.items.indexOf(it) + 1 }} з {{ st.items.length }}</span>
           </div>
           <h2 class="item-t">{{ it.t }}</h2>
           <p class="how">{{ it.how }}</p>
@@ -125,7 +122,7 @@ onMounted(() => {
           <transition name="comment">
             <div v-show="ans(it).s === 'bad'" class="comment">
               <div v-if="it.tags && it.tags.length">
-                <span :id="'tags-' + it.id" class="field-label">Що саме не так</span>
+                <span :id="'tags-' + it.id" class="visually-hidden">Що саме не так</span>
                 <div class="chips" role="group" :aria-labelledby="'tags-' + it.id">
                   <button v-for="t in it.tags" :key="t" class="chip tag" :class="{ on: hasTag(it, t) }" data-action="tag" :data-t="t" :aria-pressed="hasTag(it, t)" @click="toggleTag(it, t)">
                     <AppIcon v-if="hasTag(it, t)" name="check" /><span>{{ t }}</span>
@@ -133,8 +130,8 @@ onMounted(() => {
                 </div>
               </div>
               <label class="field">
-                <span class="field-label">Коментар для звіту</span>
-                <textarea v-autosize class="textarea" data-action="comment" rows="3" maxlength="500" placeholder="Де саме, наскільки сильно, що каже продавець" :value="ans(it).c || ''" @input="setComment(it, $event)"></textarea>
+                <span class="visually-hidden">Коментар для звіту</span>
+                <textarea v-autosize class="textarea" data-action="comment" rows="2" maxlength="500" placeholder="Коментар: де, наскільки сильно" :value="ans(it).c || ''" @input="setComment(it, $event)"></textarea>
               </label>
             </div>
           </transition>
@@ -145,7 +142,6 @@ onMounted(() => {
 
   <div id="bar" class="bar">
     <div class="bar-in">
-      <p class="bar-status"><span>Перевірено · пропущено {{ cur.skipped }}</span><b class="num">{{ cur.answered }} з {{ cur.total }}</b></p>
       <div class="bar-actions">
         <button v-if="n > 0" class="btn tonal square" data-action="prev" :data-to="'/check/' + id + '/' + (n - 1)" :aria-label="'Попередній етап: ' + stages[n - 1].short" @click="go('/check/' + id + '/' + (n - 1))"><AppIcon name="arrowLeft" /></button>
         <button class="btn" :data-action="last ? 'finish' : 'next'" :data-to="last ? null : '/check/' + id + '/' + (n + 1)" @click="last ? finish() : go('/check/' + id + '/' + (n + 1))">

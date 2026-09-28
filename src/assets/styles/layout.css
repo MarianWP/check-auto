@@ -92,8 +92,6 @@ html[data-tg] #app { bottom: auto; height: var(--tg-viewport-height, 100%); tran
   padding: var(--s3) max(var(--gutter), var(--sar)) calc(var(--s3) + var(--sab)) max(var(--gutter), var(--sal));
 }
 .bar-in { max-width: var(--col); margin-inline: auto; display: grid; gap: var(--s2); }
-.bar-status { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3); font-size: var(--fs-cap); color: var(--text-2); }
-.bar-status b { color: var(--text); font-weight: 700; }
 .bar-actions { display: flex; gap: var(--s2); }
 
 /* ---------- Нижня навігація: округла панель розділів + окрема кнопка створення ---------- */
