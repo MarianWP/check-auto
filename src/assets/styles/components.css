@@ -204,7 +204,8 @@ details.acc > summary .engine-meta { font-weight: 450; }
 }
 .textarea { resize: none; min-height: 96px; }
 .input::placeholder, .textarea::placeholder { color: var(--text-3); opacity: 1; }
-.input:focus-visible, .textarea:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+/* Фокус поля — на його власній рамці (2 px разом із внутрішньою тінню), без кільця зовні: розмір поля не змінюється. */
+.input:focus, .textarea:focus { outline: none; border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
 .hint { margin-top: var(--s2); font-size: var(--fs-cap); line-height: 1.45; color: var(--text-2); }
 
 /* ---------- Повідомлення на сторінці ---------- */
@@ -315,12 +316,28 @@ details.acc > summary .engine-meta { font-weight: 450; }
 .chat-screen .content.chat { flex: 1 0 auto; display: flex; flex-direction: column; }
 .chat-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-top: auto; padding-top: var(--s4); }
 .chat-foot .link { flex: none; }
+/* Шапка помічника (назва і кнопка профілю) прилипає під верхньою смугою: з довгої розмови профіль завжди під рукою.
+   Фон на всю ширину — тінню з обрізанням по вертикалі; лінія знизу з'являється, коли розмову прокручено. */
+.chat-head {
+  position: sticky;
+  top: var(--sat);
+  z-index: 15;
+  background: var(--bg);
+  box-shadow: 0 0 0 100vmax var(--bg), 0 1px 0 100vmax var(--line);
+  clip-path: inset(0 -100vmax);
+}
+.chat-head.stuck { clip-path: inset(0 -100vmax -1px); }
+.chat-screen .topbar.scrolled { box-shadow: none; }
+/* Поле стоїть над нижньою навігацією: safe-area вже врахована в ній, тож тут лише звичайний відступ (разом 16 px до панелі).
+   position + z-index — щоб м'яке згасання над навігацією не лягало на поле й кнопку «Надіслати». */
 .chat-bar {
   order: 3;
   flex: none;
+  position: relative;
+  z-index: 1;
   background: var(--bg);
   border-top: 1px solid var(--line);
-  padding: var(--s2) max(var(--gutter), var(--sar)) calc(var(--s2) + var(--sab)) max(var(--gutter), var(--sal));
+  padding: var(--s2) max(var(--gutter), var(--sar)) var(--s2) max(var(--gutter), var(--sal));
 }
 .chat-bar-in { max-width: var(--col); margin-inline: auto; display: flex; align-items: flex-end; gap: var(--s2); }
 .chat-input { flex: 1 1 auto; min-height: var(--h-btn); max-height: 160px; padding-top: 14px; padding-bottom: 14px; }

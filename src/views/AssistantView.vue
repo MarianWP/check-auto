@@ -93,10 +93,10 @@ onBeforeUnmount(() => { cancelAsk(); cancelAnimationFrame(frame); focusTimers.fo
 </script>
 
 <template>
-  <AppScreen class="chat-screen" v-slot="{ enter }">
+  <AppScreen class="chat-screen" v-slot="{ enter, scrolled }">
     <NavBar root />
     <div class="content chat" :class="enter">
-      <header class="page-head head-row">
+      <header class="page-head head-row chat-head" :class="{ stuck: scrolled }">
         <h1 class="title">Помічник</h1>
         <ProfileButton />
       </header>

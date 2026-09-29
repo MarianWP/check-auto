@@ -26,6 +26,6 @@ onMounted(() => {
 
 <template>
   <div ref="el" class="screen" @scroll.passive="onScroll">
-    <slot :enter="enter"></slot>
+    <slot :enter="enter" :scrolled="state.scrolled"></slot>
   </div>
 </template>
