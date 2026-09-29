@@ -21,3 +21,6 @@ dev-dist/
 .env
 .env.local
 supabase/.temp/
+
+# Локальні нотатки, не для публічного репозиторію
+README.md
