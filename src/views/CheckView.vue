@@ -8,6 +8,7 @@ import AppIcon from "../components/AppIcon.vue";
 import PhotoStrip from "../components/PhotoStrip.vue";
 import TG from "../tg";
 import { photosFor } from "../cloud/content";
+import { CLOUD } from "../cloud/client";
 import { insp, visibleStages, stageProgress, clamp, costStr, apiOf, sheet, computeReport, setStage, reduced, SEV_LABEL as SEV, answer as saveAnswer, toggleTag as saveTag, setComment as saveComment, finish as finishInsp } from "../store";
 import { go } from "../nav";
 
@@ -111,6 +112,8 @@ onMounted(() => {
           <details v-if="it.why || (it.cost && it.cost[1])" class="why">
             <summary><span>Чому це важливо</span><AppIcon name="chevDown" cls="turn" /></summary>
             <p>{{ it.why }}{{ costWhy(it) }}</p>
+            <!-- Не певен, що бачиш? Помічник подивиться на фото саме цього пункту. -->
+            <button v-if="CLOUD" class="link" data-action="ask-photo" @click="go('/assistant?insp=' + id + '&item=' + encodeURIComponent(it.id))"><AppIcon name="sparkles" /><span>Перевірити з помічником</span></button>
           </details>
 
           <div class="answers" role="group" :aria-label="'Результат: ' + it.t">

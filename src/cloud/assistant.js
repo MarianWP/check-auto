@@ -5,7 +5,7 @@ import { user } from "./auth";
 import { messageFromRow, readChatCache, putChatCache, CHAT_CACHE_KEY } from "../logic/assistant";
 
 const empty = () => ({ messages: [], loadedFor: undefined, loading: false, refreshing: false, streaming: false,
-  error: "", remaining: null, stale: false, hasMore: false, cursor: null, retryText: "" });
+  error: "", remaining: null, stale: false, hasMore: false, cursor: null, retryText: "", retryPhoto: null });
 export const chat = reactive(empty());
 let seq = 0, ctrl = null, historyCtrl = null;
 const key = id => id || null;
@@ -26,7 +26,8 @@ watch(() => user.value?.id, () => {
   Object.assign(chat, empty());
 }, { flush: "sync" });
 function baseQuery(supabase, inspId, owner) {
-  let q = supabase.from("assistant_messages").select("id,role,content,created_at").eq("user_id", owner);
+  /* Усі стовпці: has_photo є лише після міграції 20260927, а явний перелік без неї зламав би історію. */
+  let q = supabase.from("assistant_messages").select("*").eq("user_id", owner);
   return inspId ? q.eq("inspection_id", inspId) : q.is("inspection_id", null);
 }
 export async function loadHistory(inspId, older = false) {
@@ -40,7 +41,7 @@ export async function loadHistory(inspId, older = false) {
   const cached = cacheRead(owner)[inspId || "none"] || [];
   chat.error = "";
   if (!older) {
-    chat.loadedFor = key(inspId); chat.stale = false; chat.retryText = "";
+    chat.loadedFor = key(inspId); chat.stale = false; chat.retryText = ""; chat.retryPhoto = null;
     chat.messages = cached; chat.hasMore = false; chat.cursor = null;
     chat.loading = !cached.length; chat.refreshing = !!cached.length;
   } else chat.loading = true;
@@ -72,13 +73,14 @@ export async function loadHistory(inspId, older = false) {
   }
 }
 export const loadOlder = () => loadHistory(chat.loadedFor, true);
-export async function ask(text, { inspId, context, lang } = {}) {
+/* image — фото (data URL JPEG ~1280 px) для аналізу, thumb — мініатюра для стрічки чату. */
+export async function ask(text, { inspId, context, lang, image, thumb } = {}) {
   text = String(text || "").trim();
   const owner = user.value?.id;
   if (!CLOUD || !owner || !text || chat.streaming || chat.loading || chat.refreshing) return false;
   const run = ++seq, controller = new AbortController(); ctrl = controller;
   const valid = () => run === seq && owner === user.value?.id && key(inspId) === chat.loadedFor;
-  chat.streaming = true; chat.error = ""; chat.retryText = "";
+  chat.streaming = true; chat.error = ""; chat.retryText = ""; chat.retryPhoto = null;
   let timer, mine, reply;
   /* Сервер віддає відповідь після першого слова моделі (і може раз повторити порожню спробу),
      тож на початок чекаємо довше; між шматками тексту — не більше хвилини тиші. */
@@ -89,13 +91,13 @@ export async function ask(text, { inspId, context, lang } = {}) {
     if (!valid()) return false;
     if (error || !s?.session?.access_token) throw new Error("Потрібен вхід через Telegram");
     const id = crypto.randomUUID();
-    mine = reactive({ id: "u" + id, role: "user", content: text, at: Date.now() });
+    mine = reactive({ id: "u" + id, role: "user", content: text, at: Date.now(), ...(image ? { photo: thumb || true, photoFull: image } : {}) });
     reply = reactive({ id: "a" + id, role: "assistant", content: "", at: Date.now(), pending: true });
     chat.messages.push(mine, reply);
     const res = await fetch(CLOUD_URL + "/functions/v1/assistant", {
       method: "POST", signal: controller.signal,
       headers: { "Content-Type": "application/json", apikey: CLOUD_KEY, Authorization: "Bearer " + s.session.access_token },
-      body: JSON.stringify({ message: text, context: context || "", inspection_id: key(inspId), lang: lang || "uk" })
+      body: JSON.stringify({ message: text, context: context || "", inspection_id: key(inspId), lang: lang || "uk", ...(image ? { image } : {}) })
     });
     if (!valid()) return false;
     const rem = res.headers.get("x-remaining");
@@ -124,6 +126,7 @@ export async function ask(text, { inspId, context, lang } = {}) {
     if (valid()) {
       chat.error = controller.signal.aborted ? "Відповідь не надійшла вчасно. Можна повторити запитання." : errText(e);
       chat.retryText = text;
+      chat.retryPhoto = image ? { image, thumb } : null;
       if (mine) mine.failed = true;
       if (reply && !reply.content) chat.messages = chat.messages.filter(m => m.id !== reply.id);
       else if (reply) reply.interrupted = true;
@@ -146,7 +149,7 @@ export async function clearHistory(inspId) {
     const { error } = await q;
     if (run !== seq || owner !== user.value?.id) return;
     if (error) throw error;
-    Object.assign(chat, { messages: [], error: "", retryText: "", hasMore: false, cursor: null });
+    Object.assign(chat, { messages: [], error: "", retryText: "", retryPhoto: null, hasMore: false, cursor: null });
     cacheWrite(owner, inspId, []);
   } catch (e) { if (run === seq) chat.error = errText(e); }
   finally { if (run === seq) chat.loading = false; }

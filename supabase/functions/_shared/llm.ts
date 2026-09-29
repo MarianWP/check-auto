@@ -70,6 +70,21 @@ export async function firstText(events: AsyncGenerator<Ev>): Promise<{ first: st
 
 export const cutByLimit = (reason: string) => reason === "length" || reason === "max_tokens";
 
+// Фото від користувача: data URL JPEG, PNG або WebP (клієнт стискає до ~1280 px, це кількасот КБ). Інше — null.
+export const MAX_IMAGE_CHARS = 4_500_000;
+export type Img = { mediaType: string; data: string; url: string };
+export function parseImage(v: unknown): Img | null {
+  if (typeof v !== "string" || v.length > MAX_IMAGE_CHARS) return null;
+  const m = v.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/);
+  return m ? { mediaType: m[1], data: m[2], url: v } : null;
+}
+// Повідомлення користувача з фото у форматі провайдера: OpenAI — text + image_url, Anthropic — image (base64) + text.
+export function userContent(provider: string, text: string, img: Img): unknown[] {
+  return provider === "anthropic"
+    ? [{ type: "image", source: { type: "base64", media_type: img.mediaType, data: img.data } }, { type: "text", text }]
+    : [{ type: "text", text }, { type: "image_url", image_url: { url: img.url, detail: "high" } }];
+}
+
 // Потік відповіді клієнту: перший шматок тексту, далі решта подій. Коли модель закінчила, викликається save(повний текст);
 // помилка save обриває потік, щоб клієнт знав, що розмову не збережено.
 // Кожен виклик pull мусить або віддати шматок, або закрити потік: якщо pull повернеться ні з чим, браузерний потік

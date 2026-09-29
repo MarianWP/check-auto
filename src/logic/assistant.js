@@ -52,7 +52,22 @@ export function suggestions(i, G) {
 }
 
 /* Чергування ролей для показу і підрахунку: рядки бази → повідомлення чату. */
-export const messageFromRow = r => (r && (r.role === "user" || r.role === "assistant") && typeof r.content === "string" ? { id: r.id, role: r.role, content: r.content, at: r.created_at ? Date.parse(r.created_at) : 0 } : null);
+export const messageFromRow = r => (r && (r.role === "user" || r.role === "assistant") && typeof r.content === "string"
+  ? { id: r.id, role: r.role, content: r.content, at: r.created_at ? Date.parse(r.created_at) : 0, ...(r.has_photo ? { photo: true } : {}) } : null);
+
+/* Фото в повідомленні: мініатюра (data URL, лише на цьому пристрої) або true — «було фото» з хмари, де самого знімка немає. */
+export const PHOTO_THUMB_MAX = 40000;
+const photoOf = p => (p === true ? true : typeof p === "string" && /^data:image\/(jpeg|png|webp);base64,/.test(p) && p.length <= PHOTO_THUMB_MAX ? p : undefined);
+const slim = m => { const o = { id: String(m.id || ""), role: m.role, content: m.content, at: Number(m.at) || 0 }; const p = photoOf(m.photo); if (p) o.photo = p; return o; };
+
+/* Пункт чек-листа, який користувач перевіряє з помічником (кнопка в «Чому це важливо»): рядок для контексту. */
+export function focusContext(it) {
+  if (!it || !it.t) return "";
+  return "Користувач зараз перевіряє пункт чек-листа «" + clip(it.t, 160) + "»." + (it.how ? " Як перевіряти: " + clip(it.how, 400) : "") + (it.why ? " Чому це важливо: " + clip(it.why, 300) : "");
+}
+/* Запитання за замовчуванням: коли надіслали лише фото, і коли прийшли з пункту чек-листа. */
+export const PHOTO_QUESTION = "Що видно на фото? Чи є тут проблема?";
+export const focusQuestion = it => "Перевір по фото: «" + it.t + "»";
 
 /* Локальний кеш розмов: { [ключ розмови]: [повідомлення] }. Не більше 10 розмов і 60 повідомлень у кожній. */
 export const CHAT_CACHE_KEY = "golfcheck.chat.v1";
@@ -63,12 +78,12 @@ export function readChatCache(text) {
   try { o = text ? JSON.parse(text) : null; } catch (e) { return {}; }
   if (!o || typeof o !== "object" || Array.isArray(o)) return {};
   const out = {};
-  Object.keys(o).forEach(k => { if (Array.isArray(o[k])) out[k] = o[k].filter(isMsg).map(m => ({ id: String(m.id || ""), role: m.role, content: m.content, at: Number(m.at) || 0 })); });
+  Object.keys(o).forEach(k => { if (Array.isArray(o[k])) out[k] = o[k].filter(isMsg).map(slim); });
   return out;
 }
 export function putChatCache(cache, key, list) {
   const out = Object.assign({}, cache || {});
-  out[key] = (Array.isArray(list) ? list : []).filter(isMsg).slice(-CHAT_CACHE_MAX.messages).map(m => ({ id: String(m.id || ""), role: m.role, content: m.content, at: Number(m.at) || 0 }));
+  out[key] = (Array.isArray(list) ? list : []).filter(isMsg).slice(-CHAT_CACHE_MAX.messages).map(slim);
   const keys = Object.keys(out);
   if (keys.length > CHAT_CACHE_MAX.convos) keys.filter(k => k !== key).slice(0, keys.length - CHAT_CACHE_MAX.convos).forEach(k => { delete out[k]; });
   return out;

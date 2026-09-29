@@ -21,6 +21,7 @@ beforeAll(async () => {
   await pg.exec(sql("20260924000000_custom_models.sql"));
   await pg.exec(sql("20260925000000_reliable_sync_and_usage.sql"));
   await pg.exec(sql("20260926000000_lean_sync.sql"));
+  await pg.exec(sql("20260927000000_chat_photos.sql"));
   // Supabase grants table privileges by default; RLS must still constrain them.
   await pg.exec("grant select, insert, update, delete on all tables in schema public to authenticated;");
 }, 20000);
@@ -53,6 +54,13 @@ it("migrations can be run again without errors and without doubling the usage co
   expect((await pg.query("select count(*)::int n from public.ai_usage")).rows[0].n).toBe(before);
   await pg.exec("set role authenticated");
   expect((await sync("again", 0, record())).row.revision).toBe(1);
+});
+it("marks chat messages that came with a photo and keeps old rows without it", async () => {
+  await pg.exec(sql("20260927000000_chat_photos.sql"));
+  await pg.query("insert into public.assistant_messages(user_id, role, content) values($1, 'user', 'без фото')", [alice]);
+  await pg.query("insert into public.assistant_messages(user_id, role, content, has_photo) values($1, 'user', 'з фото', true)", [alice]);
+  const rows = (await pg.query("select content, has_photo from public.assistant_messages order by content")).rows;
+  expect(rows).toEqual([{ content: "без фото", has_photo: false }, { content: "з фото", has_photo: true }]);
 });
 it("returns only service fields after a successful write and the full row on conflict", async () => {
   await pg.exec("set role authenticated");

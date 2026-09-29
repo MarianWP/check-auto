@@ -3,6 +3,7 @@ import { sb, errText } from "./client";
 import { refreshContent } from "./content";
 import { rowFromForm, thumbPath, thumbScale } from "../logic/content";
 import { toast } from "../store";
+import { decodeImage as decode, toJpeg as jpeg } from "../image";
 
 async function run(promise, okMsg) {
   const { data, error } = await promise;
@@ -26,16 +27,6 @@ export async function saveItem(form, id) {
 }
 export const deleteItem = async id => run((await sb()).from("checklist_items").delete().eq("id", id), "Пункт видалено");
 
-async function decode(file) {
-  if (!/^image\//.test(file.type)) throw new Error("Це не зображення");
-  return createImageBitmap(file);
-}
-function jpeg(bmp, k, quality) {
-  const w = Math.max(1, Math.round(bmp.width * k)), h = Math.max(1, Math.round(bmp.height * k));
-  const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
-  canvas.getContext("2d").drawImage(bmp, 0, 0, w, h);
-  return new Promise(res => canvas.toBlob(res, "image/jpeg", quality));
-}
 /* Фото з телефона стискаємо до 1600 px і JPEG 0.85: сховище й трафік користувачів. */
 export async function shrinkImage(file, max = 1600) {
   const bmp = await decode(file);

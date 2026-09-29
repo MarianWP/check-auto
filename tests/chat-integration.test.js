@@ -83,3 +83,23 @@ it("times out a stalled response and unblocks the composer", async () => {
   await vi.advanceTimersByTimeAsync(40000); await request;
   expect(api.chat.streaming).toBe(false); expect(api.chat.retryText).toBe("question");
 });
+it("sends the photo with the question and keeps its thumbnail in the conversation", async () => {
+  await api.loadHistory(null);
+  let sent = null;
+  vi.stubGlobal("fetch", vi.fn(async (_url, opts) => { sent = JSON.parse(opts.body); return new Response("На фото болти цілі."); }));
+  const image = "data:image/jpeg;base64,AAAA", thumb = "data:image/jpeg;base64,BBBB";
+  expect(await api.ask("Що тут?", { image, thumb })).toBe(true);
+  expect(sent.image).toBe(image);
+  const mine = api.chat.messages.find(m => m.role === "user");
+  expect(mine.photo).toBe(thumb);
+  const cache = JSON.parse(values.get("golfcheck.chat.v1:alice"));
+  expect(cache.none.find(m => m.role === "user").photo).toBe(thumb);
+  expect(cache.none.find(m => m.role === "user")).not.toHaveProperty("photoFull");
+});
+it("keeps the photo for retry when sending fails", async () => {
+  await api.loadHistory(null);
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ error: "Фото не вдалося прочитати" }), { status: 400 })));
+  expect(await api.ask("Що тут?", { image: "data:image/jpeg;base64,AAAA", thumb: "data:image/jpeg;base64,BBBB" })).toBe(false);
+  expect(api.chat.retryText).toBe("Що тут?");
+  expect(api.chat.retryPhoto).toEqual({ image: "data:image/jpeg;base64,AAAA", thumb: "data:image/jpeg;base64,BBBB" });
+});

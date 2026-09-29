@@ -340,6 +340,25 @@ details.acc > summary .engine-meta { font-weight: 450; }
   padding: var(--s2) max(var(--gutter), var(--sar)) var(--s2) max(var(--gutter), var(--sal));
 }
 .chat-bar-in { max-width: var(--col); margin-inline: auto; display: flex; align-items: flex-end; gap: var(--s2); }
+/* Фото до запитання: кнопка ліворуч від поля (підсвічена, коли прийшли з пункту чек-листа і фото ще немає),
+   прикріплене фото — мініатюрою над полем. */
+.chat-attach { cursor: pointer; }
+.chat-attach.hint { box-shadow: inset 0 0 0 2px var(--accent); color: var(--accent-text); }
+.chat-attach.busy { opacity: 0.6; pointer-events: none; }
+.chat-attached { max-width: var(--col); margin: 0 auto var(--s2); display: flex; align-items: center; gap: var(--s3); }
+.chat-attached-img { flex: none; width: 56px; height: 56px; border-radius: var(--r-ctl); overflow: hidden; background: var(--raised); }
+.chat-attached-img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.chat-attached-l { flex: 1 1 auto; min-width: 0; font-size: var(--fs-cap); font-weight: 600; color: var(--text-2); }
+/* Пункт чек-листа, який перевіряємо з помічником. */
+.focus-card { display: grid; gap: var(--s1); margin-top: var(--s3); padding: var(--s3) var(--s4); }
+.focus-top { display: flex; align-items: center; gap: var(--s2); color: var(--text-2); }
+.focus-top .icon-btn { margin: calc(-1 * var(--s2)) calc(-1 * var(--s2)) calc(-1 * var(--s2)) auto; }
+.focus-l { font-size: var(--fs-cap); font-weight: 600; }
+.focus-t { font-size: var(--fs-body); font-weight: 600; line-height: 1.3; }
+/* Фото в повідомленні: мініатюра (натиск — більше) або позначка, якщо розмову завантажено з хмари без самого знімка. */
+.msg-photo { display: block; width: 160px; max-width: 100%; margin-bottom: var(--s2); border-radius: var(--r-ctl); overflow: hidden; background: var(--raised); }
+.msg-photo img { display: block; width: 100%; height: auto; }
+.msg-photo-tag { display: flex; align-items: center; gap: var(--s1); margin-bottom: var(--s1); font-size: var(--fs-cap); font-weight: 600; color: var(--text-2); white-space: normal; }
 .chat-input { flex: 1 1 auto; min-height: var(--h-btn); max-height: 160px; padding-top: 14px; padding-bottom: 14px; }
 /* Клавіатура відкрита: поле пливе одразу над нею (fixed, без safe-area, бо клавіатура її перекриває),
    а чат лишається на весь екран під ним і прокручується до останніх повідомлень. */
