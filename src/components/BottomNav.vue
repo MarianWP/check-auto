@@ -1,9 +1,10 @@
 <script setup>
-/* Нижня навігація: округла панель розділів + окрема оранжева кнопка створення огляду.
+/* Нижня навігація: округла панель розділів + окрема оранжева кнопка створення огляду + профіль (після входу).
    Посилання — справжні <a href>, перемикання не пише історію (див. nav.js). */
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import AppIcon from "./AppIcon.vue";
+import ProfileButton from "./ProfileButton.vue";
 import { switchTab } from "../nav";
 
 const route = useRoute();
@@ -26,6 +27,7 @@ const active = computed(() => route.meta.tab);
       <a class="fab" :class="{ on: active === 'new' }" href="#/new" draggable="false" data-tab="new" aria-label="Новий огляд" :aria-current="active === 'new' ? 'page' : null" @click.prevent="switchTab('/new')">
         <AppIcon name="plus" />
       </a>
+      <ProfileButton place="nav" />
     </div>
   </nav>
 </template>
