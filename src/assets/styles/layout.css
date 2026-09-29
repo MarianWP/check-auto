@@ -170,12 +170,12 @@ html.big-text .tabs .tab { flex-direction: column; }
 .fab:active { transform: scale(0.94); background: var(--accent-press); }
 /* Активний стан «+» позначає кільце, а не лише колір. */
 .fab.on { background-color: var(--card); color: var(--text); }
-/* Профіль у панелі після входу: кругла спокійна кнопка праворуч від «+» (оранжевий лишається за дією). */
+/* Профіль у панелі після входу: кругла кнопка того ж розміру, що «+», але спокійна (оранжевий лишається за дією). */
 .nav-profile {
   flex: none;
   align-self: center;
-  width: 48px;
-  height: 48px;
+  width: 58px;
+  height: 58px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -190,11 +190,12 @@ html.big-text .tabs .tab { flex-direction: column; }
 .nav-profile:active { transform: scale(0.94); }
 .nav-profile.on { box-shadow: inset 0 0 0 2px var(--text); }
 .nav-profile .profile-img { width: 100%; height: 100%; object-fit: cover; }
+.nav-profile .profile-initial { font-size: 20px; }
 /* Вузький екран: панель тісніша, щоб підписи вкладок вміщалися поруч із «+» і профілем. */
 @media (max-width: 359px) {
   .bottom-nav-in { gap: var(--s2); }
   .fab { width: 52px; height: 52px; }
-  .nav-profile { width: 44px; height: 44px; }
+  .nav-profile { width: 52px; height: 52px; }
 }
 
 /* Екранна клавіатура відкрита: нижні панелі не забирають місце у видимої частини. */
