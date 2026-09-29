@@ -1,24 +1,22 @@
 <script setup>
-/* Кнопка профілю. Після входу вона живе в нижній навігації праворуч від «+» (place="nav") і завжди на виду;
-   до входу — у шапці кореневих екранів (place="head") із силуетом. */
+/* Кругла кнопка праворуч у нижній навігації, завжди на виду. Після входу — аватар або ініціал (профіль),
+   гостю — шестерня (налаштування: тема, резервна копія, вхід). */
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import AppIcon from "./AppIcon.vue";
 import { auth, user, displayName } from "../cloud/auth";
 import { go } from "../nav";
 
-const props = defineProps({ place: { type: String, default: "head" } });
 const route = useRoute();
-const shown = computed(() => (props.place === "nav" ? !!user.value : !user.value));
 const photo = computed(() => (auth.profile && auth.profile.photo_url) || (user.value && user.value.user_metadata && user.value.user_metadata.photo_url) || "");
 const initial = computed(() => displayName.value.slice(0, 1).toUpperCase());
 </script>
 
 <template>
-  <button v-if="shown" :class="place === 'nav' ? ['nav-profile', { on: route.name === 'profile' }] : 'icon-btn tonal profile-btn'" data-action="profile" data-to="/profile"
-    :aria-label="user ? 'Профіль: ' + displayName : 'Профіль і налаштування'" :aria-current="place === 'nav' && route.name === 'profile' ? 'page' : null" @click="go('/profile')">
-    <img v-if="photo" class="profile-img" :src="photo" alt="" referrerpolicy="no-referrer">
+  <button class="nav-profile" :class="{ on: route.name === 'profile', guest: !user }" data-action="profile" data-to="/profile"
+    :aria-label="user ? 'Профіль: ' + displayName : 'Налаштування'" :aria-current="route.name === 'profile' ? 'page' : null" @click="go('/profile')">
+    <img v-if="user && photo" class="profile-img" :src="photo" alt="" referrerpolicy="no-referrer">
     <span v-else-if="user" class="profile-initial" aria-hidden="true">{{ initial }}</span>
-    <AppIcon v-else name="user" />
+    <AppIcon v-else name="settings" />
   </button>
 </template>

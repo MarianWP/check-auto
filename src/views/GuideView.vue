@@ -8,7 +8,6 @@ import DotsRating from "../components/DotsRating.vue";
 import EngineRow from "../components/EngineRow.vue";
 import IssueRow from "../components/IssueRow.vue";
 import ChipGroup from "../components/ChipGroup.vue";
-import ProfileButton from "../components/ProfileButton.vue";
 import CommonBlock from "../components/CommonBlock.vue";
 import VinBlock from "../components/VinBlock.vue";
 import KitBlock from "../components/KitBlock.vue";
@@ -41,9 +40,8 @@ function jump(id) {
   <AppScreen v-slot="{ enter }">
     <NavBar root />
     <div class="content" :class="enter">
-      <header class="page-head head-row">
+      <header class="page-head">
         <h1 class="title">Довідник</h1>
-        <ProfileButton />
       </header>
       <ChipGroup :list="MODEL_OPTS" :sel="sel" k="model" label="Модель" @pick="pickModel" />
       <DraftNotice :model="sel" />

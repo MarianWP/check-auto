@@ -6,7 +6,6 @@ import { useRoute } from "vue-router";
 import AppScreen from "../components/AppScreen.vue";
 import NavBar from "../components/NavBar.vue";
 import AppIcon from "../components/AppIcon.vue";
-import ProfileButton from "../components/ProfileButton.vue";
 import TelegramLogin from "../components/TelegramLogin.vue";
 import AiThinking from "../components/AiThinking.vue";
 import AiText from "../components/AiText.vue";
@@ -38,11 +37,39 @@ const focus = ref(null);
 const route = useRoute();
 
 function pick(v) { sel.value = v; try { localStorage.setItem(KEY, v); } catch (e) { /* немає доступу */ } }
+const options = computed(() => [{ id: "none", t: "Без огляду", s: "Загальні питання", icon: "comment" }]
+  .concat(list.value.map(i => ({ id: i.id, t: nameOf(i), s: apiOf(i).model.name + " · " + apiOf(i).label(i.cfg) + (i.done ? " · завершено" : ""), icon: "car" }))));
 /* Вибір огляду в аркуші знизу: компактно, скільки б оглядів не було. */
 function openPicker() {
-  const opt = (id, label, sub, icon) => ({ label, sub, icon, on: sel.value === id, fn: () => pick(id) });
-  sheet({ title: "Про який огляд запитуємо", actions: [opt("none", "Без огляду", "Загальні питання", "comment")].concat(list.value.map(i => opt(i.id, nameOf(i), apiOf(i).model.name + " · " + apiOf(i).label(i.cfg) + (i.done ? " · завершено" : ""), "car"))) });
+  sheet({ title: "Про який огляд запитуємо", actions: options.value.map(o => ({ label: o.t, sub: o.s, icon: o.icon, on: sel.value === o.id, fn: () => pick(o.id) })) });
 }
+/* Коли рядок «Про який огляд» сховався під шапку, праворуч у шапці з'являється кнопка з авто і меню вибору під нею.
+   Меню — поза шапкою (Teleport), бо шапка обрізає все, що виходить за її межі. */
+const head = ref(null), pickerRow = ref(null), chip = ref(null), menuEl = ref(null);
+const pickerHidden = ref(false);
+const menu = ref(null);
+function checkPicker() {
+  const r = pickerRow.value?.getBoundingClientRect(), h = head.value?.getBoundingClientRect();
+  pickerHidden.value = !!(r && h && r.top + r.height / 2 < h.bottom);
+  if (!pickerHidden.value) menu.value = null;
+}
+function toggleMenu(e) {
+  if (menu.value || !chip.value) { menu.value = null; return; }
+  const r = chip.value.getBoundingClientRect();
+  menu.value = { top: Math.round(r.bottom + 8), right: Math.round(document.documentElement.clientWidth - r.right), maxHeight: Math.round(window.innerHeight - r.bottom - 24) };
+  /* З клавіатури (detail 0) фокус іде в меню на обраний огляд; дотиком — лишається на кнопці, без рамки фокуса. */
+  if (e && e.detail === 0) nextTick(() => (menuEl.value?.querySelector("[aria-checked=true]") || menuEl.value?.querySelector(".car-opt"))?.focus());
+}
+function closeMenu(refocus) { if (!menu.value) return; menu.value = null; if (refocus) chip.value?.focus(); }
+function choose(id) { TG.haptic("select"); pick(id); closeMenu(true); }
+function onMenuKey(e) {
+  if (e.key === "Escape") { e.preventDefault(); closeMenu(true); return; }
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  e.preventDefault();
+  const items = [...menuEl.value.querySelectorAll(".car-opt")], i = items.indexOf(document.activeElement);
+  items[(i + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]?.focus();
+}
+const onResize = () => closeMenu();
 function context() {
   const i = insp.value; if (!i) return "";
   const rep = computeReport(i);
@@ -78,6 +105,7 @@ function onScroll() {
   const s = scroller();
   if (s) atBottom.value = s.scrollHeight - s.scrollTop - s.clientHeight < 100;
   if (atBottom.value) hasNew.value = false;
+  checkPicker();
 }
 function followReply() {
   if (!atBottom.value) { hasNew.value = true; return; }
@@ -123,18 +151,35 @@ watch(sel, load);
 watch(sel, () => { focus.value = null; });
 watch(ready, load);
 watch(() => chat.messages.length && chat.messages[chat.messages.length - 1].content.length, () => { if (chat.streaming) followReply(); });
-onMounted(() => { scrollElement = scroller(); scrollElement?.addEventListener("scroll", onScroll, { passive: true }); load(); });
-onBeforeUnmount(() => { cancelAsk(); cancelAnimationFrame(frame); focusTimers.forEach(clearTimeout); scrollElement?.removeEventListener("scroll", onScroll); });
+watch(pickerRow, () => nextTick(checkPicker));
+onMounted(() => { scrollElement = scroller(); scrollElement?.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onResize); load(); });
+onBeforeUnmount(() => { cancelAsk(); cancelAnimationFrame(frame); focusTimers.forEach(clearTimeout); scrollElement?.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onResize); });
 </script>
 
 <template>
   <AppScreen class="chat-screen" v-slot="{ enter, scrolled }">
     <NavBar root />
     <div class="content chat" :class="enter">
-      <header class="page-head head-row chat-head" :class="{ stuck: scrolled }">
+      <header ref="head" class="page-head head-row chat-head" :class="{ stuck: scrolled }">
         <h1 class="title">Помічник</h1>
-        <ProfileButton />
+        <Transition name="car-chip">
+          <button v-if="ready && pickerHidden" ref="chip" class="car-chip" data-action="pick-insp-head" aria-haspopup="menu" :aria-expanded="!!menu" :aria-label="'Про який огляд: ' + pickLabel" @click="toggleMenu" @keydown.esc="closeMenu()">
+            <AppIcon :name="insp ? 'car' : 'comment'" /><span class="car-chip-t">{{ pickLabel }}</span><AppIcon name="chevDown" />
+          </button>
+        </Transition>
       </header>
+      <Teleport to="body">
+        <div v-if="menu" class="car-menu-scrim" @click="closeMenu()"></div>
+        <Transition name="car-menu">
+          <div v-if="menu" ref="menuEl" class="car-menu" role="menu" aria-label="Про який огляд" :style="{ top: menu.top + 'px', right: menu.right + 'px', maxHeight: menu.maxHeight + 'px' }" @keydown="onMenuKey">
+            <button v-for="o in options" :key="o.id" class="car-opt" role="menuitemradio" :aria-checked="sel === o.id" @click="choose(o.id)">
+              <AppIcon :name="o.icon" />
+              <span class="car-opt-main"><span class="car-opt-t">{{ o.t }}</span><span class="car-opt-s">{{ o.s }}</span></span>
+              <AppIcon v-if="sel === o.id" name="check" cls="car-opt-on" />
+            </button>
+          </div>
+        </Transition>
+      </Teleport>
 
       <div v-if="CLOUD_ERROR" class="notice warn" data-notice="assistant-off"><AppIcon name="alert" /><div><b>Хмару налаштовано з помилкою</b>{{ CLOUD_ERROR }}. Помічник поки недоступний.</div></div>
       <div v-else-if="!auth.enabled" class="notice info" data-notice="assistant-off"><AppIcon name="alert" /><div><b>Помічник недоступний</b>Хмару ще не підключено.</div></div>
@@ -145,7 +190,7 @@ onBeforeUnmount(() => { cancelAsk(); cancelAnimationFrame(frame); focusTimers.fo
       </div>
 
       <template v-else>
-        <div v-if="list.length" class="group picker">
+        <div v-if="list.length" ref="pickerRow" class="group picker">
           <button class="row" data-action="pick-insp" :aria-label="'Про який огляд: ' + pickLabel" @click="openPicker">
             <AppIcon name="car" />
             <div class="row-main"><div class="row-s">Про який огляд</div><div class="row-t" data-pick-label>{{ pickLabel }}</div></div>

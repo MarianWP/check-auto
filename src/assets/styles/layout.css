@@ -94,7 +94,7 @@ html[data-tg] #app { bottom: auto; height: var(--tg-viewport-height, 100%); tran
 .bar-in { max-width: var(--col); margin-inline: auto; display: grid; gap: var(--s2); }
 .bar-actions { display: flex; gap: var(--s2); }
 
-/* ---------- Нижня навігація: округла панель розділів + окрема кнопка створення ---------- */
+/* ---------- Нижня навігація: округла панель розділів з «+» у кінці + кнопка профілю ---------- */
 .bottom-nav {
   order: 4;
   flex: none;
@@ -111,7 +111,7 @@ html[data-tg] #app { bottom: auto; height: var(--tg-viewport-height, 100%); tran
   background: linear-gradient(to bottom, var(--bg-fade), var(--bg));
   pointer-events: none;
 }
-.bottom-nav-in { max-width: 480px; margin-inline: auto; display: flex; align-items: stretch; gap: var(--s3); }
+.bottom-nav-in { max-width: 480px; margin-inline: auto; display: flex; align-items: center; gap: var(--s2); }
 .tabs {
   flex: 1 1 auto;
   min-width: 0;
@@ -122,10 +122,11 @@ html[data-tg] #app { bottom: auto; height: var(--tg-viewport-height, 100%); tran
   background: var(--card);
   border: 1px solid var(--line);
 }
-/* Підпис стоїть поруч з іконкою, а коли не вміщається (вузький екран, збільшений текст) — сам переходить під неї. */
+/* Підпис стоїть поруч з іконкою, а коли не вміщається (вузький екран, збільшений текст) — сам переходить під неї.
+   Вкладки однакові, поки підписи вміщаються; інакше довша бере місце в коротшої, але підпис не обрізається. */
 .tabs .tab {
   flex: 1 1 0;
-  min-width: 0;
+  min-width: min-content;
   min-height: var(--h-btn);
   display: flex;
   flex-wrap: wrap;
@@ -146,36 +147,39 @@ html[data-tg] #app { bottom: auto; height: var(--tg-viewport-height, 100%); tran
   transition: background-color 160ms ease, color 160ms ease;
 }
 /* Це посилання, але поводяться як кнопки застосунку: без системного меню посилання на довге натискання. */
-.tabs .tab, .fab { -webkit-touch-callout: none; }
-/* Телефон або збільшений текст: усі вкладки однаково стають «іконка над підписом». */
-@media (max-width: 480px) { .tabs .tab { flex-direction: column; } }
+.tabs .tab, .tabs .nav-add { -webkit-touch-callout: none; }
+/* Телефон або збільшений текст: усі вкладки однаково стають «іконка над підписом». На телефоні підписи
+   не ростуть зі збільшеним текстом системи (як панель вкладок в iOS): інакше «Довідник» і «Помічник» не вміщаються. */
+@media (max-width: 480px) { .tabs .tab { flex-direction: column; padding-inline: var(--s1); font-size: 12px; } }
 html.big-text .tabs .tab { flex-direction: column; }
 .tabs .tab:active { background: var(--raised); }
 .tabs .tab.on { background: var(--raised); color: var(--text); }
 .tabs .tab.on svg.i { color: var(--accent); }
-.fab {
+/* «+» — остання кнопка всередині панелі: оранжеве коло на висоту вкладки, без підпису, тож вкладкам лишається більше місця. */
+.tabs .nav-add {
   flex: none;
-  width: 58px;
-  height: 58px;
+  align-self: center;
+  width: var(--h-btn);
+  height: var(--h-btn);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background: var(--accent);
   color: var(--on-accent);
-  border: 0.0625rem solid var(--line);
-  transition: transform 160ms var(--ease-out), background-color 120ms ease;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 160ms var(--ease-out), background-color 120ms ease, color 120ms ease;
 }
-.fab svg.i { width: 28px; height: 28px; stroke-width: 2.5; }
-.fab:active { transform: scale(0.94); background: var(--accent-press); }
-/* Активний стан «+» позначає кільце, а не лише колір. */
-.fab.on { background-color: var(--card); color: var(--text); }
-/* Профіль у панелі після входу: кругла кнопка того ж розміру, що «+», але спокійна (оранжевий лишається за дією). */
+.tabs .nav-add svg.i { width: 26px; height: 26px; stroke-width: 2.5; }
+.tabs .nav-add:active { transform: scale(0.94); background: var(--accent-press); }
+/* Екран нового огляду відкрито: «+» стає як обрана вкладка (підкладка й оранжева іконка). */
+.tabs .nav-add.on { background: var(--raised); color: var(--accent); }
+/* Профіль (гостю — налаштування): кругла кнопка на висоту панелі, спокійна (оранжевий лишається за дією). */
 .nav-profile {
   flex: none;
-  align-self: center;
-  width: 58px;
-  height: 58px;
+  width: 62px;
+  height: 62px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -191,11 +195,14 @@ html.big-text .tabs .tab { flex-direction: column; }
 .nav-profile.on { box-shadow: inset 0 0 0 2px var(--text); }
 .nav-profile .profile-img { width: 100%; height: 100%; object-fit: cover; }
 .nav-profile .profile-initial { font-size: 20px; }
-/* Вузький екран: панель тісніша, щоб підписи вкладок вміщалися поруч із «+» і профілем. */
+.nav-profile.guest { color: var(--text-2); }
+.nav-profile.guest.on { color: var(--text); }
+/* Вузький екран (320 px): «+» і профіль менші, проміжки тонші, щоб підписи вкладок вміщалися. */
 @media (max-width: 359px) {
-  .bottom-nav-in { gap: var(--s2); }
-  .fab { width: 52px; height: 52px; }
-  .nav-profile { width: 52px; height: 52px; }
+  .tabs { gap: 2px; }
+  .tabs .tab { padding-inline: 2px; }
+  .tabs .nav-add { width: var(--h-ctl); height: var(--h-ctl); }
+  .nav-profile { width: 48px; height: 48px; }
 }
 
 /* Екранна клавіатура відкрита: нижні панелі не забирають місце у видимої частини. */
@@ -260,5 +267,5 @@ html.kb-open .sheet { padding-bottom: var(--s2); }
 
 @media (hover: hover) and (pointer: fine) {
   .tabs .tab:not(.on):hover, .sheet-btn:hover { background: var(--raised); }
-  .fab:hover { background: var(--accent-press); }
+  .tabs .nav-add:not(.on):hover { background: var(--accent-press); }
 }

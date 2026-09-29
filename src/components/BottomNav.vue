@@ -1,6 +1,6 @@
 <script setup>
-/* Нижня навігація: округла панель розділів + окрема оранжева кнопка створення огляду + профіль (після входу).
-   Посилання — справжні <a href>, перемикання не пише історію (див. nav.js). */
+/* Нижня навігація: округла панель розділів з оранжевим «+» (новий огляд) у кінці + кругла кнопка профілю праворуч
+   (гостю — налаштування). Посилання — справжні <a href>, перемикання не пише історію (див. nav.js). */
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import AppIcon from "./AppIcon.vue";
@@ -23,11 +23,11 @@ const active = computed(() => route.meta.tab);
         <a v-for="t in tabs" :key="t.id" class="tab" :class="{ on: active === t.id }" :href="'#' + t.to" draggable="false" :data-tab="t.id" :aria-current="active === t.id ? 'page' : null" @click.prevent="switchTab(t.to)">
           <AppIcon :name="t.icon" /><span>{{ t.label }}</span>
         </a>
+        <a class="nav-add" :class="{ on: active === 'new' }" href="#/new" draggable="false" data-tab="new" aria-label="Новий огляд" :aria-current="active === 'new' ? 'page' : null" @click.prevent="switchTab('/new')">
+          <AppIcon name="plus" />
+        </a>
       </div>
-      <a class="fab" :class="{ on: active === 'new' }" href="#/new" draggable="false" data-tab="new" aria-label="Новий огляд" :aria-current="active === 'new' ? 'page' : null" @click.prevent="switchTab('/new')">
-        <AppIcon name="plus" />
-      </a>
-      <ProfileButton place="nav" />
+      <ProfileButton />
     </div>
   </nav>
 </template>

@@ -8,7 +8,6 @@ import SecTitle from "../components/SecTitle.vue";
 import InspCard from "../components/InspCard.vue";
 import InstallCard from "../components/InstallCard.vue";
 import StorageNotice from "../components/StorageNotice.vue";
-import ProfileButton from "../components/ProfileButton.vue";
 import { db } from "../store";
 import { switchTab } from "../nav";
 
@@ -26,9 +25,8 @@ const SEARCH_FROM = 6;
   <AppScreen v-slot="{ enter }">
     <NavBar root />
     <div class="content" :class="enter">
-      <header class="page-head head-row">
+      <header class="page-head">
         <h1 class="title">Мої огляди</h1>
-        <ProfileButton />
       </header>
       <StorageNotice />
       <SaveStatus />

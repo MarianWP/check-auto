@@ -267,10 +267,9 @@ details.acc > summary .engine-meta { font-weight: 450; }
 .tg-login-box { min-height: 0; }
 .tg-login-box iframe { border-radius: var(--r-btn); }
 
-/* ---------- Шапка кореневого екрана з кнопкою профілю ---------- */
+/* ---------- Шапка з кнопкою праворуч; аватар профілю ---------- */
 .head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); }
 .head-row > div { min-width: 0; }
-.profile-btn { margin-top: var(--s1); overflow: hidden; }
 .profile-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .profile-initial { font-size: var(--fs-body); font-weight: 700; }
 
@@ -316,7 +315,7 @@ details.acc > summary .engine-meta { font-weight: 450; }
 .chat-screen .content.chat { flex: 1 0 auto; display: flex; flex-direction: column; }
 .chat-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-top: auto; padding-top: var(--s4); }
 .chat-foot .link { flex: none; }
-/* Шапка помічника (назва і кнопка профілю) прилипає під верхньою смугою: з довгої розмови профіль завжди під рукою.
+/* Шапка помічника (назва і вибір огляду) прилипає під верхньою смугою: з довгої розмови огляд видно й можна змінити.
    Фон на всю ширину — тінню з обрізанням по вертикалі; лінія знизу з'являється, коли розмову прокручено. */
 .chat-head {
   position: sticky;
@@ -327,6 +326,59 @@ details.acc > summary .engine-meta { font-weight: 450; }
   clip-path: inset(0 -100vmax);
 }
 .chat-head.stuck { clip-path: inset(0 -100vmax -1px); }
+/* Огляд у шапці, коли рядок вибору прокручено: компактна кнопка праворуч і меню під нею. */
+.car-chip {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 62%;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: var(--h-ctl);
+  padding: 0 var(--s3);
+  border-radius: var(--r-pill);
+  background: var(--raised);
+  color: var(--text);
+  font-size: var(--fs-body-s);
+  font-weight: 600;
+  transition: background-color 120ms ease, opacity 160ms ease, transform 160ms var(--ease-out);
+}
+.car-chip svg.i { flex: none; width: 18px; height: 18px; color: var(--text-2); }
+.car-chip-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.car-chip:active, .car-chip[aria-expanded="true"] { background: var(--raised-2); }
+.car-chip-enter-from, .car-chip-leave-to { opacity: 0; transform: translateY(-4px); }
+.car-menu-scrim { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 40; }
+.car-menu {
+  position: fixed;
+  z-index: 41;
+  width: min(320px, calc(100vw - 2 * var(--gutter)));
+  overflow-y: auto;
+  display: grid;
+  gap: 2px;
+  padding: var(--s2);
+  border-radius: var(--r-card);
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  transform-origin: top right;
+}
+.car-menu-enter-active { transition: opacity 160ms ease, transform 200ms var(--ease-out); }
+.car-menu-leave-active { transition: opacity 120ms ease; }
+.car-menu-enter-from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+.car-menu-leave-to { opacity: 0; }
+.car-opt { display: flex; align-items: center; gap: var(--s3); width: 100%; min-height: 56px; padding: var(--s2) var(--s3); border-radius: var(--r-ctl); color: var(--text); text-align: left; transition: background-color 120ms ease; }
+.car-opt svg.i { flex: none; color: var(--text-2); }
+.car-opt[aria-checked="true"] { background: var(--raised); }
+.car-opt:active { background: var(--raised-2); }
+.car-opt svg.i.car-opt-on { color: var(--accent); stroke-width: 2.5; }
+.car-opt-main { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.car-opt-t { font-size: var(--fs-body); font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.car-opt-s { font-size: var(--fs-cap); font-weight: 500; line-height: 1.35; color: var(--text-2); }
+@media (hover: hover) and (pointer: fine) {
+  .car-chip:hover { background: var(--raised-2); }
+  .car-opt[aria-checked="false"]:hover { background: var(--raised); }
+}
 .chat-screen .topbar.scrolled { box-shadow: none; }
 /* Поле стоїть над нижньою навігацією: safe-area вже врахована в ній, тож тут лише звичайний відступ (разом 16 px до панелі).
    position + z-index — щоб м'яке згасання над навігацією не лягало на поле й кнопку «Надіслати». */
